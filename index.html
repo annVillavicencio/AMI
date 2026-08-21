@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMI - Inicio</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        
+        <!-- Sidebar (Menú Lateral) -->
+        <div class="sidebar text-white" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4">
+                <img src="Assets/Logo_Ami.png" alt="AMI Logo" class="img-fluid w-75">
+            </div>
+            <div class="list-group list-group-flush px-3 sidebar-menu">
+                <a href="#" class="list-group-item list-group-item-action active-tab rounded-3 mb-2">
+                    <i class="bi bi-house-door me-2"></i> Inicio
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-car-front me-2"></i> Inventario
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-display me-2"></i> Ventas
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-cart3 me-2"></i> Compras
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-people me-2"></i> Clientes
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-megaphone me-2"></i> Marketing
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
+                </a>
+                <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2">
+                    <i class="bi bi-person-gear me-2"></i> Usuarios
+                </a>
+                
+                <div class="mt-4 mb-3">
+                    <a href="#" class="list-group-item list-group-item-action sidebar-link rounded-3">
+                        <i class="bi bi-box-arrow-right me-2"></i> Salir
+                    </a>
+                </div>
+
+                <!-- Tarjeta de Seguridad -->
+                <div class="security-card p-3 rounded-4 text-start mt-auto">
+                    <div class="d-flex align-items-center mb-1">
+                        <div class="security-icon bg-success rounded-circle d-flex justify-content-center align-items-center me-2">
+                            <i class="bi bi-check text-white"></i>
+                        </div>
+                        <span class="fw-bold fs-6 text-white">Seguridad y control</span>
+                    </div>
+                    <p class="text-secondary mb-0 ms-4 security-text">Tus datos siempre protegidos.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="page-content-wrapper" class="w-100">
+            
+            <!-- Navbar Superior -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
+                <div class="container-fluid">
+                    <div class="ms-auto d-flex align-items-center">
+                        
+                        <!-- Campana de Notificación -->
+                        <div class="position-relative me-4 cursor-pointer">
+                            <i class="bi bi-bell fs-5"></i>
+                            <!-- El punto rojo está oculto por defecto (clase d-none). Aparecerá solo si hay notificaciones -->
+                            <span id="notif-dot" class="position-absolute top-0 start-100 translate-middle p-1 border border-light rounded-circle bg-danger d-none"></span>
+                        </div>
+
+                        <!-- Dropdown de Usuario con Avatar Genérico -->
+                        <div class="dropdown">
+                            <div class="d-flex align-items-center cursor-pointer user-select-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="Assets/User.jpg" alt="Usuario" class="rounded-circle me-2 default-avatar" style="width: 40px; height: 40px; object-fit: cover;">
+                                <span class="fw-bold text-dark" id="nombre-usuario">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                            </div>
+                            
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4 mt-3">
+                                <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2 text-muted"></i> Ver perfil</a></li>
+                                <li><a class="dropdown-item py-2" href="Login.html"><i class="bi bi-box-arrow-in-right me-2 text-muted"></i> Iniciar sesión</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger" href="#"><i class="bi bi-key me-2"></i> Cambiar contraseña</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido Principal del Dashboard -->
+            <div class="container-fluid px-4">
+               <!-- Saludo Dinámico -->
+                <h2 class="fw-bold mb-1">¡Bienvenido, <span id="nombre-saludo">Usuario</span>! 👋</h2>
+                <p class="text-muted mb-4">Aquí tienes el resumen de AMI</p>
+
+                <!-- Hero / Carrusel de 3 imágenes -->
+                <div id="heroCarousel" class="carousel slide mb-5 rounded-4 overflow-hidden shadow-sm" data-bs-ride="carousel">
+                    <!-- Indicadores del carrusel -->
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+                    </div>
+                    
+                    <div class="carousel-inner position-relative">
+                        <!-- Capa de texto sobre las imágenes -->
+                       <div class="carousel-caption text-overlay text-start" style="bottom: 15%; left: 5%; z-index: 10; position: absolute;">
+                        <h1 class="fw-bold display-5 text-white">Todo el control<br>de <span style="color: #DBFF99;">AMI</span>,<br>en un solo lugar.</h1>
+                        <p class="w-50 mt-3 mb-4 text-white">Gestiona tu inventario, ventas, clientes y más desde un solo lugar, de forma rápida, segura y eficiente.</p>
+                        <button class="btn rounded-pill fw-bold px-4 py-2" style="background-color: #DBFF99; color: #0B1009;">
+                        Explorar módulos <i class="bi bi-arrow-right-circle ms-2"></i>
+                        </button>
+                    </div>
+
+                        <!-- Imágenes del Carrusel -->
+                        <div class="carousel-item active">
+                            <img src="Assets/Image/Hero_1.jpg" class="d-block w-100 hero-img" alt="Banner 1" style="height: 400px; object-fit: cover; filter: brightness(0.6);">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="Assets/Image/Hero_2.jpg" class="d-block w-100 hero-img" alt="Banner 2" style="height: 400px; object-fit: cover; filter: brightness(0.6);">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="Assets/Image/Hero_3.jpg" class="d-block w-100 hero-img" alt="Banner 3" style="height: 400px; object-fit: cover; filter: brightness(0.6);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Alertas -->
+                <h4 class="fw-bold mb-1">Requiere tu atención</h4>
+                <p class="text-muted mb-4">Hay información reciente que podría necesitar revisión.</p>
+                
+                <div class="row">
+                    <!-- Tarjeta 1 -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; background-color: #F8E8FF; color: #8A2BE2;">
+                                        <i class="bi bi-exclamation-circle fs-5"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold mb-0">Inventario bajo</h5>
+                                    <i class="bi bi-x ms-auto text-muted" style="cursor: pointer; font-size: 1.5rem;" onclick="this.closest('.col-md-6').remove()"></i>
+                                </div>
+                                <p class="card-text text-muted" style="margin-left: 55px;">Algunos productos están por debajo del stock mínimo.</p>
+                                <div class="text-end mt-3">
+                                    <button class="btn rounded-pill px-4 fw-bold" style="background-color: #F8E8FF; color: #8A2BE2;">Ver detalles</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tarjeta 2 -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; background-color: #F8E8FF; color: #8A2BE2;">
+                                        <i class="bi bi-exclamation-circle fs-5"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold mb-0">Órdenes pendientes</h5>
+                                    <i class="bi bi-x ms-auto text-muted" style="cursor: pointer; font-size: 1.5rem;" onclick="this.closest('.col-md-6').remove()"></i>
+                                </div>
+                                <p class="card-text text-muted" style="margin-left: 55px;">Tienes órdenes de compra pendientes por aprobar.</p>
+                                <div class="text-end mt-3">
+                                    <button class="btn rounded-pill px-4 fw-bold" style="background-color: #F8E8FF; color: #8A2BE2;">Ver detalles</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (Necesario para carrusel y menús desplegables) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript Personalizado -->
+    <script src="JS/script.js"></script>
+</body>
+</html>

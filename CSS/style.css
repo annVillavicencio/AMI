@@ -1,0 +1,71 @@
+:root {
+    --ami-black: #0B1009;
+    --ami-light-green: #DBFF99;
+    --ami-dark-green: #64B60A;
+    --ami-bg-gray: #EFF0EB;
+    --ami-pink: #FFD4F8;
+    --ami-purple-icon: #E2B4FC;
+}
+
+body {
+    background-color: var(--ami-bg-gray);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: 260px;
+    background-color: var(--ami-black);
+    min-height: 100vh;
+}
+
+.sidebar-link {
+    color: white !important;
+    background-color: transparent !important;
+    border: none !important;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efecto al pasar el mouse por un botón del menú */
+.sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    transform: translateX(5px);
+}
+
+.active-tab {
+    background-color: var(--ami-pink) !important;
+    color: var(--ami-black) !important;
+    font-weight: 600;
+}
+
+.security-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.security-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.security-text {
+    font-size: 0.8rem;
+}
+
+/* --- Navbar Superior --- */
+.default-avatar {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: var(--ami-bg-gray);
+}
+
