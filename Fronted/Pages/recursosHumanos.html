@@ -111,7 +111,7 @@
                 <a href="../index.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 bg-transparent border-0">
                     <i class="bi bi-house-door me-2"></i> Inicio
                 </a>
-                 <a href="inventario.html" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2">
+                 <a href="inventario.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-car-front me-2"></i> Inventario
                 </a>
                 <a href="ventas.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
@@ -135,7 +135,7 @@
                 <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-person-gear me-2"></i> Usuarios
                 </a>
-                <a href="#" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2 border-0">
+                <a href="recursosHumanos.html" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2 border-0">
                     <i class="bi bi-person-vcard me-2"></i> Personal
                 </a>
             </div>
@@ -289,8 +289,7 @@
                                 <!-- Pestañas Internas -->
                                 <div class="inner-tabs">
                                     <div class="inner-tab" onclick="switchInnerTab('personal', this)">Información personal</div>
-                                    <div class="inner-tab active" onclick="switchInnerTab('laboral', this)">Información laboral</div>
-                                    <div class="inner-tab" onclick="switchInnerTab('pagos', this)">Historial de Pagos</div>
+                                    <div class="inner-tab active" onclick="switchInnerTab('laboral', this)">Información laboral</div>                                  
                                 </div>
 
                                 <!-- Contenido: Info Personal -->
@@ -314,12 +313,6 @@
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-currency-dollar me-2 text-muted"></i> Salario:</span> <strong class="text-white" id="p-salario">-</strong></li>
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-clock me-2 text-muted"></i> Jornada:</span> <strong class="text-white text-end" id="p-jornada" style="max-width: 60%;">-</strong></li>
                                     </ul>
-                                </div>
-
-                                <!-- Contenido: Historial Pagos -->
-                                <div id="inner-pagos" class="inner-view">
-                                    <div id="p-historial-container" class="d-flex flex-column gap-2">
-                                    </div>
                                 </div>
 
                                 <div class="mt-auto pt-3 border-top border-secondary border-opacity-25 d-flex gap-2">
