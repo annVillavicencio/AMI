@@ -13,9 +13,11 @@ El sistema detecta automáticamente el rol del usuario tras el inicio de sesión
 | **Inicio / Dashboard** | ✅ | ✅ | ✅ | ✅ (Básico) |
 | **Ventas e Inventario** | ✅ (CRUD) | ✅ (CRUD) | ✅ (Solo lectura) | ❌ |
 | **Marketing** | ✅ (CRUD) | ✅ (CRUD) | ✅ (Solo lectura) | ❌ |
+| **Recursos humanos**| ✅ | ❌ | ❌ | ❌ |
+| **Costos** | ✅ (CRUD) | ✅ (CRUD) | ✅ (Solo lectura) | ❌ |
 | **Reportes y Análisis** | ✅ | ❌ | ❌ | ❌ |
 | **Gestión de Usuarios** | ✅ | ❌ | ❌ | ❌ |
-| **Notificaciones Globales**| ✅ | ✅ | ✅ | ✅ |
+
 
 *(CRUD: Crear, Leer, Actualizar, Eliminar)*
 
