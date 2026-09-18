@@ -1008,4 +1008,62 @@ a {
         align-items: flex-start;
     }
 }
+.notification-menu {
+    width: 320px;
+    background-color: var(--bg-card); /* Usa el fondo oscuro de las tarjetas */
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    margin-top: 15px !important;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 12px;
+}
 
+/* Modificar el hover por defecto de Bootstrap para modo oscuro */
+.notification-menu .dropdown-item {
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    background-color: transparent;
+}
+
+.notification-menu .dropdown-item:hover, 
+.notification-menu .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.05); /* Brillo sutil al pasar el mouse */
+}
+
+/* Evitar que el texto se salga y forzar el salto de línea */
+.notification-item {
+    white-space: normal; 
+}
+
+.notification-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.text-brand-green {
+    color: var(--brand-green) !important;
+}
+
+.text-brand-green:hover {
+    color: var(--brand-green-dark) !important;
+    background-color: transparent !important;
+}
+
+/* Scrollbar personalizado para las notificaciones */
+.notification-menu::-webkit-scrollbar {
+    width: 6px;
+}
+.notification-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+.notification-menu::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
