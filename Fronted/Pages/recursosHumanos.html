@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMI - Trabajadores</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="../CSS/style.css">
+    <style>
+        
+        :root {
+            --bg-main: #0B1009;
+            --bg-card: #121810;
+            --bg-sidebar: #101218;
+            --bg-input: #1A2218;
+            --neon-green: #DBFF99;
+            --neon-pink: #FFD4F8;
+            --neon-purple: #A855F7;
+            --neon-purple-glow: rgba(168, 85, 247, 0.35);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --text-muted-custom: #A1A1AA;
+        }
+
+        body { background-color: var(--bg-main); color: #EFF0EB; font-family: system-ui, -apple-system, sans-serif; }
+        .card-custom { background-color: var(--bg-card); border: 1px solid var(--border-subtle); }
+        .bg-sidebar { background-color: var(--bg-sidebar); border-right: 1px solid var(--border-subtle); }
+        
+        .text-neon-green { color: var(--neon-green) !important; }
+        .text-neon-pink { color: var(--neon-pink) !important; }
+        
+        /* Controles de formulario */
+        .form-control-dark { background-color: var(--bg-input); border: 1px solid var(--border-subtle); color: #EFF0EB; border-radius: 8px; }
+        .form-control-dark:focus { background-color: var(--bg-input); color: #EFF0EB; border-color: var(--neon-green); box-shadow: none; }
+        
+        /* Sidebar links */
+        .sidebar-link { color: #EFF0EB; transition: 0.2s; }
+        .sidebar-link:hover { background-color: rgba(16, 18, 24); }
+       .sidebar-active { background-color: #FFD4F8; color: #0B1009 !important; font-weight: bold; }
+
+        /* Vistas y Pestañas */
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        
+        .custom-tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px; }
+        .custom-tab { padding: 8px 16px; cursor: pointer; color: var(--text-muted-custom); border-bottom: 2px solid transparent; font-weight: 500; }
+        .custom-tab.active { color: var(--neon-pink); border-bottom-color: var(--neon-pink); }
+
+        .status { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .status.activo { background: rgba(219, 255, 153, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .status.inactivo { background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid #EF4444; }
+        .status.pagado { background: rgba(163, 230, 53, 0.1); color: #A3E635; border: 1px solid #A3E635; }
+        .status.pendiente { background: rgba(234, 179, 8, 0.1); color: #EAB308; border: 1px solid #EAB308; }
+
+        .employee-row { cursor: pointer; transition: background 0.2s; }
+        .employee-row:hover { background-color: rgba(255, 255, 255, 0.02); }
+        .employee-row.selected { background-color: rgba(168, 85, 247, 0.1) !important; }
+
+         .sidebar-active-pink {
+            background-color: var(--pink-soft) !important;
+            color: #07060B !important;
+            font-weight: 700;
+            box-shadow: 0 0 12px var(--pink-soft-glow);
+        }
+
+        .sidebar-promo-card {
+            background: linear-gradient(135deg, #1C132B 0%, #0F1019 100%);
+            border: 1px solid rgba(229, 143, 229, 0.2);
+            border-radius: 16px;
+        }
+
+        .inner-tabs { display: flex; gap: 15px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px; font-size: 0.85rem; overflow-x: auto;}
+        .inner-tab { padding-bottom: 8px; cursor: pointer; color: var(--text-muted-custom); transition: 0.3s; white-space: nowrap; }
+        .inner-tab:hover { color: #fff; }
+        .inner-tab.active { color: var(--neon-green); border-bottom: 2px solid var(--neon-green); font-weight: 500; }
+        
+        .inner-view { display: none; }
+        .inner-view.active { display: block; }
+
+        .btn-outline-neon { border: 1px solid var(--neon-green); color: var(--neon-green); background: transparent; transition: 0.3s; }
+        .btn-outline-neon:hover { background: rgba(219, 255, 153, 0.1); color: var(--neon-green); }
+
+        .dropdown-item { cursor: pointer; }
+        .btn-editar-empleado, .btn-eliminar-empleado {
+            width: 100%;
+            text-align: left;
+            border: 0;
+            background: transparent;
+        }
+        .btn-editar-empleado:hover { background: rgba(255,255,255,.06); }
+        .btn-eliminar-empleado:hover { background: rgba(239,68,68,.10); }
+        .table-container { overflow-x: auto; width: 100%; }
+        .payroll-table { min-width: 1800px; }
+        .payroll-table th, .payroll-table td { white-space: nowrap; }
+        .employee-actions { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        
+        <!-- Sidebar -->
+        <div class="bg-sidebar d-flex flex-column p-3" id="sidebar-wrapper" style="width: 260px; min-height: 100vh;">
+            <div class="sidebar-heading text-center py-3 mb-3">
+                <img src="../Assets/Logo_Ami.png" alt="AMI Logo" class="img-fluid w-75">
+            </div>
+            <div class="list-group list-group-flush px-2 sidebar-menu flex-grow-1">
+                <a href="../index.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 bg-transparent border-0">
+                    <i class="bi bi-house-door me-2"></i> Inicio
+                </a>
+                 <a href="inventario.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-car-front me-2"></i> Inventario
+                </a>
+                <a href="ventas.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-display me-2"></i> Ventas
+                </a>
+                <a href="compras.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-cart3 me-2"></i> Compras
+                </a>
+                <a href="clientes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-people me-2"></i> Clientes
+                </a>
+                <a href="marketing.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-megaphone me-2"></i> Marketing
+                </a>
+                <a href="Costos.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-calculator me-2"></i> Costos
+                </a>
+                <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
+                </a>
+                <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
+                    <i class="bi bi-person-gear me-2"></i> Usuarios
+                </a>
+                <a href="recursosHumanos.html" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2 border-0">
+                    <i class="bi bi-person-vcard me-2"></i> Personal
+                </a>
+            </div>
+            <div class="mt-auto px-2">
+                <a href="Salir.html" class="list-group-item list-group-item-action sidebar-link rounded-3 text-white bg-transparent border-0">
+                    <i class="bi bi-box-arrow-right me-2"></i> Salir
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Wrapper -->
+        <div id="page-content-wrapper" class="w-100">
+            <!-- Navbar Superior -->
+            <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-3 px-4 border-bottom border-secondary border-opacity-25">
+                <div class="container-fluid">
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="position-relative me-4 cursor-pointer text-white">
+                            <i class="bi bi-bell fs-5"></i>
+                        </div>
+                        <div class="dropdown">
+                            <div class="d-flex align-items-center cursor-pointer text-white" data-bs-toggle="dropdown">
+                                <img src="../Assets/User.jpg" alt="Usuario" class="rounded-circle me-2" style="width: 35px; height: 35px; object-fit: cover;">
+                                <span class="fw-bold small">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido Principal -->
+            <div class="container-fluid px-4 py-4">
+                <!-- Encabezado de la página -->
+                <div class="mb-4 text-white">
+                    <h2 class="fw-bold mb-1" id="header-title">Recursos Humanos</h2>
+                    <p class="text-muted small mb-2">Inicio / <span class="text-neon-pink">RR.HH</span></p>
+                    <p class="text-secondary small" id="header-desc">Gestiona y administra la información de los trabajadores.</p>
+                </div>
+
+                <!-- Pestañas Principales -->
+                <div class="custom-tabs">
+                    <div class="custom-tab active" onclick="switchMainTab('empleados', this)">Empleados</div>
+                    <div class="custom-tab" onclick="switchMainTab('planilla', this)">Planilla</div>
+                </div>
+
+              <!-- VISTA: EMPLEADOS -->
+                <div id="view-empleados" class="view-section active">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card card-custom p-4 rounded-4 h-100">
+                                
+                                <!-- Controles: Botón, Búsqueda y Filtros -->
+                                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+                                    <button class="btn btn-outline-neon rounded-pill px-4 small fw-bold" data-bs-toggle="modal" data-bs-target="#modalEmpleado">
+                                        <i class="bi bi-plus fs-5 align-middle me-1"></i> Nuevo empleado
+                                    </button>
+                                <div class="input-group flex-grow-1 border border-secondary rounded-pill" style="max-width: 320px; background-color: #121212;">
+                                    <span class="input-group-text bg-transparent border-0 text-muted rounded-start-pill ps-3">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <input type="text" id="searchInput" class="form-control bg-transparent border-0 text-white shadow-none" placeholder="Buscar trabajador..." onkeyup="aplicarFiltros()">
+                                    <button class="btn bg-transparent border-0 text-white rounded-end-pill px-3 fw-bold" type="button">
+                                        Buscar
+                                    </button>
+                                </div>
+                                    
+                                    <div class="d-flex gap-3">
+                                        <div>
+                                            <label class="text-muted small mb-1 d-block">Departamento</label>
+                                            <select id="filterDepto" class="form-select form-control-dark text-white form-select-sm" onchange="aplicarFiltros()">
+                                                <option value="Todos">Todos</option>
+                                                <option value="Ventas">Ventas</option>
+                                                <option value="Contabilidad">Contabilidad</option>
+                                                <option value="Taller">Taller</option>
+                                                <option value="Administración">Administración</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-muted small mb-1 d-block">Estado</label>
+                                            <select id="filterEstado" class="form-select form-control-dark text-white form-select-sm" onchange="aplicarFiltros()">
+                                                <option value="Todos">Todos</option>
+                                                <option value="Activo">Activo</option>
+                                                <option value="Inactivo">Inactivo</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla -->
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover align-middle mb-0" style="background: transparent;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">Código</th>
+                                                <th class="text-center">Nombre</th>
+                                                <th class="text-center">Cedula</th>
+                                                <th class="text-center">Cargo</th>
+                                                <th class="text-center">Departamento</th>
+                                                <th class="text-center">Salario</th>
+                                                <th class="text-center">Estado</th>
+                                                <th class="text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                       <tbody>
+                                            <!-- Fila Activo -->
+                                            <tr>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 50px;"></span></td>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 100px;"></span></td>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 80px;"></span></td>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 110px;"></span></td>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 70px;"></span></td>
+                                                <td class="text-center"><span class="placeholder-line" style="width: 70px;"></span></td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-activo rounded-pill">Activo</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-link text-secondary p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-dark-custom shadow-sm">
+                                                            <li><button type="button" class="dropdown-item text-white btn-editar-empleado"><i class="bi bi-pencil-square me-2 text-neon"></i>Editar</button></li>
+                                                            <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
+                                                            <li><button type="button" class="dropdown-item text-danger btn-eliminar-empleado"><i class="bi bi-trash me-2"></i>Eliminar</button></li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>                                         
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Lateral: Tarjeta Dinámica -->
+                        <div class="col-lg-4">
+                            <div class="card card-custom p-4 rounded-4 h-100">
+                                <!-- Encabezado Tarjeta -->
+                                <div class="d-flex align-items-center gap-3 mb-4">
+                                    <div class="bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 55px; height: 55px; font-size: 1.5rem;">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="mb-0 fs-5 text-white" id="p-nombre">Seleccione empleado</h5>
+                                            <span id="p-badge" class="status activo" style="display:none;">Activo</span>
+                                        </div>
+                                        <p class="text-muted small mb-0 mt-1"><span id="p-cargo-header">-</span> • <span id="p-depto-header">-</span></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pestañas Internas -->
+                                <div class="inner-tabs">
+                                    <div class="inner-tab" onclick="switchInnerTab('personal', this)">Información personal</div>
+                                    <div class="inner-tab active" onclick="switchInnerTab('laboral', this)">Información laboral</div>                                  
+                                </div>
+
+                                <!-- Contenido: Info Personal -->
+                                <div id="inner-personal" class="inner-view">
+                                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-3 mb-4">
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-envelope me-2 text-muted"></i> Correo:</span> <strong class="text-white" id="p-correo">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-telephone me-2 text-muted"></i> Teléfono:</span> <strong class="text-white" id="p-telefono">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-geo-alt me-2 text-muted"></i> Dirección:</span> <strong class="text-white text-end" id="p-direccion" style="max-width: 60%;">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-person-vcard me-2 text-muted"></i> Cédula:</span> <strong class="text-white" id="p-cedula">-</strong></li>
+                                    </ul>
+                                </div>
+
+                                <!-- Contenido: Info Laboral -->
+                                <div id="inner-laboral" class="inner-view active">
+                                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-3 mb-4">
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-upc-scan me-2 text-muted"></i> Código:</span> <strong class="text-white" id="p-codigo">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-briefcase me-2 text-muted"></i> Cargo:</span> <strong class="text-white" id="p-cargo">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-building me-2 text-muted"></i> Depto:</span> <strong class="text-white" id="p-depto">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-calendar3 me-2 text-muted"></i> Ingreso:</span> <strong class="text-white" id="p-fecha">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-file-earmark-text me-2 text-muted"></i> Contrato:</span> <strong class="text-white" id="p-contrato">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-currency-dollar me-2 text-muted"></i> Salario:</span> <strong class="text-white" id="p-salario">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-clock me-2 text-muted"></i> Jornada:</span> <strong class="text-white text-end" id="p-jornada" style="max-width: 60%;">-</strong></li>
+                                    </ul>
+                                </div>
+
+                                <div class="mt-auto pt-3 border-top border-secondary border-opacity-25 d-flex gap-2">
+                                    <button class="btn btn-outline-light btn-sm w-50"><i class="fa-solid fa-pen me-1"></i> Editar</button>
+                                    <button class="btn btn-outline-neon btn-sm w-50"><i class="fa-regular fa-folder-open me-1"></i> Ver expediente</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: PLANILLA -->
+                <div id="view-planilla" class="view-section">
+    <div class="row g-4">
+
+        <!-- TABLA DE PLANILLA -->
+        <div class="col-12 col-xl-8">
+            <div class="card card-custom p-4 rounded-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-control-dark form-select-sm">
+                            <option>Septiembre 2026</option>
+                        </select>
+
+                        <select class="form-select form-control-dark form-select-sm">
+                            <option>Primera Quincena</option>
+                        </select>
+                    </div>
+
+                    <button id="btnGenerarPlanilla" type="button" class="btn btn-light btn-sm fw-bold">
+                        <i class="fa-solid fa-file-invoice me-1"></i>
+                        Generar planilla
+                    </button>
+                </div>
+                <!-- CONTENEDOR DEL SCROLL -->
+                <div class="table-container">
+
+                    <table class="table table-dark table-hover align-middle mb-0 payroll-table">
+
+                        <thead>
+                            <tr class="text-muted small">
+
+                                <th>ID planilla</th>
+                                <th>Periodo Inicial</th>
+                                <th>Empleado</th>
+                                <th>Código Empleado</th>
+                                <th>Salario base</th>
+                                <th>Días Trabajados</th>
+                                <th>Horas extra</th>
+                                <th>Bonificaciones</th>
+                                <th>Comisiones</th>
+                                <th>Otros ingresos</th>
+                                <th>Salario bruto</th>
+                                <th>INSS</th>
+                                <th>IR</th>
+                                <th>Otras deducciones</th>
+                                <th>Total deducciones</th>
+                                <th>Salario neto</th>
+                                <th>INSS Patronal</th>
+                                <th>Total a pagar</th>
+                                <th>Fecha de pago</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+
+                            </tr>
+                        </thead>
+                     <tbody>
+                                        <tr>
+                                        <td><span class="placeholder-line" style="width: 70px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 100px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 120px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 80px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td><span class="placeholder-line" style="width: 90px;"></span></td>
+                                        <td class="text-center">
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-link text-secondary p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-dark-custom shadow-sm">
+                                                            <li><button type="button" class="dropdown-item text-white btn-editar-empleado"><i class="bi bi-pencil-square me-2 text-neon"></i>Editar</button></li>
+                                                            <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
+                                                            <li><button type="button" class="dropdown-item text-danger btn-eliminar-empleado"><i class="bi bi-trash me-2"></i>Eliminar</button></li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                        </tr>
+                                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+
+            <div class="card card-custom p-4 rounded-4">
+                <h6 class="text-white mb-3">
+                    <i class="fa-regular fa-calendar-check text-success me-2"></i>
+                    Resumen de planilla
+                </h6>
+                <div class="d-flex justify-content-between small text-secondary mb-2">
+                    <span>Total salario base</span>
+                    <span class="text-white">C$ </span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary mb-2">
+                    <span>Total horas extra</span>
+                    <span class="text-white">C$ </span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary mb-2">
+                    <span>Total ingresos</span>
+                    <span class="text-white">C$ </span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary mb-3">
+                    <span>Total deducciones</span>
+                    <span class="text-white">C$ </span>
+                </div>
+                <hr class="border-secondary opacity-25">
+                <div class="d-flex justify-content-between fw-bold text-white">
+                    <span>Total a pagar</span>
+                    <span class="text-neon-green">C$ </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        /*
+         * FRONTEND - RECURSOS HUMANOS
+         * Esta capa controla la interacción y presentación.
+         * La persistencia, eliminación real y cálculos serán responsabilidad del backend.
+         */
+
+        const tbody = document.getElementById('employees-table-body');
+
+        // Datos temporales para comprobar la interfaz.
+        // Posteriormente pueden ser sustituidos por una respuesta del backend.
+        const listaEmpleadosMock = window.listaEmpleadosMock || [
+            {
+                id: 1,
+                codigo: "EMP-001",
+                nombre: "Empleado de ejemplo",
+                cedula: "000-000000-0000A",
+                correo: "empleado@ami.com",
+                telefono: "8888-8888",
+                direccion: "Managua, Nicaragua",
+                cargo: "Vendedor",
+                departamento: "Ventas",
+                fecha: "2026-01-15",
+                contrato: "T. Indeterminado",
+                salario: "C$ 18,000.00",
+                jornada: "Lunes a sábado",
+                horasExtra: "0",
+                estado: "Activo",
+                historial: [
+                    { mes: "Agosto 2026", monto: "C$ 18,000.00" },
+                    { mes: "Julio 2026", monto: "C$ 18,000.00" }
+                ]
+            }
+        ];
+
+        function escaparHTML(valor) {
+            return String(valor ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderizarTabla(datos) {
+            if (!tbody) return;
+
+            tbody.innerHTML = "";
+
+            if (datos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No se encontraron empleados con los filtros seleccionados.
+                        </td>
+                    </tr>`;
+                limpiarTarjeta();
+                return;
+            }
+
+            datos.forEach((emp, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "employee-row";
+                tr.dataset.employeeId = emp.id;
+
+                if (index === 0) tr.classList.add('selected');
+
+                const claseEstado = emp.estado === 'Activo' ? 'activo' : 'inactivo';
+
+                tr.innerHTML = `
+                    <td class="text-center">${escaparHTML(emp.codigo)}</td>
+                    <td class="text-center">${escaparHTML(emp.nombre)}</td>
+                    <td class="text-center">${escaparHTML(emp.cedula)}</td>
+                    <td class="text-center">${escaparHTML(emp.cargo)}</td>
+                    <td class="text-center">${escaparHTML(emp.departamento)}</td>
+                    <td class="text-center">${escaparHTML(emp.salario)}</td>
+                    <td class="text-center">
+                        <span class="status ${claseEstado}">${escaparHTML(emp.estado)}</span>
+                    </td>
+                    <td class="text-center employee-actions">
+                        <div class="dropdown">
+                            <button class="btn btn-link text-secondary p-0 border-0"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    title="Acciones">
+                                <i class="bi bi-three-dots-vertical fs-5"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark shadow-sm">
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item text-white btn-editar-empleado"
+                                            data-id="${escaparHTML(emp.id)}">
+                                        <i class="bi bi-pencil-square me-2 text-neon"></i>Editar
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item text-danger btn-eliminar-empleado"
+                                            data-id="${escaparHTML(emp.id)}">
+                                        <i class="bi bi-trash me-2"></i>Eliminar
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                `;
+
+                tr.addEventListener('click', (event) => {
+                    if (event.target.closest('.dropdown')) return;
+
+                    document.querySelectorAll('.employee-row')
+                        .forEach(row => row.classList.remove('selected'));
+
+                    tr.classList.add('selected');
+                    actualizarTarjeta(emp);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            actualizarTarjeta(datos[0]);
+        }
+
+        function aplicarFiltros() {
+            const txtBuscar = document.getElementById('searchInput').value.toLowerCase().trim();
+            const valDepto = document.getElementById('filterDepto').value;
+            const valEstado = document.getElementById('filterEstado').value;
+
+            const datosFiltrados = listaEmpleadosMock.filter(emp => {
+                const cumpleBusqueda =
+                    emp.nombre.toLowerCase().includes(txtBuscar) ||
+                    emp.codigo.toLowerCase().includes(txtBuscar) ||
+                    emp.cedula.toLowerCase().includes(txtBuscar);
+
+                const cumpleDepto =
+                    valDepto === "Todos" || emp.departamento === valDepto;
+
+                const cumpleEstado =
+                    valEstado === "Todos" || emp.estado === valEstado;
+
+                return cumpleBusqueda && cumpleDepto && cumpleEstado;
+            });
+
+            renderizarTabla(datosFiltrados);
+        }
+
+        function limpiarTarjeta() {
+            document.getElementById('p-nombre').innerText = "Seleccione empleado";
+            document.getElementById('p-cargo-header').innerText = "-";
+            document.getElementById('p-depto-header').innerText = "-";
+
+            const badge = document.getElementById('p-badge');
+            badge.style.display = "none";
+
+            [
+                'p-codigo', 'p-cargo', 'p-depto', 'p-fecha',
+                'p-contrato', 'p-salario', 'p-jornada',
+                'p-correo', 'p-telefono', 'p-direccion', 'p-cedula'
+            ].forEach(id => document.getElementById(id).innerText = "-");
+
+            document.getElementById('p-historial-container').innerHTML = "";
+        }
+
+        function actualizarTarjeta(emp) {
+            document.getElementById('p-nombre').innerText = emp.nombre;
+            document.getElementById('p-cargo-header').innerText = emp.cargo;
+            document.getElementById('p-depto-header').innerText = emp.departamento;
+
+            const badge = document.getElementById('p-badge');
+            badge.style.display = "inline-block";
+            badge.innerText = emp.estado;
+            badge.className = emp.estado === 'Activo'
+                ? 'status activo'
+                : 'status inactivo';
+
+            document.getElementById('p-codigo').innerText = emp.codigo;
+            document.getElementById('p-cargo').innerText = emp.cargo;
+            document.getElementById('p-depto').innerText = emp.departamento;
+            document.getElementById('p-fecha').innerText = emp.fecha;
+            document.getElementById('p-contrato').innerText = emp.contrato;
+            document.getElementById('p-salario').innerText = emp.salario;
+            document.getElementById('p-jornada').innerText = emp.jornada;
+
+            document.getElementById('p-correo').innerText = emp.correo;
+            document.getElementById('p-telefono').innerText = emp.telefono;
+            document.getElementById('p-direccion').innerText = emp.direccion;
+            document.getElementById('p-cedula').innerText = emp.cedula;
+
+            const histContainer = document.getElementById('p-historial-container');
+            histContainer.innerHTML = "";
+
+            if (emp.historial && emp.historial.length > 0) {
+                emp.historial.forEach(pago => {
+                    histContainer.innerHTML += `
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded"
+                             style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);">
+                            <div>
+                                <p class="mb-0 text-white small">${escaparHTML(pago.mes)}</p>
+                                <small class="text-muted" style="font-size: 0.7rem;">
+                                    Transferencia bancaria
+                                </small>
+                            </div>
+                            <span class="text-neon-green fw-bold small">
+                                ${escaparHTML(pago.monto)}
+                            </span>
+                        </div>`;
+                });
+            } else {
+                histContainer.innerHTML = `
+                    <p class="text-muted small text-center mt-3">
+                        No hay registros de pago recientes.
+                    </p>`;
+            }
+        }
+
+        function switchMainTab(viewName, clickedTab) {
+            document.querySelectorAll('.custom-tab')
+                .forEach(t => t.classList.remove('active'));
+
+            clickedTab.classList.add('active');
+
+            document.querySelectorAll('.view-section')
+                .forEach(s => s.classList.remove('active'));
+
+            document.getElementById('view-' + viewName).classList.add('active');
+        }
+
+        function switchInnerTab(tabName, clickedTab) {
+            document.querySelectorAll('.inner-tab')
+                .forEach(t => t.classList.remove('active'));
+
+            clickedTab.classList.add('active');
+
+            document.querySelectorAll('.inner-view')
+                .forEach(v => v.classList.remove('active'));
+
+            document.getElementById('inner-' + tabName).classList.add('active');
+        }
+
+        /*
+         * PUNTOS DE CONEXIÓN CON BACKEND
+         * --------------------------------
+         * No hacen persistencia ni cálculos todavía.
+         * El backend podrá reemplazar estas funciones con fetch/AJAX.
+         */
+
+        function guardarEmpleado() {
+            const datos = {
+                nombre: document.getElementById('empleadoNombre')?.value,
+                cedula: document.getElementById('empleadoCedula')?.value,
+                correo: document.getElementById('empleadoCorreo')?.value,
+                telefono: document.getElementById('empleadoTelefono')?.value,
+                direccion: document.getElementById('empleadoDireccion')?.value,
+                codigo: document.getElementById('empleadoCodigo')?.value,
+                cargo: document.getElementById('empleadoCargo')?.value,
+                contrato: document.getElementById('empleadoContrato')?.value,
+                departamento: document.getElementById('empleadoDepartamento')?.value,
+                salario: document.getElementById('empleadoSalario')?.value,
+                jornada: document.getElementById('empleadoJornada')?.value,
+                horasExtra: document.getElementById('empleadoHorasExtra')?.value,
+                fecha: document.getElementById('empleadoFecha')?.value,
+                estado: document.getElementById('empleadoEstado')?.value
+            };
+
+            console.log("HOOK BACKEND - POST /empleados", datos);
+        }
+
+        function editarEmpleado(id) {
+            console.log("HOOK BACKEND - GET/EDIT empleado:", id);
+            // Aquí posteriormente se abrirá el formulario de edición
+            // y/o se conectará con PUT/PATCH.
+        }
+
+        function eliminarEmpleado(id) {
+            console.log("HOOK BACKEND - DELETE empleado:", id);
+            // Aquí posteriormente se agregará confirmación y DELETE.
+        }
+
+        function generarPlanilla() {
+            const periodo = document.querySelector('#view-planilla select:nth-of-type(1)')?.value;
+            const quincena = document.querySelector('#view-planilla select:nth-of-type(2)')?.value;
+
+            console.log("HOOK BACKEND - GENERAR PLANILLA", {
+                periodo,
+                quincena
+            });
+
+            // Los cálculos de salario, INSS, IR, deducciones,
+            // salario neto, INSS patronal y total a pagar
+            // serán realizados por el backend.
+        }
+
+        // Acciones de la tabla.
+        document.addEventListener('click', (event) => {
+            const btnEditar = event.target.closest('.btn-editar-empleado');
+            const btnEliminar = event.target.closest('.btn-eliminar-empleado');
+
+            if (btnEditar) {
+                event.stopPropagation();
+                editarEmpleado(btnEditar.dataset.id);
+            }
+
+            if (btnEliminar) {
+                event.stopPropagation();
+                eliminarEmpleado(btnEliminar.dataset.id);
+            }
+        });
+
+        document.getElementById('btnGuardarEmpleado')
+            ?.addEventListener('click', guardarEmpleado);
+
+        document.getElementById('btnGenerarPlanilla')
+            ?.addEventListener('click', generarPlanilla);
+
+        window.addEventListener('load', () => {
+            renderizarTabla(listaEmpleadosMock);
+        });
+    </script>
+    <div class="modal fade" id="modalEmpleado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-custom text-white">
+            <div class="modal-header border-bottom border-secondary border-opacity-25">
+                <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>Gestión de Trabajadores</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEmpleado" novalidate>
+                    <div class="row g-3">
+                            <h8 class="modal-title fw-bold"></i>Información Personal</h8>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Nombre Completo</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoNombre" placeholder="Nombre del trabajador">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Cedula</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoCedula" placeholder="Cédula del trabajador">
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label small text-secondary">Correo</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoCorreo" placeholder="Correo del trabajador">
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label small text-secondary">Telefono</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Direccion</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
+                        </div>
+                        <h8 class="modal-title fw-bold"></i>Información Laboral</h8>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Codigo</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoCodigo" placeholder="Código del trabajador">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Cargo</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoCargo" placeholder="Cargo del trabajador">
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label small text-secondary">Tipo de contrato</label>
+                            <select id="empleadoContrato" class="form-select form-control-dark">
+                                    <option>T. Determinado</option>
+                                    <option>T. Indeterminado</option>
+                                </select>
+                        </div>
+                       <div class="col-md-6">
+                            <label class="form-label small text-secondary">Departamento</label>
+                             <select id="empleadoDepartamento" class="form-select form-control-dark">
+                                    <option>Ventas</option>
+                                    <option>Contabilidad</option>
+                                    <option>Taller</option>
+                                    <option>Administración</option>
+                                </select>
+                        </div>                      
+                               <div class="col-md-6">
+                            <label class="form-label small text-secondary">Salario (C$)</label>
+                            <input type="number" id="empleadoSalario" step="0.01" class="form-control form-control-dark" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Jornada</label>
+                            <input type="text" id="empleadoJornada" class="form-control form-control-dark" placeholder="Jornada del trabajador">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Horas extra</label>
+                            <input type="text" id="empleadoHorasExtra" class="form-control form-control-dark" placeholder="Si aplica">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Fecha de ingreso</label>
+                            <input id="empleadoFecha" type="date" class="form-control form-control-dark">
+                        </div>
+                         <div class="col-md-6">
+                                <label class="form-label small text-secondary">Estado</label>
+                                <select id="empleadoEstado" class="form-select form-control-dark">
+                                    <option>Activo</option>
+                                    <option>Inactivo</option>
+                                </select>
+                            </div>
+                        <div class="modal-footer border-top border-secondary border-opacity-25">
+                    <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="btnGuardarEmpleado" type="button" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar empleado</button>
+                </div>
+                    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
