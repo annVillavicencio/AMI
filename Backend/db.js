@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const sql = require('mssql');
 
 // Cargar .env de Backend o de raíz si existe
 const envBackend = path.join(__dirname, '.env');
@@ -9,7 +10,6 @@ if (fs.existsSync(envBackend)) {
 } else if (fs.existsSync(envRoot)) {
     require('dotenv').config({ path: envRoot });
 } else {
-    // Si no existe .env en la máquina del compañero, copiar desde .env.example automáticamente
     const envExample = path.join(__dirname, '.env.example');
     if (fs.existsSync(envExample)) {
         try {
@@ -20,38 +20,28 @@ if (fs.existsSync(envBackend)) {
     }
 }
 
-const sql = require('mssql');
-
-// Detección inteligente de entorno
 const serverHost = process.env.DB_SERVER || 'localhost';
 const isDocker = (serverHost && serverHost !== 'localhost' && serverHost !== '127.0.0.1') || process.env.DOCKER_CONTAINER === 'true';
 
-// En Docker (Linux) SQL Server exige contraseñas complejas: Password123!
-// En local dev clásico: 123
 const defaultPassword = isDocker ? 'Password123!' : '123';
 const finalPassword = (process.env.DB_PASSWORD !== undefined && process.env.DB_PASSWORD !== '') 
     ? process.env.DB_PASSWORD 
     : defaultPassword;
 
-// Configuración de la conexión
+const targetDb = process.env.DB_DATABASE || process.env.DB_NAME || 'Autos_AMI';
+
 const config = {
     server: serverHost,
-    database: process.env.DB_DATABASE || process.env.DB_NAME || 'Autos_AMI',
+    database: targetDb,
     port: parseInt(process.env.DB_PORT, 10) || 1433,
     options: {
-        trustServerCertificate: true, // necesario en dev local y contenedores
-        encrypt: false,               // desactivar TLS en desarrollo
+        trustServerCertificate: true,
+        encrypt: false,
     },
-
-    // Autenticación Windows o SQL
     ...(process.env.DB_WINDOWS_AUTH === 'true' ? {
         authentication: {
             type: 'ntlm',
-            options: {
-                userName: '',
-                password: '',
-                domain: ''
-            }
+            options: { userName: '', password: '', domain: '' }
         }
     } : {
         user: process.env.DB_USER || 'sa',
@@ -59,21 +49,38 @@ const config = {
     })
 };
 
-// Pool compartido
 let pool;
 
-/**
- * Obtiene (o crea) un pool de conexiones activo.
- */
 async function getPool() {
     if (!pool) {
         try {
-            console.log(`[DB] Conectando a ${config.server}:${config.port}/${config.database} como '${config.user}'...`);
-            pool = await sql.connect(config);
+            console.log(`[DB] Conectando a ${config.server}:${config.port}/${config.database} como '${config.user || 'windows_user'}'...`);
+            pool = await new sql.ConnectionPool(config).connect();
             console.log(`[DB] Conectado exitosamente a SQL Server (${config.server}:${config.port}/${config.database})`);
         } catch (err) {
-            console.error(`[DB] Error al conectar a la base de datos (${config.server}:${config.port}):`, err.message);
-            throw err;
+            console.warn(`[DB] Conexión inicial a ${targetDb} falló (${err.message}). Verificando a través de master...`);
+            
+            // Si falló (por ejemplo, Autos_AMI no existe aún en una máquina limpia), conectar a master
+            try {
+                const masterConfig = { ...config, database: 'master' };
+                const masterPool = await new sql.ConnectionPool(masterConfig).connect();
+                console.log('[DB] Conexión a master exitosa. Verificando base de datos ' + targetDb);
+                
+                const dbRes = await masterPool.request().query(`SELECT name FROM sys.databases WHERE name = '${targetDb}'`);
+                if (dbRes.recordset.length === 0) {
+                    console.log(`[DB] La base de datos '${targetDb}' no existe. Creándola automáticamente...`);
+                    await masterPool.request().query(`CREATE DATABASE [${targetDb}]`);
+                }
+                await masterPool.close();
+                
+                // Reintentar conectar a la base de datos destino
+                pool = await new sql.ConnectionPool(config).connect();
+                console.log(`[DB] Conexión restablecida con éxito a ${targetDb}`);
+                return pool;
+            } catch (recoveryErr) {
+                console.error(`[DB] Error crítico al conectar a la base de datos (${config.server}:${config.port}):`, err.message);
+                throw err;
+            }
         }
     }
     return pool;
