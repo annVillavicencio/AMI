@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/style.css">
     <style>
-         /* Paleta de colores exacta segÃºn el diseÃ±o */
+         /* Paleta de colores exacta según el diseño */
         body { background-color: #0B1009; color: #EFF0EB; font-family: system-ui, -apple-system, sans-serif; }
         .card-custom { background-color: #121810; border: 1px solid rgba(255, 255, 255, 0.05); }
         .bg-sidebar { background-color: #101218; border-right: 1px solid rgba(255, 255, 255, 0.05); }
@@ -32,19 +32,19 @@
         .table-dark-custom th { font-weight: 600; color: #EFF0EB; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
         .table-dark-custom td { padding: 1rem 0.5rem; vertical-align: middle; border-bottom: none; }
         
-        /* Elementos vacÃ­os de la tabla (las barritas grises del diseÃ±o) */
+        /* Elementos vacíos de la tabla (las barritas grises del diseño) */
         .placeholder-line { display: inline-block; width: 60%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; }
         
-       /* MenÃº lateral */
+       /* Menú lateral */
         .sidebar-link { color: #EFF0EB; transition: 0.2s; }
         .sidebar-link:hover { background-color: rgba(16, 18, 24); }
        .sidebar-active { background-color: #FFD4F8; color: #0B1009 !important; font-weight: bold; }
         
-        /* Enlaces de acciones rÃ¡pidas */
+        /* Enlaces de acciones rápidas */
         .action-link { text-decoration: none; color: #EFF0EB; transition: 0.2s; }
         .action-link:hover { color: #DBFF99; }
         
-        /* PaginaciÃ³n */
+        /* Paginación */
         .page-btn { background-color: #101218; border: 1px solid rgba(16, 18, 24); color: #EFF0EB; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer;}
         .page-btn.active { background-color: #DBFF99; color: #101218; border-color: #DBFF99; font-weight: bold; }
          .page-btn.active {
@@ -230,7 +230,7 @@
             --bg-sidebar: #0B0C12;
             --bg-input: #161722;
             
-            /* Rosa bajo sÃ³lido para botones activos */
+            /* Rosa bajo sólido para botones activos */
             --pink-soft: #E58FE5;
             --pink-soft-glow: rgba(229, 143, 229, 0.25);
             
@@ -250,7 +250,7 @@
 <body>
      <div class="d-flex" id="wrapper">
         
-        <!-- Sidebar (MenÃº Lateral) -->
+        <!-- Sidebar (Menú Lateral) -->
         
         <div class="sidebar" id="sidebar-wrapper" style="background-color: #101218; border-right: 1px solid rgba(16, 18, 24);">
             <div class="sidebar-heading text-center py-4">
@@ -281,7 +281,7 @@
                     <i class="bi bi-calculator me-2"></i> Costos
                 </a>
                 <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
-                    <i class="bi bi-bar-chart me-2"></i> AnÃ¡lisis
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
                 </a>
                 <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-person-gear me-2"></i> Usuarios
@@ -314,7 +314,7 @@
                 </div>
             </nav>
            <div class="container-fluid px-4 py-4">
-                <!-- Encabezado de la pÃ¡gina -->
+                <!-- Encabezado de la página -->
                 <div class="mb-4 text-white">
                     <h2 class="fw-bold mb-1">Compras</h2>
                     <p class="text-muted small mb-2">Inicio / <span class="text-pink">Compras</span></p>
@@ -361,7 +361,7 @@
                                         </div>
                                     </div>
                                     <div class="d-flex">
-                                        <select class="form-select dark-select rounded-pill me-2 text-white">
+                                        <select id="filtro-estado-compra" class="form-select dark-select rounded-pill me-2 text-white">
                                             <option>Todos los estados</option>
                                             <option>Completado</option>
                                             <option>Pendiente</option>
@@ -377,7 +377,7 @@
                                                 <th class="text-center">ID Compra</th>
                                                 <th class="text-center">Proveedor</th>
                                                 <th class="text-center">Descripcion</th>
-                                                <th class="text-center">NÃºmero de factura</th>
+                                                <th class="text-center">Número de factura</th>
                                                 <th class="text-center">Fecha compra</th>
                                                 <th class="text-center">Total</th>
                                                 <th class="text-center">Estado</th>
@@ -423,7 +423,7 @@
                         </div>
                     </div>
 
-                    <!-- Columna Derecha (EstadÃ­sticas y Acciones) -->
+                    <!-- Columna Derecha (Estadísticas y Acciones) -->
                     <div class="col-xl-4 col-lg-5">                       
                         <!-- Mini Tarjetas (Stats) -->
                         <div class="card dark-card border-0 rounded-4 shadow-sm mb-3">
@@ -453,16 +453,16 @@
                                 <div class="stat-icon bg-icon-green text-neon me-3"><i class="bi bi-box fs-4"></i></div>
                                 <div>
                                     <h4 id="kpi-main-pendientes" class="text-white mb-0 fw-bold">--</h4>
-                                    <p class="text-secondary small mb-0 text-white">Ã“rdenes pendientes <br><span class="text-muted" style="font-size: 0.75rem;">Compras pendientes de recibir</span></p>
+                                    <p class="text-secondary small mb-0 text-white">Órdenes pendientes <br><span class="text-muted" style="font-size: 0.75rem;">Compras pendientes de recibir</span></p>
                                 </div>
                                 <div class="ms-auto"><i class="bi bi-graph-up text-neon fs-4"></i></div>
                             </div>
                         </div>
 
-                        <!-- Acciones RÃ¡pidas -->
+                        <!-- Acciones Rápidas -->
                         <div class="card dark-card border-0 rounded-4 shadow-sm p-2">
                             <div class="card-body">
-                                <h6 class="text-neon fw-bold mb-4"><i class="bi bi-lightning-charge-fill me-2"></i>Acciones rÃ¡pidas</h6>
+                                <h6 class="text-neon fw-bold mb-4"><i class="bi bi-lightning-charge-fill me-2"></i>Acciones rápidas</h6>
                                 <div class="list-group list-group-flush dark-list">
                                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                         <span><i class="bi bi-download me-3"></i> Exportar compras</span> <i class="bi bi-chevron-right text-secondary small"></i>
@@ -471,7 +471,7 @@
                                         <span onclick="generarReporte()" style="cursor: pointer;"><i class="bi bi-file-earmark-text me-3"></i> Generar reporte</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom-0">
-                                        <span><i class="bi bi-gear me-3"></i> ConfiguraciÃ³n</span> <i class="bi bi-chevron-right text-secondary small"></i>
+                                        <span><i class="bi bi-gear me-3"></i> Configuración</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                 </div>
                             </div>
@@ -487,49 +487,51 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-custom text-white">
             <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>GestiÃ³n de compras</h5>
+                <h5 class="modal-title fw-bold" id="modalCompraLabel"><i class="bi bi-cart-check text-neon-green me-2"></i>Registrar Compra</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="formCompra">
+                    <input type="hidden" id="compra-id" value="">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label small text-secondary">ID de Compra (Autogenerado)</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="XXXX" readonly>
+                            <label class="form-label small text-secondary">ID de Compra</label>
+                            <input type="text" id="compra-id-display" class="form-control form-control-dark" placeholder="Autogenerado" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Proveedor</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Nombre del proveedor">
+                            <label class="form-label small text-secondary">Proveedor *</label>
+                            <input type="text" id="compra-proveedor" list="lista-proveedores" class="form-control form-control-dark" placeholder="Ej. Auto Importaciones" required>
+                            <datalist id="lista-proveedores"></datalist>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Descripcion</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Descripcion de la compra">
+                            <label class="form-label small text-secondary">Número de Factura</label>
+                            <input type="text" id="compra-factura" class="form-control form-control-dark" placeholder="Ej. F-1025">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small text-secondary">Descripción</label>
+                            <input type="text" id="compra-descripcion" class="form-control form-control-dark" placeholder="Ej. Lote de camionetas Toyota">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Fecha de compra</label>
-                            <input type="date" class="form-control form-control-dark">
+                            <label class="form-label small text-secondary">Fecha de compra *</label>
+                            <input type="date" id="compra-fecha" class="form-control form-control-dark" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">NÃºmero de Factura</label>
-                            <input type="number" class="form-control form-control-dark" placeholder="Ej. 10450">
+                            <label class="form-label small text-secondary">Total de la compra (C$) *</label>
+                            <input type="number" step="0.01" id="compra-total" class="form-control form-control-dark" placeholder="0.00" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Total de la compra(C$)</label>
-                            <input type="number" step="0.01" class="form-control form-control-dark" placeholder="0.00">
+                        <div class="col-12">
+                            <label class="form-label small text-secondary">Estado de la compra</label>
+                            <select id="compra-estado" class="form-select form-control-dark">
+                                <option value="Completado">Completado</option>
+                                <option value="Pendiente">Pendiente</option>
+                            </select>
                         </div>
-                         <div class="col-6">
-                                <label class="form-label small text-subhead">Estado</label>
-                                <select class="form-select form-control-dark">
-                                    <option value="Programada">Completado</option>
-                                    <option value="Activa">Pendiente</option>
-                                </select>
-                            </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer border-top border-secondary border-opacity-25">
                 <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Compra</button>
+                <button type="button" id="btn-guardar-compra" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Compra</button>
             </div>
         </div>
     </div>
@@ -537,7 +539,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../JS/script.js?v=3"></script>
-<script src="../JS/compras.js?v=3"></script>
+<script src="../JS/auth.js"></script>
+    <script src="../JS/compras.js?v=5"></script>
 
 <!-- Modal Reporte Compras -->
 <div class="modal fade" id="modalReporteCompras" tabindex="-1" aria-hidden="true">

@@ -1,6 +1,6 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,103 +12,192 @@
     <!-- CSS Personalizado -->
     <link rel="stylesheet" href="CSS/style.css">
 </head>
+
 <body style="background-color: #0d1117; color: white;">
 
     <div class="container-fluid vh-100 p-0">
         <div class="row g-0 h-100">
-<!-- Sección del Formulario (Izquierda) -->
-<div class="col-12 col-lg-5 d-flex flex-column justify-content-center px-4">
-    
-    <!-- Contenedor centralizado con un ancho máximo (mx-auto centra el bloque) -->
-    <div class="w-100 mx-auto" style="max-width: 380px;">
-        
-        <!-- LOGO CENTRADO (usando text-center) -->
-        <div class="text-center mb-4">
-            <img src="Assets/Logo_Ami.png" alt="AMI Logo" style="max-width: 140px;">
-        </div>
-        
-        <!-- TEXTOS CENTRADOS (usando text-center) -->
-        <div class="text-center mb-5">
-            <h2 class="fw-bold mb-1">Bienvenido</h2>
-            <p class="text-secondary">Inicia sesión para continuar</p>
-        </div>
+            <!-- Sección del Formulario (Izquierda) -->
+            <div class="col-12 col-lg-5 d-flex flex-column justify-content-center px-4">
 
-        <!-- FORMULARIO -->
-        <form id="form-login">
-            <div class="mb-3">
-                <label class="form-label text-secondary small">Correo electrónico</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-secondary text-secondary"><i class="bi bi-person"></i></span>
-                    <input type="email" class="form-control bg-transparent border-secondary text-white shadow-none" placeholder="correo@ejemplo.com" required>
+                <!-- Contenedor centralizado con un ancho máximo (mx-auto centra el bloque) -->
+                <div class="w-100 mx-auto" style="max-width: 380px;">
+
+                    <!-- LOGO CENTRADO (usando text-center) -->
+                    <div class="text-center mb-4">
+                        <img src="Assets/Logo_Ami.png" alt="AMI Logo" style="max-width: 140px;">
+                    </div>
+
+                    <!-- TEXTOS CENTRADOS (usando text-center) -->
+                    <div class="text-center mb-5">
+                        <h2 class="fw-bold mb-1">Bienvenido</h2>
+                        <p class="text-secondary">Inicia sesión para continuar</p>
+                    </div>
+
+                    <!-- FORMULARIO -->
+                    <form id="form-login">
+                        <!-- Mensaje de alerta en caso de error -->
+                        <div id="mensaje-error" class="alert alert-danger d-none py-2 small" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Correo electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-secondary text-secondary"><i
+                                        class="bi bi-person"></i></span>
+                                <input type="email" id="correo"
+                                    class="form-control bg-transparent border-secondary text-white shadow-none"
+                                    placeholder="correo@ejemplo.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-secondary text-secondary"><i
+                                        class="bi bi-lock"></i></span>
+                                <input type="password" id="password"
+                                    class="form-control bg-transparent border-secondary text-white shadow-none"
+                                    placeholder="••••••••" required>
+                                <span class="input-group-text bg-transparent border-secondary text-secondary"
+                                    id="togglePassword" style="cursor: pointer;">
+                                    <i class="bi bi-eye" id="iconoOjo"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                    class="form-check-input bg-transparent border-secondary shadow-none"
+                                    id="recordarme">
+                                <label class="form-check-label text-secondary small" for="recordarme">Recordarme</label>
+                            </div>
+                            <a href="#" class="text-decoration-none small" style="color: #DBFF99;"
+                                data-bs-toggle="modal" data-bs-target="#modalRecuperar">¿Olvidaste tu contraseña?</a>
+                        </div>
+
+                        <button type="submit" class="btn w-100 fw-bold d-flex justify-content-center align-items-center"
+                            style="background-color: #DBFF99; color: #000;">
+                            Iniciar sesión <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            <div class="mb-3">
-    <label class="form-label text-secondary small">Contraseña</label>
-    <div class="input-group">
-        <span class="input-group-text bg-transparent border-secondary text-secondary"><i class="bi bi-lock"></i></span>
-        <!-- Agregamos id="password" -->
-        <input type="password" id="password" class="form-control bg-transparent border-secondary text-white shadow-none" placeholder="••••••••" required>
-        <!-- Agregamos id="togglePassword" y cursor pointer -->
-        <span class="input-group-text bg-transparent border-secondary text-secondary" id="togglePassword" style="cursor: pointer;">
-            <i class="bi bi-eye" id="iconoOjo"></i>
-        </span>
+            <!-- Sección de la Imagen (Derecha) usando Background CSS -->
+            <div class="col-lg-7 d-none d-lg-block p-0 h-100" style="background-image: url('Assets/Login_Ami.png'); 
+                background-size: cover; 
+                background-position: center; 
+                background-repeat: no-repeat;">
+            </div>
+        </div>
     </div>
-</div>
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input bg-transparent border-secondary shadow-none" id="recordarme">
-                    <label class="form-check-label text-secondary small" for="recordarme">Recordarme</label>
+    <!-- Modal Recuperar Contraseña -->
+    <div class="modal fade" id="modalRecuperar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white"
+                style="background-color: #161b22; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"
+                            style="color: #DBFF99;"></i>Recuperar Contraseña</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
                 </div>
-                <a href="#" class="text-decoration-none small" style="color: #DBFF99;" data-bs-toggle="modal" data-bs-target="#modalRecuperar">¿Olvidaste tu contraseña?</a>
+                <div class="modal-body">
+                    <p class="text-secondary small">Ingresa el correo electrónico asociado a tu cuenta para restablecer
+                        tu contraseña.</p>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small">Correo electrónico</label>
+                        <input type="email" class="form-control bg-transparent border-secondary text-white shadow-none"
+                            placeholder="correo@ejemplo.com">
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn fw-bold" style="background-color: #DBFF99; color: #000;"
+                        data-bs-dismiss="modal">Enviar solicitud</button>
+                </div>
             </div>
-
-            <button type="submit" class="btn w-100 fw-bold d-flex justify-content-center align-items-center" style="background-color: #DBFF99; color: #000;">
-                Iniciar sesión <i class="bi bi-arrow-right ms-2"></i>
-            </button>
-        </form>
+        </div>
     </div>
-    
-</div>
 
-           <!-- Sección de la Imagen (Derecha) usando Background CSS -->
-            <div class="col-lg-7 d-none d-lg-block p-0 h-100" 
-            style="background-image: url('Assets/Login_Ami.png'); 
-            background-size: cover; 
-            background-position: center; 
-            background-repeat: no-repeat;">
-            </div>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para redirigir al Dashboard -->
+    <!-- Script de funcionalidad -->
     <script>
-        document.getElementById('form-login').addEventListener('submit', function(e) {
-            e.preventDefault(); // Evita que recargue la página
-            // Redirige a tu página de inicio
-            window.location.href = 'index.html';
-        });
+        // 1. Funcionalidad para ver / ocultar contraseña
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const iconoOjo = document.getElementById('iconoOjo');
+
+        if (togglePassword && passwordInput && iconoOjo) {
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                iconoOjo.classList.toggle('bi-eye');
+                iconoOjo.classList.toggle('bi-eye-slash');
+            });
+        }
+
+        // 2. Funcionalidad para redirigir al Dashboard
+        // 2. Autenticación real con la API y guardado de sesión
+        const formLogin = document.getElementById('form-login');
+        const mensajeError = document.getElementById('mensaje-error');
+        const btnSubmit = formLogin ? formLogin.querySelector('button[type="submit"]') : null;
+
+        if (formLogin) {
+            formLogin.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const correo = document.getElementById('correo').value.trim();
+                const contrasena = document.getElementById('password').value.trim();
+
+                // Ocultar mensaje de error anterior
+                mensajeError.classList.add('d-none');
+                mensajeError.textContent = '';
+
+                // Deshabilitar botón mientras carga
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando sesión...';
+                }
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ correo, contrasena })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Credenciales inválidas');
+                    }
+
+                    // Guardar la información del usuario y sus permisos en localStorage
+                    localStorage.setItem('usuario_ami', JSON.stringify(data.usuario));
+
+                    // Redirigir al panel principal
+                    window.location.href = 'index.html';
+
+                } catch (error) {
+                    // Mostrar error visual al usuario
+                    mensajeError.textContent = error.message;
+                    mensajeError.classList.remove('d-none');
+                } finally {
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = 'Iniciar Sesión <i class="bi bi-arrow-right ms-2"></i>';
+                    }
+                }
+            });
+        }
+
+
     </script>
-    <script>
-    // 1. Funcionalidad para ver / ocultar contraseña
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const iconoOjo = document.getElementById('iconoOjo');
-
-    togglePassword.addEventListener('click', function () {
-        // Verificamos si el tipo actual es password y lo cambiamos a text (o viceversa)
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-
-        // Cambiamos el icono del ojo abierto al ojo tachado (slash) y viceversa
-        iconoOjo.classList.toggle('bi-eye');
-        iconoOjo.classList.toggle('bi-eye-slash');
-    });
-
-    // 2. Funcionalidad para redirigir al Dashboard
-    document.getElementById('form-login').addEventListener('submit', function(e) {
-        e.preventDefault(); 
-        window.location.href = 'index.html';
-    });
-</script>
 </body>
+
 </html>

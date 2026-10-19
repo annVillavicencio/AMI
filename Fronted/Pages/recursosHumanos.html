@@ -42,7 +42,7 @@
         .sidebar-link:hover { background-color: rgba(16, 18, 24); }
        .sidebar-active { background-color: #FFD4F8; color: #0B1009 !important; font-weight: bold; }
 
-        /* Vistas y PestaÃ±as */
+        /* Vistas y Pestañas */
         .view-section { display: none; }
         .view-section.active { display: block; }
         
@@ -130,7 +130,7 @@
                     <i class="bi bi-calculator me-2"></i> Costos
                 </a>
                 <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
-                    <i class="bi bi-bar-chart me-2"></i> AnÃ¡lisis
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
                 </a>
                 <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-person-gear me-2"></i> Usuarios
@@ -158,7 +158,7 @@
                         <div class="dropdown">
                             <div class="d-flex align-items-center cursor-pointer text-white" data-bs-toggle="dropdown">
                                 <img src="../Assets/User.jpg" alt="Usuario" class="rounded-circle me-2" style="width: 35px; height: 35px; object-fit: cover;">
-                                <span class="fw-bold small">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                                <span class="fw-bold small" id="nombre-usuario">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
                             </div>
                         </div>
                     </div>
@@ -167,14 +167,14 @@
 
             <!-- Contenido Principal -->
             <div class="container-fluid px-4 py-4">
-                <!-- Encabezado de la pÃ¡gina -->
+                <!-- Encabezado de la página -->
                 <div class="mb-4 text-white">
                     <h2 class="fw-bold mb-1" id="header-title">Recursos Humanos</h2>
                     <p class="text-muted small mb-2">Inicio / <span class="text-neon-pink">RR.HH</span></p>
-                    <p class="text-secondary small" id="header-desc">Gestiona y administra la informaciÃ³n de los trabajadores.</p>
+                    <p class="text-secondary small" id="header-desc">Gestiona y administra la información de los trabajadores.</p>
                 </div>
 
-                <!-- PestaÃ±as Principales -->
+                <!-- Pestañas Principales -->
                 <div class="custom-tabs">
                     <div class="custom-tab active" onclick="switchMainTab('empleados', this)">Empleados</div>
                     <div class="custom-tab" onclick="switchMainTab('planilla', this)">Planilla</div>
@@ -186,7 +186,7 @@
                         <div class="col-lg-8">
                             <div class="card card-custom p-4 rounded-4 h-100">
                                 
-                                <!-- Controles: BotÃ³n, BÃºsqueda y Filtros -->
+                                <!-- Controles: Botón, Búsqueda y Filtros -->
                                 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
                                     <button class="btn btn-outline-neon rounded-pill px-4 small fw-bold" data-bs-toggle="modal" data-bs-target="#modalEmpleado">
                                         <i class="bi bi-plus fs-5 align-middle me-1"></i> Nuevo empleado
@@ -212,7 +212,7 @@
                                                 <option value="Ventas">Ventas</option>
                                                 <option value="Contabilidad">Contabilidad</option>
                                                 <option value="Taller">Taller</option>
-                                                <option value="AdministraciÃ³n">AdministraciÃ³n</option>
+                                                <option value="Administración">Administración</option>
                                             </select>
                                         </div>
                                         <div>
@@ -231,7 +231,7 @@
                                     <table class="table table-dark table-hover align-middle mb-0" style="background: transparent;">
                                         <thead>
                                             <tr>
-                                                <th class="text-center">CÃ³digo</th>
+                                                <th class="text-center">Código</th>
                                                 <th class="text-center">Nombre</th>
                                                 <th class="text-center">Cedula</th>
                                                 <th class="text-center">Cargo</th>
@@ -272,7 +272,7 @@
                             </div>
                         </div>
 
-                        <!-- Columna Lateral: Tarjeta DinÃ¡mica -->
+                        <!-- Columna Lateral: Tarjeta Dinámica -->
                         <div class="col-lg-4">
                             <div class="card card-custom p-4 rounded-4 h-100">
                                 <!-- Encabezado Tarjeta -->
@@ -289,26 +289,26 @@
                                     </div>
                                 </div>
                                 
-                                <!-- PestaÃ±as Internas -->
+                                <!-- Pestañas Internas -->
                                 <div class="inner-tabs">
-                                    <div class="inner-tab" onclick="switchInnerTab('personal', this)">InformaciÃ³n personal</div>
-                                    <div class="inner-tab active" onclick="switchInnerTab('laboral', this)">InformaciÃ³n laboral</div>                                  
+                                    <div class="inner-tab" onclick="switchInnerTab('personal', this)">Información personal</div>
+                                    <div class="inner-tab active" onclick="switchInnerTab('laboral', this)">Información laboral</div>                                  
                                 </div>
 
                                 <!-- Contenido: Info Personal -->
                                 <div id="inner-personal" class="inner-view">
                                     <ul class="list-unstyled small text-secondary d-flex flex-column gap-3 mb-4">
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-envelope me-2 text-muted"></i> Correo:</span> <strong class="text-white" id="p-correo">-</strong></li>
-                                        <li class="d-flex justify-content-between"><span><i class="bi bi-telephone me-2 text-muted"></i> TelÃ©fono:</span> <strong class="text-white" id="p-telefono">-</strong></li>
-                                        <li class="d-flex justify-content-between"><span><i class="bi bi-geo-alt me-2 text-muted"></i> DirecciÃ³n:</span> <strong class="text-white text-end" id="p-direccion" style="max-width: 60%;">-</strong></li>
-                                        <li class="d-flex justify-content-between"><span><i class="bi bi-person-vcard me-2 text-muted"></i> CÃ©dula:</span> <strong class="text-white" id="p-cedula">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-telephone me-2 text-muted"></i> Teléfono:</span> <strong class="text-white" id="p-telefono">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-geo-alt me-2 text-muted"></i> Dirección:</span> <strong class="text-white text-end" id="p-direccion" style="max-width: 60%;">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-person-vcard me-2 text-muted"></i> Cédula:</span> <strong class="text-white" id="p-cedula">-</strong></li>
                                     </ul>
                                 </div>
 
                                 <!-- Contenido: Info Laboral -->
                                 <div id="inner-laboral" class="inner-view active">
                                     <ul class="list-unstyled small text-secondary d-flex flex-column gap-3 mb-4">
-                                        <li class="d-flex justify-content-between"><span><i class="bi bi-upc-scan me-2 text-muted"></i> CÃ³digo:</span> <strong class="text-white" id="p-codigo">-</strong></li>
+                                        <li class="d-flex justify-content-between"><span><i class="bi bi-upc-scan me-2 text-muted"></i> Código:</span> <strong class="text-white" id="p-codigo">-</strong></li>
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-briefcase me-2 text-muted"></i> Cargo:</span> <strong class="text-white" id="p-cargo">-</strong></li>
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-building me-2 text-muted"></i> Depto:</span> <strong class="text-white" id="p-depto">-</strong></li>
                                         <li class="d-flex justify-content-between"><span><i class="bi bi-calendar3 me-2 text-muted"></i> Ingreso:</span> <strong class="text-white" id="p-fecha">-</strong></li>
@@ -362,9 +362,9 @@
                                 <th>ID planilla</th>
                                 <th>Periodo Inicial</th>
                                 <th>Empleado</th>
-                                <th>CÃ³digo Empleado</th>
+                                <th>Código Empleado</th>
                                 <th>Salario base</th>
-                                <th>DÃ­as Trabajados</th>
+                                <th>Días Trabajados</th>
                                 <th>Horas extra</th>
                                 <th>Bonificaciones</th>
                                 <th>Comisiones</th>
@@ -462,20 +462,20 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-custom text-white">
             <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>GestiÃ³n de Trabajadores</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>Gestión de Trabajadores</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="formEmpleado" novalidate>
                     <div class="row g-3">
-                            <h8 class="modal-title fw-bold"></i>InformaciÃ³n Personal</h8>
+                            <h8 class="modal-title fw-bold"></i>Información Personal</h8>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Nombre Completo</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoNombre" placeholder="Nombre del trabajador">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Cedula</label>
-                            <input type="text" class="form-control form-control-dark" id="empleadoCedula" placeholder="CÃ©dula del trabajador">
+                            <input type="text" class="form-control form-control-dark" id="empleadoCedula" placeholder="Cédula del trabajador">
                         </div>
                          <div class="col-md-6">
                             <label class="form-label small text-secondary">Correo</label>
@@ -483,16 +483,16 @@
                         </div>
                          <div class="col-md-6">
                             <label class="form-label small text-secondary">Telefono</label>
-                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="TelÃ©fono del trabajador">
+                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Direccion</label>
-                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="TelÃ©fono del trabajador">
+                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
                         </div>
-                        <h8 class="modal-title fw-bold"></i>InformaciÃ³n Laboral</h8>
+                        <h8 class="modal-title fw-bold"></i>Información Laboral</h8>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Codigo</label>
-                            <input type="text" class="form-control form-control-dark" id="empleadoCodigo" placeholder="CÃ³digo del trabajador">
+                            <input type="text" class="form-control form-control-dark" id="empleadoCodigo" placeholder="Código del trabajador">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Cargo</label>
@@ -511,7 +511,7 @@
                                     <option>Ventas</option>
                                     <option>Contabilidad</option>
                                     <option>Taller</option>
-                                    <option>AdministraciÃ³n</option>
+                                    <option>Administración</option>
                                 </select>
                         </div>                      
                                <div class="col-md-6">
@@ -582,7 +582,8 @@
     </div>
 </div>
 <script src="../JS/script.js?v=3"></script>
-<script src="../JS/recursosHumanos.js?v=3"></script>
+<script src="../JS/auth.js"></script>
+    <script src="../JS/recursosHumanos.js?v=3"></script>
 </body>
 </html>
 

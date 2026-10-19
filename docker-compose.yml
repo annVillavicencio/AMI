@@ -1,21 +1,38 @@
-﻿version: '3.8'
+version: '3.8'
 
 services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ami_sqlserver
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ami_backend
     restart: always
+    depends_on:
+      - sqlserver
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
-      - DB_SERVER=
-      - DB_PORT=
-      - DB_DATABASE=
-      - DB_USER=
-      - DB_PASSWORD=
+      - DB_SERVER=sqlserver
+      - DB_PORT=1433
+      - DB_DATABASE=Autos_AMI
+      - DB_USER=sa
+      - DB_PASSWORD=Password123!
       - DB_WINDOWS_AUTH=false
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    command: sh -c "node initDb.js && node server.js"
+
+volumes:
+  mssql_data:

@@ -18,7 +18,7 @@
             --bg-sidebar: #0B0C12;
             --bg-input: #161722;
             
-            /* Rosa bajo sÃ³lido para botones activos */
+            /* Rosa bajo sólido para botones activos */
             --pink-soft: #E58FE5;
             --pink-soft-glow: rgba(229, 143, 229, 0.25);
             
@@ -52,10 +52,10 @@
         .table-dark-custom td { padding: 1rem 0.5rem; vertical-align: middle; border-bottom: none; }
         
         
-        /* Elementos vacÃ­os de la tabla (las barritas grises del diseÃ±o) */
+        /* Elementos vacíos de la tabla (las barritas grises del diseño) */
         .placeholder-line { display: inline-block; width: 60%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; }
         
-        /* Enlaces de acciones rÃ¡pidas */
+        /* Enlaces de acciones rápidas */
         .action-link { text-decoration: none; color: #EFF0EB; transition: 0.2s; }
         .action-link:hover { color: #DBFF99; }
         .badge-registrado { border: 1px solid #DBFF99; color: #DBFF99; background: rgba(219, 255, 153, 0.08); font-weight: 500; padding: 0.35em 0.8em; border-radius: 50px; font-size: 0.75rem; }
@@ -112,7 +112,7 @@
 <body>
     <div class="d-flex" id="wrapper">
         
-        <!-- Sidebar (MenÃº Lateral) -->
+        <!-- Sidebar (Menú Lateral) -->
         <div class="sidebar" id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-4">
                 <img src="../Assets/Logo_Ami.png" alt="AMI Logo" class="img-fluid w-75">
@@ -140,7 +140,7 @@
                     <i class="bi bi-calculator me-2"></i> Costos
                 </a>
                 <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
-                    <i class="bi bi-bar-chart me-2"></i> AnÃ¡lisis
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
                 </a>
                 <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
                     <i class="bi bi-person-gear me-2"></i> Usuarios
@@ -169,7 +169,7 @@
                         <div class="dropdown">
                             <div class="d-flex align-items-center cursor-pointer text-white" data-bs-toggle="dropdown">
                                 <img src="../Assets/User.jpg" alt="Usuario" class="rounded-circle me-2" style="width: 35px; height: 35px; object-fit: cover;">
-                                <span class="fw-bold small">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                                <span class="fw-bold small" id="nombre-usuario">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
                             </div>
                         </div>
                     </div>
@@ -178,11 +178,11 @@
 
             <!-- Contenido Principal -->
             <div class="container-fluid px-4 py-4">
-                <!-- Encabezado de la pÃ¡gina -->
+                <!-- Encabezado de la página -->
                 <div class="mb-4 text-white">
                     <h2 class="fw-bold mb-1">Costos</h2>
                     <p class="text-muted small mb-1">Inicio / <span class="text-pink">Costos</span></p>
-                    <p class="text-secondary small">Gestiona y administra los costos registrados de los vehÃ­culos.</p>
+                    <p class="text-secondary small">Gestiona y administra los costos registrados de los vehículos.</p>
                 </div>
 
                 <div class="row g-4">
@@ -229,7 +229,8 @@
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2 align-items-center">
-                                    <select class="form-select form-control-dark rounded-3 small py-1">            
+                                    <select id="filtro-categoria" class="form-select form-control-dark rounded-3 small py-1">
+                                        <option value="Todos">Todas las categorías</option>            
                                         <option>Categorias de gasto</option>
                                         <option>Mantenimiento</option>
                                         <option>Reparacion</option>
@@ -248,8 +249,8 @@
                                         <tr>
                                              <th class="text-center">ID Gasto</th>
                                              <th class="text-center">Auto </th>
-                                             <th class="text-center">CategorÃ­a </th>
-                                             <th class="text-center">DescripciÃ³n</th>
+                                             <th class="text-center">Categoría </th>
+                                             <th class="text-center">Descripción</th>
                                              <th class="text-center">Fecha </th>
                                              <th class="text-center">Monto </th>
                                              <th class="text-center">Acciones</th>
@@ -280,7 +281,7 @@
                                 </table>
                             </div>
                             
-                            <!-- PaginaciÃ³n -->
+                            <!-- Paginación -->
                             <div class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
                                 <span>Mostrando x a x de x costos</span>  <!-- Eso lo vas a modificar segun los daos registrados -->
                                 <div class="d-flex gap-1 align-items-center">
@@ -296,7 +297,7 @@
                         </div>
                     </div>
 
-                    <!-- Columna Derecha (Resumen y Acciones RÃ¡pidas) -->
+                    <!-- Columna Derecha (Resumen y Acciones Rápidas) -->
                     <div class="col-xl-4 col-lg-5">                     
                         <!-- Resumen de Costos -->
                         <div class="card dark-card border-0 rounded-4 shadow-sm p-4 mb-3">
@@ -311,7 +312,7 @@
                                 <span id="kpi-costos-mantenimiento" class="text-white fw-medium">C$ __</span>
                             </div>
                             <div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-10 small">
-                                <span class="text-secondary">Gastos de reparaciÃ³n</span>
+                                <span class="text-secondary">Gastos de reparación</span>
                                 <span id="kpi-costos-reparacion" class="text-white fw-medium">C$ __</span>
                             </div>
                             <div class="d-flex justify-content-between py-2 small">
@@ -330,19 +331,19 @@
                                 <div class="ms-auto"><i class="bi bi-graph-up text-neon-green fs-4"></i></div>
                             </div>
                         </div>
-                        <!-- Acciones RÃ¡pidas -->
+                        <!-- Acciones Rápidas -->
                         <div class="card dark-card border-0 rounded-4 shadow-sm p-2">
                             <div class="card-body">
-                                <h6 class="text-neon-green fw-bold mb-3"><i class="bi bi-lightning-charge-fill me-2"></i>Acciones rÃ¡pidas</h6>
+                                <h6 class="text-neon-green fw-bold mb-3"><i class="bi bi-lightning-charge-fill me-2"></i>Acciones rápidas</h6>
                                 <div class="list-group list-group-flush dark-list">
                                     <a href="#" class="list-group-item list-group-item-action bg-transparent text-white border-secondary border-opacity-10 d-flex justify-content-between align-items-center py-3">
-                                        <span><i class="bi bi-download me-3 text-secondary"></i> Exportar InformaciÃ³n</span> <i class="bi bi-chevron-right text-secondary small"></i>
+                                        <span><i class="bi bi-download me-3 text-secondary"></i> Exportar Información</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                     <a href="#" class="list-group-item list-group-item-action bg-transparent text-white border-secondary border-opacity-10 d-flex justify-content-between align-items-center py-3" onclick="generarReporte()">
                                         <span><i class="bi bi-file-earmark-text me-3 text-secondary"></i> Generar reporte</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                     <a href="#" class="list-group-item list-group-item-action bg-transparent text-white border-0 d-flex justify-content-between align-items-center py-3">
-                                        <span><i class="bi bi-gear me-3 text-secondary"></i> ConfiguraciÃ³n</span> <i class="bi bi-chevron-right text-secondary small"></i>
+                                        <span><i class="bi bi-gear me-3 text-secondary"></i> Configuración</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                 </div>
                             </div>
@@ -357,7 +358,7 @@
         <div class="modal-content card-custom text-white">
             <!-- HEADER -->
             <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold">
+                <h5 class="modal-title fw-bold" id="modalAgregarCostoLabel">
                     <i class="bi bi-receipt-cutoff text-neon-green me-2"></i>
                     Agregar nuevo gasto
                 </h5>
@@ -365,13 +366,14 @@
             </div>
             <div class="modal-body">
                 <form id="formAgregarCosto">
+                        <input type="hidden" id="edit-id-costo" value="">
                     <div class="row g-3">
-                        <!-- ID AUTOMÃTICO -->
+                        <!-- ID AUTOMÁTICO -->
                         <div class="col-md-12">
                             <label class="form-label small text-secondary">ID de gasto</label>
                             <input type="text"class="form-control form-control-dark"value="Autogenerado"readonly>
 
-                            <small class="text-secondary"> El sistema asignarÃ¡ automÃ¡ticamente el ID.</small>
+                            <small class="text-secondary"> El sistema asignará automáticamente el ID.</small>
                         </div>
                         <!-- AUTO -->
                         <div class="col-md-6">
@@ -382,24 +384,24 @@
                                 </option>
                                 <!--
                                     Estos datos posteriormente
-                                    vendrÃ¡n desde la tabla Auto.
+                                    vendrán desde la tabla Auto.
                                 -->
                             </select>
                         </div>
                         <!-- CATEGORÃA -->
                         <div class="col-md-6">
-                            <label for="idCategoriaCosto"class="form-label small text-secondary">CategorÃ­a del gasto *</label>
+                            <label for="idCategoriaCosto"class="form-label small text-secondary">Categoría del gasto *</label>
                             <select id="idCategoriaCosto"name="idCategoria"class="form-select form-control-dark"required>
-                                <option value="" selected disabled>Seleccione una categorÃ­a</option>
+                                <option value="" selected disabled>Seleccione una categoría</option>
                                 <!--
                                     Posteriormente estas opciones
-                                    vendrÃ¡n desde CategoriasCosto.
+                                    vendrán desde CategoriasCosto.
                                 -->
                                 <option value="1">
                                     Mantenimiento
                                 </option>
                                 <option value="2">
-                                    ReparaciÃ³n
+                                    Reparación
                                 </option>
                                 <option value="3">
                                    Repuestos
@@ -415,9 +417,9 @@
                                 </option>
                             </select>
                         </div>
-                        <!-- DESCRIPCIÃ“N -->
+                        <!-- DESCRIPCIÓN -->
                         <div class="col-md-12">
-                            <label for="descripcionCosto"class="form-label small text-secondary">DescripciÃ³n</label>
+                            <label for="descripcionCosto"class="form-label small text-secondary">Descripción</label>
                             <textarea id="descripcionCosto"
                                       name="descripcion"
                                       class="form-control form-control-dark"
@@ -469,7 +471,8 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../JS/script.js?v=3"></script>
-<script src="../JS/costos.js?v=3"></script>
+<script src="../JS/auth.js"></script>
+    <script src="../JS/costos.js?v=5"></script>
 
 <div class="modal fade" id="modalReporteCostos" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -482,7 +485,7 @@
                 <div class="alert bg-dark text-white border border-danger mb-3 rounded-3" id="kpi-costos"></div>
                 <div class="table-responsive">
                     <table class="table table-dark table-hover align-middle">
-                        <thead><tr><th>ID</th><th>Auto</th><th>CategorÃ­a</th><th>Monto</th><th>Fecha</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Auto</th><th>Categoría</th><th>Monto</th><th>Fecha</th></tr></thead>
                         <tbody id="cuerpo-tabla-reporte-costos"></tbody>
                     </table>
                 </div>

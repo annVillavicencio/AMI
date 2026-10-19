@@ -1,5 +1,6 @@
-﻿// se cargan las variables del archivo .env
-require('dotenv').config();
+// se cargan las variables del archivo .env
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const sql = require('mssql');
 
 // configuración de la conexión (con valores por defecto)

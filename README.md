@@ -90,3 +90,50 @@ Control total sobre los accesos al sistema.
 
 ###  Salida
 *   Opción segura para cerrar sesión y volver a la pantalla de Login.
+
+
+---
+
+## 🐳 Despliegue Rápido con Docker (Instalación en 1 Solo Paso)
+
+Para que cualquier miembro del equipo ejecute el sistema completo sin necesidad de configurar SQL Server manualmente ni lidiar con versiones locales de Node:
+
+### 1. Requisitos Previos
+* Tener instalado **Docker Desktop** (en Windows, Mac o Linux) y tenerlo en ejecución.
+* **Git** para clonar el repositorio.
+
+### 2. Puesta en Marcha Inmediata
+Abre una terminal en la raíz del proyecto (`AMI`) y ejecuta:
+
+```bash
+docker compose up --build
+```
+
+*(Si tu versión de Docker usa guion, también puedes usar: `docker-compose up --build`)*
+
+### 3. ¿Qué hace este comando automáticamente?
+1. 🗄️ **Levanta SQL Server 2022** en un contenedor seguro (`ami_sqlserver`).
+2. 🔄 **Crea y puebla la Base de Datos `Autos_AMI`**: Al iniciar, el backend detecta automáticamente la base de datos y ejecuta el script `Autos_AMI_Backup.sql`, cargando todas las tablas, relaciones, roles, vehículos, ventas y usuarios de prueba.
+3. 🚀 **Inicia el Backend y Frontend** en el puerto `3000` (`ami_backend`).
+
+### 4. Acceso al Sistema
+Una vez que en la consola veas:
+```text
+[InitDB] ¡Base de datos inicializada y poblada exitosamente!
+Servidor corriendo en puerto 3000
+```
+
+Abre tu navegador e ingresa a:
+👉 **[http://localhost:3000/Login.html](http://localhost:3000/Login.html)**
+
+#### 🔑 Credenciales de Acceso para Pruebas:
+* **Superadministrador:** `superadmin@ami.com` / Contraseña: `123`
+* **Administrador:** `admin@ami.com` / Contraseña: `123`
+* **Vendedor / Estándar:** `ventas@ami.com` / Contraseña: `123`
+
+### 5. Detener los Contenedores
+Para detener el entorno cuando termines tu jornada:
+```bash
+docker compose down
+```
+*(Los datos se conservan en el volumen de Docker `mssql_data` para la siguiente vez que inicies)*.

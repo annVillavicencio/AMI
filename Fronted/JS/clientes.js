@@ -1,10 +1,10 @@
-﻿let clientesData = []; // AquÃ­ guardaremos todos los clientes temporalmente
-let clienteEnEdicion = null; // GuardarÃ¡ el ID del cliente que se estÃ¡ editando
+﻿let clientesData = []; // Aquí guardaremos todos los clientes temporalmente
+let clienteEnEdicion = null; // Guardará el ID del cliente que se está editando
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarClientes();
 
-    // Cada vez que el usuario escriba en el buscador se filtrarÃ¡ la tabla
+    // Cada vez que el usuario escriba en el buscador se filtrará la tabla
     const inputBusqueda = document.getElementById('input-busqueda');
     if (inputBusqueda) {
         inputBusqueda.addEventListener('input', renderizarTabla);
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGuardar.addEventListener('click', guardarCliente);
     }
     
-    // Al abrir el modal de agregar, nos aseguramos que estÃ© en modo "Agregar"
+    // Al abrir el modal de agregar, nos aseguramos que esté en modo "Agregar"
     const modalCliente = document.getElementById('modalCliente');
     if (modalCliente) {
         modalCliente.addEventListener('hidden.bs.modal', () => {
@@ -54,7 +54,7 @@ function renderizarTabla() {
     const tbody = document.getElementById('clientes-table-body');
     if (!tbody) return;
     
-    // Obtenemos lo que escribiste en el buscador, en minÃºsculas
+    // Obtenemos lo que escribiste en el buscador, en minúsculas
     const busquedaElement = document.getElementById('input-busqueda');
     const busqueda = busquedaElement ? busquedaElement.value.toLowerCase() : '';
 
@@ -108,7 +108,7 @@ function renderizarTabla() {
 function actualizarEstadisticas() {
     const totalClientes = clientesData.length;
 
-    // Solo actualizamos el total de clientes, los demÃ¡s quedan estÃ¡ticos por ahora
+    // Solo actualizamos el total de clientes, los demás quedan estáticos por ahora
     const elemTotal = document.getElementById('stat-clientes-total');
     if (elemTotal) elemTotal.innerText = totalClientes;
 }
@@ -155,12 +155,12 @@ async function guardarCliente() {
         alert(clienteEnEdicion ? "Cliente actualizado correctamente" : "Cliente agregado correctamente");
     } catch (error) {
         console.error('Error al guardar el cliente:', error);
-        alert('Error al guardar el cliente. Verifique la consola para mÃ¡s detalles.');
+        alert('Error al guardar el cliente. Verifique la consola para más detalles.');
     }
 }
 
 async function eliminarCliente(id) {
-    if (!confirm(`Â¿EstÃ¡s seguro de que deseas eliminar el cliente con ID #${id}?`)) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el cliente con ID #${id}?`)) {
         return;
     }
 
@@ -231,7 +231,7 @@ function calcularDatosReporte() {
     }
     
     let porcentaje = totalClientes > 0 ? ((maxCount / totalClientes) * 100).toFixed(1) : 0;
-    kpiOrigenTexto = `El origen mÃ¡s frecuente es <strong>${maxOrigen}</strong> con un ${porcentaje}% del total (${maxCount} clientes).`;
+    kpiOrigenTexto = `El origen más frecuente es <strong>${maxOrigen}</strong> con un ${porcentaje}% del total (${maxCount} clientes).`;
 }
 
 function generarReporte() {

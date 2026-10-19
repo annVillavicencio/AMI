@@ -1,22 +1,19 @@
-﻿FROM node:20-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copiar archivos de dependencias del backend
+# Copiar dependencias e instalar
 COPY Backend/package*.json ./Backend/
-
-# Instalar dependencias dentro de Backend
 WORKDIR /app/Backend
 RUN npm install
 
-# Regresar a /app y copiar el código completo
+# Copiar el código fuente completo
 WORKDIR /app
 COPY Backend ./Backend
 COPY Fronted ./Fronted
 
-# Directorio de trabajo final
 WORKDIR /app/Backend
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node initDb.js && node server.js"]

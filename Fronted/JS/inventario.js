@@ -1,159 +1,325 @@
-﻿let autosData = [];
+// ==========================================================================
+// AMI - Módulo de Inventario (inventario.js)
+// Gestión integral de vehículos, filtrado en tiempo real, KPIs y CRUD completo
+// ==========================================================================
+
+let autosData = [];
 let autoEnEdicion = null;
+let paginaActual = 1;
+const elementosPorPagina = 8;
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarInventario();
 
+    // 1. Buscador en tiempo real
     const inputBusqueda = document.getElementById('input-busqueda');
+    const btnBuscar = document.getElementById('btn-buscar');
+
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', () => {
+            paginaActual = 1;
+            renderizarTabla();
+        });
+        inputBusqueda.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                paginaActual = 1;
+                renderizarTabla();
+            }
+        });
+    }
+
+    if (btnBuscar) {
+        btnBuscar.addEventListener('click', () => {
+            paginaActual = 1;
+            renderizarTabla();
+        });
+    }
+
+    // 2. Filtro por Estado
     const filtroEstado = document.getElementById('filtro-estado');
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', () => {
+            paginaActual = 1;
+            renderizarTabla();
+        });
+    }
 
-    if (inputBusqueda) inputBusqueda.addEventListener('input', renderizarTabla);
-    if (filtroEstado) filtroEstado.addEventListener('change', renderizarTabla);
+    // 3. Botón y formulario para Guardar Vehículo (Crear o Editar)
+    const btnGuardar = document.getElementById('btn-guardar-auto');
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', guardarAuto);
+    }
 
-    document.getElementById('btn-guardar-auto').addEventListener('click', guardarAuto);
+    const formAgregarAuto = document.querySelector('#modalAgregarAuto form');
+    if (formAgregarAuto) {
+        formAgregarAuto.addEventListener('submit', (e) => {
+            e.preventDefault();
+            guardarAuto();
+        });
+    }
 
-    const modalAgregarAuto = document.getElementById('modalAgregarAuto');
-    if (modalAgregarAuto) {
-        modalAgregarAuto.addEventListener('hidden.bs.modal', () => {
-            autoEnEdicion = null;
-            document.getElementById('add-marca').value = '';
-            document.getElementById('add-modelo').value = '';
-            document.getElementById('add-anio').value = '';
-            document.getElementById('add-precio').value = '';
-            document.getElementById('add-costo').value = '';
-            document.getElementById('add-fecha').value = '';
-            document.getElementById('add-placa').value = '';
-            document.getElementById('add-descripcion').value = '';
-            document.getElementById('add-estado').value = 'Disponible';
-            document.getElementById('btn-guardar-auto').innerText = 'Guardar VehÃ­culo';
-            document.getElementById('modalAgregarAutoLabel').innerHTML = '<i class="bi bi-car-front text-neon-green me-2"></i>Agregar Nuevo VehÃ­culo';
+    // 4. Limpieza del modal al cerrarse
+    const modalEl = document.getElementById('modalAgregarAuto');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            limpiarFormularioModal();
         });
     }
 });
 
+// --------------------------------------------------------------------------
+// CARGAR DATOS DESDE LA API
+// --------------------------------------------------------------------------
 async function cargarInventario() {
     try {
-        const res = await fetch('http://localhost:3000/api/inventario');
-        if (!res.ok) throw new Error('Error al cargar inventario');
+        const res = await fetch('/api/inventario');
+        if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
         autosData = await res.json();
         renderizarTabla();
         actualizarEstadisticas();
     } catch (err) {
-        console.error('Error cargando inventario:', err);
+        console.error('Error al cargar inventario:', err);
+        const tbody = document.getElementById('inventario-table-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Error al cargar datos del servidor. Asegúrese de que el backend esté activo.
+            </td></tr>`;
+        }
     }
 }
 
+// --------------------------------------------------------------------------
+// RENDERIZAR TABLA CON FILTROS Y PAGINACIÓN
+// --------------------------------------------------------------------------
 function renderizarTabla() {
-    actualizarKPIsPrincipales(autosData);
-
     const tbody = document.getElementById('inventario-table-body');
     if (!tbody) return;
 
     const inputBusqueda = document.getElementById('input-busqueda');
     const filtroEstado = document.getElementById('filtro-estado');
 
-    const busqueda = inputBusqueda ? inputBusqueda.value.toLowerCase() : '';
-    const estado = filtroEstado ? filtroEstado.value : 'Todos';
+    const busqueda = inputBusqueda ? inputBusqueda.value.trim().toLowerCase() : '';
+    const estado = filtroEstado ? filtroEstado.value.trim() : 'Todos';
 
     tbody.innerHTML = '';
 
+    // Filtrar lista
     const autosFiltrados = autosData.filter(auto => {
+        const idStr = auto.ID_Auto ? String(auto.ID_Auto).toLowerCase() : '';
         const marca = (auto.Marca || '').toLowerCase();
         const modelo = (auto.Modelo || '').toLowerCase();
         const descripcion = (auto.Descripcion || '').toLowerCase();
+        const placa = (auto.Placa || '').toLowerCase();
+        const anioStr = auto.Anio ? String(auto.Anio) : '';
+        const precioStr = auto.Precio ? String(auto.Precio) : '';
 
-        const coincideBusqueda = marca.includes(busqueda) || modelo.includes(busqueda) || descripcion.includes(busqueda);
-        const coincideEstado = estado === 'Todos' || auto.Estado === estado;
+        const coincideBusqueda = !busqueda ||
+            idStr.includes(busqueda) ||
+            marca.includes(busqueda) ||
+            modelo.includes(busqueda) ||
+            descripcion.includes(busqueda) ||
+            placa.includes(busqueda) ||
+            anioStr.includes(busqueda) ||
+            precioStr.includes(busqueda);
+
+        const autoEstado = (auto.Estado || '').trim().toLowerCase();
+        const coincideEstado = (estado === 'Todos' || !estado) || (autoEstado === estado.toLowerCase());
 
         return coincideBusqueda && coincideEstado;
     });
 
-    if (autosFiltrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No se encontraron autos.</td></tr>`;
+    const totalFiltrados = autosFiltrados.length;
+    const totalPaginas = Math.ceil(totalFiltrados / elementosPorPagina) || 1;
+
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    if (paginaActual < 1) paginaActual = 1;
+
+    const inicio = (paginaActual - 1) * elementosPorPagina;
+    const fin = Math.min(inicio + elementosPorPagina, totalFiltrados);
+    const autosPaginados = autosFiltrados.slice(inicio, fin);
+
+    // Actualizar contador
+    const contador = document.getElementById('contador-vehiculos');
+    if (contador) {
+        if (totalFiltrados === 0) {
+            contador.innerText = `Mostrando 0 a 0 de 0 vehículos`;
+        } else {
+            contador.innerText = `Mostrando ${inicio + 1} a ${fin} de ${totalFiltrados} vehículos (Total: ${autosData.length})`;
+        }
+    }
+
+    // Renderizar paginador si existe
+    renderizarPaginador(totalPaginas);
+
+    if (autosPaginados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-4 d-block mb-1"></i> No se encontraron vehículos que coincidan con la búsqueda.
+        </td></tr>`;
         return;
     }
 
-    autosFiltrados.forEach(auto => {
+    // Construir filas
+    autosPaginados.forEach(auto => {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
 
-        let badgeClass = auto.Estado === 'Disponible' ? 'bg-success text-white' : 'bg-secondary text-white';
-        let estadoBadge = `<span class="badge ${badgeClass} rounded-pill px-3 py-2">${auto.Estado}</span>`;
+        let estadoBadge = '';
+        const est = (auto.Estado || '').trim().toLowerCase();
+        if (est === 'disponible') {
+            estadoBadge = '<span class="badge badge-activa rounded-pill px-3 py-1">Disponible</span>';
+        } else if (est === 'vendido') {
+            estadoBadge = '<span class="badge badge-finalizada rounded-pill px-3 py-1">Vendido</span>';
+        } else {
+            estadoBadge = `<span class="badge badge-programada rounded-pill px-3 py-1">${auto.Estado || 'Otro'}</span>`;
+        }
+
+        const precioNum = parseFloat(auto.Precio || 0);
+        const precioFormateado = isNaN(precioNum) ? '0' : precioNum.toLocaleString('en-US');
 
         tr.innerHTML = `
-            <td class="align-middle fw-bold text-neon-green">#${auto.ID_Auto}</td>
-            <td class="align-middle fw-bold">${auto.Marca || 'N/A'}</td>
-            <td class="align-middle">${auto.Modelo || 'N/A'}</td>
-            <td class="align-middle text-muted small">${auto.Descripcion || ''}</td>
-            <td class="align-middle">${auto.Placa || 'N/A'}</td>
-            <td class="align-middle">${auto.Anio || 'N/A'}</td>
-            <td class="align-middle fw-bold">C${parseFloat(auto.Precio || 0).toLocaleString()}</td>
-            <td class="align-middle">${estadoBadge}</td>
-            <td class="align-middle text-end">
-                <button class="btn btn-sm btn-outline-light rounded-circle me-1" onclick="abrirModalEditar(${auto.ID_Auto})">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarAuto(${auto.ID_Auto})">
-                    <i class="bi bi-trash"></i>
-                </button>
+            <td class="text-center fw-bold text-neon-green">#${auto.ID_Auto}</td>
+            <td class="text-center fw-bold text-white">${auto.Marca || '-'}</td>
+            <td class="text-center text-white">${auto.Modelo || '-'}</td>
+            <td class="text-center text-secondary small text-truncate" style="max-width: 150px;" title="${auto.Descripcion || ''}">${auto.Descripcion || '-'}</td>
+            <td class="text-center text-white"><span class="badge bg-dark border border-secondary px-2 py-1">${auto.Placa || 'S/P'}</span></td>
+            <td class="text-center text-white">${auto.Anio || '-'}</td>
+            <td class="text-center fw-bold text-white">C$${precioFormateado}</td>
+            <td class="text-center">${estadoBadge}</td>
+            <td class="text-center">
+                <div class="dropdown">
+                    <button class="btn btn-link text-secondary p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Acciones">
+                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow" style="background-color: #1A2218; border: 1px solid rgba(255,255,255,0.1);">
+                        <li>
+                            <a class="dropdown-item text-white py-2" href="javascript:void(0)" onclick="abrirModalEditar(${auto.ID_Auto})">
+                                <i class="bi bi-pencil-square me-2" style="color: #DBFF99;"></i> Editar
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
+                        <li>
+                            <a class="dropdown-item text-danger py-2" href="javascript:void(0)" onclick="eliminarAuto(${auto.ID_Auto})">
+                                <i class="bi bi-trash me-2"></i> Eliminar
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </td>
         `;
+
         tbody.appendChild(tr);
     });
 }
 
-function actualizarEstadisticas() {
-    const disponibles = autosData.filter(a => a.Estado === 'Disponible').length;
-    const vendidos = autosData.filter(a => a.Estado === 'Vendido').length;
+// --------------------------------------------------------------------------
+// RENDERIZAR BOTONES DE PAGINACIÓN
+// --------------------------------------------------------------------------
+function renderizarPaginador(totalPaginas) {
+    const contenedorPaginacion = document.querySelector('.pagination-dark');
+    if (!contenedorPaginacion) return;
 
-    let ingresos = 0;
-    autosData.filter(a => a.Estado === 'Vendido').forEach(a => {
-        ingresos += parseFloat(a.Precio || 0);
-    });
+    let html = `
+        <button class="btn btn-sm btn-dark-page me-1" ${paginaActual === 1 ? 'disabled' : ''} onclick="cambiarPagina(${paginaActual - 1})">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    `;
 
-    const valDisponibles = document.querySelector('.val-disponibles');
-    const valVendidos = document.querySelector('.val-vendidos');
-    const valIngresos = document.querySelector('.val-ingresos');
+    for (let p = 1; p <= totalPaginas; p++) {
+        const activa = p === paginaActual ? 'btn-page-active' : 'btn-dark-page';
+        html += `<button class="btn btn-sm ${activa} me-1" onclick="cambiarPagina(${p})">${p}</button>`;
+    }
 
-    if (valDisponibles) valDisponibles.innerText = disponibles;
-    if (valVendidos) valVendidos.innerText = vendidos;
-    if (valIngresos) valIngresos.innerText = `C$${ingresos.toLocaleString()}`;
+    html += `
+        <button class="btn btn-sm btn-dark-page" ${paginaActual === totalPaginas ? 'disabled' : ''} onclick="cambiarPagina(${paginaActual + 1})">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    `;
+
+    contenedorPaginacion.innerHTML = html;
 }
 
-async function guardarAuto() {
-    const marca = document.getElementById('add-marca').value.trim();
-    const modelo = document.getElementById('add-modelo').value.trim();
-    const anio = document.getElementById('add-anio').value;
-    const precio = document.getElementById('add-precio').value;
-    const costo = document.getElementById('add-costo').value;
-    const fecha = document.getElementById('add-fecha').value;
-    const placa = document.getElementById('add-placa').value.trim();
-    const descripcion = document.getElementById('add-descripcion').value.trim();
-    const estado = document.getElementById('add-estado').value;
+function cambiarPagina(nuevaPagina) {
+    paginaActual = nuevaPagina;
+    renderizarTabla();
+}
+window.cambiarPagina = cambiarPagina;
+
+// --------------------------------------------------------------------------
+// ACTUALIZAR TARJETAS KPI
+// --------------------------------------------------------------------------
+function actualizarEstadisticas() {
+    let vendidos = 0;
+    let disponibles = 0;
+    let montoTotalVendido = 0;
+
+    autosData.forEach(auto => {
+        const est = (auto.Estado || '').trim().toLowerCase();
+        const precio = parseFloat(auto.Precio || 0) || 0;
+
+        if (est === 'vendido') {
+            vendidos++;
+            montoTotalVendido += precio;
+        } else if (est === 'disponible') {
+            disponibles++;
+        }
+    });
+
+    const elemVendidos = document.getElementById('kpi-main-vehiculos');
+    const elemValor = document.getElementById('kpi-main-valor');
+    const elemDisponibles = document.getElementById('kpi-main-vendidos');
+
+    if (elemVendidos) elemVendidos.innerText = vendidos;
+    if (elemValor) elemValor.innerText = `C$${montoTotalVendido.toLocaleString('en-US')}`;
+    if (elemDisponibles) elemDisponibles.innerText = disponibles;
+}
+
+// --------------------------------------------------------------------------
+// GUARDAR VEHÍCULO (CREAR O EDITAR)
+// --------------------------------------------------------------------------
+async function guardarAuto(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const marca = document.getElementById('add-marca')?.value.trim();
+    const modelo = document.getElementById('add-modelo')?.value.trim();
+    const anio = document.getElementById('add-anio')?.value.trim();
+    const precio = document.getElementById('add-precio')?.value.trim();
+    const costo = document.getElementById('add-costo')?.value.trim();
+    const fecha = document.getElementById('add-fecha')?.value;
+    const placa = document.getElementById('add-placa')?.value.trim();
+    const descripcion = document.getElementById('add-descripcion')?.value.trim();
+    const estado = document.getElementById('add-estado')?.value;
 
     if (!marca || !modelo || !precio) {
-        alert('Marca, Modelo y Precio son obligatorios.');
+        alert('Por favor complete los campos obligatorios: Marca, Modelo y Precio.');
         return;
     }
 
     const nuevoAuto = {
         Marca: marca,
         Modelo: modelo,
-        Anio: anio,
-        Precio: precio,
-        Estado: estado,
-        CostoAdquisicion: costo,
-        Placa: placa,
-        Descripcion: descripcion,
-        FechaIngresoInventario: fecha
+        Anio: parseInt(anio) || new Date().getFullYear(),
+        Precio: parseFloat(precio) || 0,
+        Estado: estado || 'Disponible',
+        CostoAdquisicion: parseFloat(costo) || 0,
+        Placa: placa || 'S/P',
+        Descripcion: descripcion || `${marca} ${modelo}`,
+        FechaIngresoInventario: fecha || new Date().toISOString().split('T')[0]
     };
 
     const metodoUrl = autoEnEdicion
-        ? `http://localhost:3000/api/inventario/${autoEnEdicion}`
-        : 'http://localhost:3000/api/inventario';
+        ? `/api/inventario/${autoEnEdicion}`
+        : '/api/inventario';
     const metodoTipo = autoEnEdicion ? 'PUT' : 'POST';
 
+    const btnGuardar = document.getElementById('btn-guardar-auto');
+    const textoOriginal = btnGuardar ? btnGuardar.innerText : 'Guardar';
+
     try {
+        if (btnGuardar) {
+            btnGuardar.disabled = true;
+            btnGuardar.innerText = 'Guardando...';
+        }
+
         const respuesta = await fetch(metodoUrl, {
             method: metodoTipo,
             headers: {
@@ -161,133 +327,223 @@ async function guardarAuto() {
             },
             body: JSON.stringify(nuevoAuto)
         });
-        if (!respuesta.ok) throw new Error('Error al guardar en el servidor');
 
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarAuto'));
-        if (modal) modal.hide();
-
-        await cargarInventario();
-    } catch (error) {
-        console.error('Error al guardar el auto:', error);
-        alert('Error al guardar el auto.');
-    }
-}
-
-async function eliminarAuto(idAuto) {
-    if (!confirm('Â¿Seguro que deseas eliminar este vehÃ­culo?')) return;
-    try {
-        const res = await fetch(`http://localhost:3000/api/inventario/${idAuto}`, {
-            method: 'DELETE'
-        });
-        if (res.ok) {
-            cargarInventario();
+        if (btnGuardar) {
+            btnGuardar.disabled = false;
+            btnGuardar.innerText = textoOriginal;
         }
-    } catch (err) {
-        console.error('Error eliminando vehÃ­culo:', err);
+
+        if (!respuesta.ok) {
+            const errJson = await respuesta.json().catch(() => ({}));
+            throw new Error(errJson.error || 'Error al guardar en el servidor');
+        }
+
+        // Cerrar modal
+        const modalEl = document.getElementById('modalAgregarAuto');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        limpiarFormularioModal();
+        await cargarInventario();
+        alert(autoEnEdicion ? 'Vehículo actualizado con éxito.' : 'Vehículo registrado con éxito.');
+    } catch (error) {
+        if (btnGuardar) {
+            btnGuardar.disabled = false;
+            btnGuardar.innerText = textoOriginal;
+        }
+        console.error('Error al guardar vehículo:', error);
+        alert('Error al guardar vehículo: ' + error.message);
     }
 }
 
+// --------------------------------------------------------------------------
+// ABRIR MODAL PARA EDITAR
+// --------------------------------------------------------------------------
 function abrirModalEditar(idAuto) {
     const auto = autosData.find(a => a.ID_Auto === idAuto);
-    if (!auto) return;
+    if (!auto) {
+        alert('No se encontró el vehículo seleccionado.');
+        return;
+    }
+
     autoEnEdicion = idAuto;
 
-    document.getElementById('add-marca').value = auto.Marca || '';
-    document.getElementById('add-modelo').value = auto.Modelo || '';
-    document.getElementById('add-anio').value = auto.Anio || '';
-    document.getElementById('add-precio').value = auto.Precio || '';
-    document.getElementById('add-costo').value = auto.CostoAdquisicion || auto.Precio || '';
-    if (auto.FechaIngresoInventario) {
-        document.getElementById('add-fecha').value = auto.FechaIngresoInventario.split('T')[0];
+    const idInput = document.getElementById('add-id');
+    if (idInput) idInput.value = auto.ID_Auto;
+
+    const elMarca = document.getElementById('add-marca');
+    if (elMarca) elMarca.value = auto.Marca || '';
+
+    const elModelo = document.getElementById('add-modelo');
+    if (elModelo) elModelo.value = auto.Modelo || '';
+
+    const elAnio = document.getElementById('add-anio');
+    if (elAnio) elAnio.value = auto.Anio || '';
+
+    const elPrecio = document.getElementById('add-precio');
+    if (elPrecio) elPrecio.value = auto.Precio || '';
+
+    const elCosto = document.getElementById('add-costo');
+    if (elCosto) elCosto.value = auto.CostoAdquisicion != null ? auto.CostoAdquisicion : '';
+
+    const elFecha = document.getElementById('add-fecha');
+    if (elFecha) {
+        elFecha.value = auto.FechaIngresoInventario ? auto.FechaIngresoInventario.split('T')[0] : '';
     }
-    document.getElementById('add-placa').value = auto.Placa || '';
-    document.getElementById('add-descripcion').value = auto.Descripcion || '';
-    document.getElementById('add-estado').value = auto.Estado || 'Disponible';
 
-    document.getElementById('btn-guardar-auto').innerText = 'Guardar Cambios';
-    document.getElementById('modalAgregarAutoLabel').innerHTML = '<i class="bi bi-pencil-square text-neon-green me-2"></i>Editar VehÃ­culo';
+    const elPlaca = document.getElementById('add-placa');
+    if (elPlaca) elPlaca.value = auto.Placa || '';
 
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAgregarAuto'));
-    modal.show();
+    const elDesc = document.getElementById('add-descripcion');
+    if (elDesc) elDesc.value = auto.Descripcion || '';
+
+    const elEstado = document.getElementById('add-estado');
+    if (elEstado) elEstado.value = auto.Estado || 'Disponible';
+
+    const btnGuardar = document.getElementById('btn-guardar-auto');
+    if (btnGuardar) btnGuardar.innerText = 'Guardar Cambios';
+
+    const label = document.getElementById('modalAgregarAutoLabel');
+    if (label) {
+        label.innerHTML = `<i class="bi bi-pencil-square text-neon-green me-2"></i>Editar Vehículo #${idAuto}`;
+    }
+
+    const modalEl = document.getElementById('modalAgregarAuto');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 }
 
-window.eliminarAuto = eliminarAuto;
+// --------------------------------------------------------------------------
+// ELIMINAR VEHÍCULO
+// --------------------------------------------------------------------------
+async function eliminarAuto(idAuto) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el vehículo con ID #${idAuto}?`)) return;
+
+    try {
+        const res = await fetch(`/api/inventario/${idAuto}`, {
+            method: 'DELETE'
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error || 'No se pudo eliminar el vehículo.');
+        }
+
+        await cargarInventario();
+        alert('Vehículo eliminado con éxito.');
+    } catch (err) {
+        console.error('Error eliminando vehículo:', err);
+        alert('Error al eliminar: ' + err.message + '\n(Nota: Si este auto tiene compras o ventas asociadas en la base de datos, no podrá ser eliminado por integridad referencial).');
+    }
+}
+
+// --------------------------------------------------------------------------
+// LIMPIAR FORMULARIO MODAL
+// --------------------------------------------------------------------------
+function limpiarFormularioModal() {
+    autoEnEdicion = null;
+    const ids = ['add-id', 'add-marca', 'add-modelo', 'add-anio', 'add-precio', 'add-costo', 'add-fecha', 'add-placa', 'add-descripcion'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    const elEstado = document.getElementById('add-estado');
+    if (elEstado) elEstado.value = 'Disponible';
+
+    const btnGuardar = document.getElementById('btn-guardar-auto');
+    if (btnGuardar) btnGuardar.innerText = 'Guardar Vehículo';
+
+    const label = document.getElementById('modalAgregarAutoLabel');
+    if (label) {
+        label.innerHTML = '<i class="bi bi-car-front text-neon-green me-2"></i>Agregar Nuevo Vehículo';
+    }
+}
+
 window.abrirModalEditar = abrirModalEditar;
+window.eliminarAuto = eliminarAuto;
 
-
-
-
-// --- REPORTE DE VENTAS ---
+// --------------------------------------------------------------------------
+// REPORTE DE VENTAS Y EXPORTACIÓN A CSV / EXCEL
+// --------------------------------------------------------------------------
 let datosReporteActual = [];
 
 function calcularDatosReporte() {
     const reporteAgrupado = {};
-    const autosVendidos = autosData.filter(auto => auto.Estado === 'Vendido');
+    const autosVendidos = autosData.filter(auto => (auto.Estado || '').trim().toLowerCase() === 'vendido');
 
     autosVendidos.forEach(auto => {
-        const modeloCompleto = `${auto.Marca} ${auto.Modelo}`;
-        if (!reporteAgrupado[modeloCompleto]) {
-            reporteAgrupado[modeloCompleto] = {
-                marca: auto.Marca || "N/A",
-                modelo: auto.Modelo || "N/A",
+        const clave = `${auto.Marca || 'N/A'} ${auto.Modelo || 'N/A'}`;
+        if (!reporteAgrupado[clave]) {
+            reporteAgrupado[clave] = {
+                marca: auto.Marca || 'N/A',
+                modelo: auto.Modelo || 'N/A',
                 unidadesVendidas: 0,
-                precio: parseFloat(auto.Precio || 0)
+                precioMax: parseFloat(auto.Precio || 0)
             };
         }
-        reporteAgrupado[modeloCompleto].unidadesVendidas++;
-        if (parseFloat(auto.Precio || 0) > reporteAgrupado[modeloCompleto].precio) {
-            reporteAgrupado[modeloCompleto].precio = parseFloat(auto.Precio || 0);
+        reporteAgrupado[clave].unidadesVendidas++;
+        const p = parseFloat(auto.Precio || 0);
+        if (p > reporteAgrupado[clave].precioMax) {
+            reporteAgrupado[clave].precioMax = p;
         }
     });
 
     datosReporteActual = Object.values(reporteAgrupado);
-    datosReporteActual.sort((a, b) => b.precio - a.precio);
+    datosReporteActual.sort((a, b) => b.precioMax - a.precioMax);
 }
 
-// 1. Mostrar la pestaÃ±a
 function generarReporte() {
     calcularDatosReporte();
 
     const tbody = document.getElementById('cuerpo-tabla-reporte');
-    if(tbody) {
-        tbody.innerHTML = ''; 
-        datosReporteActual.forEach(item => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.marca}</td>
-                    <td>${item.modelo}</td>
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (datosReporteActual.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay registros de vehículos vendidos para generar reporte.</td></tr>';
+        } else {
+            datosReporteActual.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-white">${item.marca}</td>
+                    <td class="text-white">${item.modelo}</td>
                     <td class="text-center text-info fw-bold">${item.unidadesVendidas}</td>
-                    <td class="text-success">$${item.precio.toLocaleString()}</td>
-                </tr>
-            `;
-        });
+                    <td class="text-success fw-bold">C$${item.precioMax.toLocaleString('en-US')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     }
 
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalReporte'));
-    modal.show();
+    const modalReporteEl = document.getElementById('modalReporte');
+    if (modalReporteEl) {
+        const modalReporte = bootstrap.Modal.getOrCreateInstance(modalReporteEl);
+        modalReporte.show();
+    }
 }
 
-// 2. Descargar el Excel
 function descargarReporteExcel() {
-    if (datosReporteActual.length === 0) {
-        calcularDatosReporte();
-    }
+    calcularDatosReporte();
 
     if (datosReporteActual.length === 0) {
-        alert("No hay ventas registradas para exportar.");
+        alert('No hay datos de ventas disponibles para exportar.');
         return;
     }
 
-    let csvContent = "ï»¿Marca,Modelo,Unidades Vendidas,Precio Maximo\n";
+    let csvContent = '\uFEFFMarca,Modelo,Unidades Vendidas,Precio Máximo (C$)\n';
     datosReporteActual.forEach(item => {
-        csvContent += `${item.marca},${item.modelo},${item.unidadesVendidas},${item.precio}\n`;
+        csvContent += `"${item.marca}","${item.modelo}",${item.unidadesVendidas},${item.precioMax}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "reporte_ventas.csv");
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_inventario_ventas_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -295,21 +551,3 @@ function descargarReporteExcel() {
 
 window.generarReporte = generarReporte;
 window.descargarReporteExcel = descargarReporteExcel;
-
-
-function actualizarKPIsPrincipales(data) {
-    let totalAutos = data.length;
-    let valor = data.reduce((sum, a) => sum + (parseFloat(a.Precio) || 0), 0);
-    let disp = data.filter(a => a.Estado === 'Disponible').length;
-
-    let e1 = document.getElementById('kpi-main-vehiculos');
-    if(e1) e1.innerText = totalAutos;
-    
-    let e2 = document.getElementById('kpi-main-valor');
-    if(e2) e2.innerText = '$' + valor.toFixed(2);
-    
-    let e3 = document.getElementById('kpi-main-vendidos');
-    if(e3) e3.innerText = disp;
-}
-
-

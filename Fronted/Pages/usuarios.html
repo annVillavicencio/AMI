@@ -28,19 +28,19 @@
         .table-dark-custom th { font-weight: 600; color: #EFF0EB; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
         .table-dark-custom td { padding: 1rem 0.5rem; vertical-align: middle; border-bottom: none; }
         
-        /* Elementos vacÃ­os de la tabla (las barritas grises del diseÃ±o) */
+        /* Elementos vacíos de la tabla (las barritas grises del diseño) */
         .placeholder-line { display: inline-block; width: 60%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; }
         
-       /* MenÃº lateral */
+       /* Menú lateral */
         .sidebar-link { color: #EFF0EB; transition: 0.2s; }
         .sidebar-link:hover { background-color: rgba(16, 18, 24); }
        .sidebar-active { background-color: #FFD4F8; color: #0B1009 !important; font-weight: bold; }
         
-        /* Enlaces de acciones rÃ¡pidas */
+        /* Enlaces de acciones rápidas */
         .action-link { text-decoration: none; color: #EFF0EB; transition: 0.2s; }
         .action-link:hover { color: #DBFF99; }
         
-        /* PaginaciÃ³n */
+        /* Paginación */
         .page-btn { background-color: #101218; border: 1px solid rgba(16, 18, 24); color: #EFF0EB; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer;}
         .page-btn.active { background-color: #DBFF99; color: #101218; border-color: #DBFF99; font-weight: bold; }
          .page-btn.active {
@@ -222,7 +222,7 @@
             --bg-sidebar: #0B0C12;
             --bg-input: #161722;
             
-            /* Rosa bajo sÃ³lido para botones activos */
+            /* Rosa bajo sólido para botones activos */
             --pink-soft: #E58FE5;
             --pink-soft-glow: rgba(229, 143, 229, 0.25);
             
@@ -271,7 +271,7 @@
                     <i class="bi bi-calculator me-2"></i> Costos
                 </a>
                 <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
-                    <i class="bi bi-bar-chart me-2"></i> AnÃ¡lisis
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
                 </a>
                 <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2 border-0">
                     <i class="bi bi-person-gear me-2"></i> Usuarios
@@ -300,7 +300,7 @@
                         <div class="dropdown">
                             <div class="d-flex align-items-center cursor-pointer text-white" data-bs-toggle="dropdown">
                                 <img src="../Assets/User.jpg" alt="Usuario" class="rounded-circle me-2" style="width: 35px; height: 35px; object-fit: cover;">
-                                <span class="fw-bold small">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                                <span class="fw-bold small" id="nombre-usuario">Usuario <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
                             </div>
                         </div>
                     </div>
@@ -324,7 +324,7 @@
                             </div>
                             <div>
                                 <p class="text-secondary small mb-0">Total de usuarios</p>
-                                <h3 class="text-white fw-bold mb-0">__</h3>
+                                <h3 id="kpi-total-usuarios" class="text-white fw-bold mb-0">--</h3>
                             </div>
                         </div>
                     </div>
@@ -335,7 +335,7 @@
                             </div>
                             <div>
                                 <p class="text-secondary small mb-0">Usuarios activos</p>
-                                <h3 class="text-white fw-bold mb-0">__</h3>
+                                <h3 id="kpi-activos-usuarios" class="text-white fw-bold mb-0">--</h3>
                             </div>
                         </div>
                     </div>
@@ -346,7 +346,7 @@
                             </div>
                             <div>
                                 <p class="text-secondary small mb-0">Usuarios inactivos</p>
-                                <h3 class="text-white fw-bold mb-0">__</h3>
+                                <h3 id="kpi-inactivos-usuarios" class="text-white fw-bold mb-0">--</h3>
                             </div>
                         </div>
                     </div>
@@ -356,16 +356,12 @@
                     <div class="d-flex gap-3 flex-grow-1" style="max-width: 600px;">
                         <div class="input-icon-wrapper flex-grow-1">
                             <i class="bi bi-search"></i>
-                            <input type="text" class="form-control" placeholder="Buscar usuario...">
+                            <input type="text" id="input-busqueda-usuario" class="form-control" placeholder="Buscar por nombre, correo, rol o ID...">
                         </div>
-                        <select class="filter-select w-auto">
-                            <option>Todos los roles</option>
-                             <option>Super administrador</option>
-                            <option>Administrador</option>
-                            <option>Usuario estandar</option>
-                            <option>Usuario de revision</option>
-                        </select>
-                        <select class="filter-select w-auto">
+                        <select id="filtro-rol-usuario" class="filter-select w-auto">
+        <option value="Todos">Todos los roles</option>
+    </select>
+    <select id="filtro-estado-usuario" class="filter-select w-auto">
                             <option>Todos los estados</option>
                             <option>Activo</option>
                             <option>Inactivo</option>
@@ -384,41 +380,20 @@
                                     <th>ID</th>
                                     <th>Nombre</th>
                                     <th>Apellido</th>
-                                    <th>Correo electrÃ³nico</th>
+                                    <th>Correo electrónico</th>
                                     <th>Rol</th>
-                                    <th>Fecha de creaciÃ³n</th>
+                                    <th>Fecha de creación</th>
                                     <th>Estado</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-secondary"></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td class="text-secondary"></td>
-                                    <td><span class="role-badge role-super"><i class="bi bi-award"></i> </span></td>
-                                    <td class="text-secondary"></td>
-                                    <td><span class="status-badge status-active"><span class="status-dot dot-active"></span> Activo</span></td>
-                                   <td class="text-center">
-                                        <div class="dropdown">
-                                            <button class="btn btn-link text-subhead p-0 border-0" type="button" data-bs-toggle="dropdown">
-                                                <i class="bi bi-three-dots-vertical fs-6"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-dark">
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil-square me-2" style="color: var(--neon-purple);"></i> Editar</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Eliminar</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody id="usuarios-table-body"><tr><td colspan="8" class="text-center py-4 text-muted">Cargando usuarios...</td></tr></tbody>
                         </table>
                     </div>
                     
-                    <!-- PaginaciÃ³n -->
+                    <!-- Paginación -->
                     <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-25">
-                        <span class="text-secondary small">Mostrando_ a _ de __ usuarios</span>
+                        <span id="contador-usuarios" class="text-secondary small">Mostrando 0 de 0 usuarios</span>
                         <div class="d-flex gap-2">
                             <a href="#" class="page-btn"><i class="bi bi-chevron-left"></i></a>
                             <a href="#" class="page-btn active" style="background-color: var(--pink-soft); border-color: var(--pink-soft); color: #07060B;">1</a>
@@ -433,58 +408,61 @@
     </div>
       <div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content dark-card text-white border-secondary border-opacity-25">
+            <div class="modal-content card-custom text-white border-secondary border-opacity-25" style="background-color: #101218;">
                 <div class="modal-header border-bottom border-secondary border-opacity-25">
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-megaphone me-2" style="color: var(--pink-soft);"></i> Nuevo Usuario
+                    <h5 class="modal-title fw-bold" id="modalUsuarioLabel">
+                        <i class="bi bi-person-plus text-neon-green me-2"></i> Nuevo Usuario
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="formNuevoUsuario">
-                        <div class="mb-3">
-                            <label class="form-label small text-subhead">Nombre del usuario</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Nombre" required>
-                        </div>
-                         <div class="mb-3">
-                            <label class="form-label small text-subhead">Apellido del usuario</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Apellido" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-subhead">Correo Electronico</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="xx@Ami.com".." required>
-                        </div>
-                        <div class="col-6">
-                                <label class="form-label small text-subhead">Rol</label>
-                                <select class="form-select form-control-dark text-white">
-                                    <option value="Programada">Super administrador</option>
-                                    <option value="Activa">Administrador</option>
-                                    <option value="Finalizada">Usuario estandar</option>
-                                    <option value="Finalizada">Usuario de revision</option>
+                    <form id="formUsuario">
+                        <input type="hidden" id="usuario-id" value="">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Nombre *</label>
+                                <input type="text" id="usuario-nombre" class="form-control form-control-dark" placeholder="Ej. Roberto" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Apellido *</label>
+                                <input type="text" id="usuario-apellido" class="form-control form-control-dark" placeholder="Ej. Gómez" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">Correo Electrónico *</label>
+                                <input type="email" id="usuario-correo" class="form-control form-control-dark" placeholder="nombre@ami.com" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">Contraseña *</label>
+                                <input type="password" id="usuario-contrasena" class="form-control form-control-dark" placeholder="Dejar en blanco para conservar al editar">
+                                <small class="text-muted" id="ayuda-contrasena" style="font-size: 0.75rem;">Para nuevo usuario es obligatoria.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Rol *</label>
+                                <select id="usuario-rol" class="form-select form-control-dark" required>
+                                    <option value="" selected disabled>Seleccione un rol</option>
                                 </select>
                             </div>
-                        <div class="col-6">
-                                <label class="form-label small text-subhead">Fecha Ingreso</label>
-                                <input type="date" class="form-control form-control-dark" required>
-                        </div>
-                        <div class="col-6">
-                                <label class="form-label small text-subhead">Estado</label>
-                                <select class="form-select form-control-dark text-white">
-                                    <option value="Programada">Activo</option>
-                                    <option value="Activa">Inactivo</option>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Estado</label>
+                                <select id="usuario-estado" class="form-select form-control-dark">
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
                                 </select>
+                            </div>
                         </div>
-                       
                     </form>
                 </div>
                 <div class="modal-footer border-top border-secondary border-opacity-25">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 small" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" form="formNuevaCampana" class="btn btn-purple rounded-pill px-4 small fw-semibold">Guardar Usuario</button>
+                    <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btn-guardar-usuario" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Usuario</button>
                 </div>
             </div>
         </div>
     </div>
+    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../JS/auth.js"></script>
+    <script src="../JS/usuarios.js?v=2"></script>
 </body>
 </html>
