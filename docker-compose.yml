@@ -18,8 +18,8 @@ services:
       dockerfile: Dockerfile
     container_name: ami_backend
     restart: always
-    depends_on:
-      - sqlserver
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"
     environment:
@@ -31,6 +31,5 @@ services:
       - DB_PASSWORD=Password123!
       - DB_WINDOWS_AUTH=false
     command: sh -c "node initDb.js && node server.js"
-
 volumes:
   mssql_data:
