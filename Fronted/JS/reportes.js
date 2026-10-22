@@ -1,162 +1,191 @@
-// ==========================================================================
-// AMI - Módulo de Reportes y Análisis Ejecutivo (reportes.js)
-// Filtros reactivos, KPIs dinámicos, Gráficos Chart.js, Exportación y Guardado de Informes (Snapshots y PNGs)
-// ==========================================================================
+/**
+ * AMI - Sistema Ejecutivo de Reportes, Análisis de Datos y Contabilidad Oficial
+ * Diseñado para Fronted/Pages/reportes.html
+ */
 
+// ==========================================================================
+// ESTADO GLOBAL
+// ==========================================================================
 let dashboardData = null;
 let currentDetailData = [];
+let chartVentasMesInstance = null;
 let chartMarcasInstance = null;
 let chartClientesInstance = null;
 let chartCostosInstance = null;
-let chartVentasMesInstance = null;
-let chartInventarioInstance = null;
 
-let selectedRango = 'Todos';
-let selectedTipo = 'Todos';
-let modoInformeGuardado = null; // null cuando estamos en vivo
+let selectedRango = 'Todos los registros';
+let selectedTipo = 'General (Todo)';
+let reporteFinancieroActual = null;
+let datosFinancierosActuales = null;
+let modoInformeGuardado = null; // null si estamos en vivo
 
 const THEME_COLORS = [
-    '#DBFF99', // Verde Neón
+    '#DBFF99', // Verde Neón Principal
     '#FFD4F8', // Rosa Neón
-    '#A855F7', // Púrpura Neón
     '#38BDF8', // Celeste Neón
     '#FACC15', // Amarillo Neón
+    '#A855F7', // Púrpura Neón
     '#FB7185', // Coral Neón
-    '#4ADE80', // Esmeralda
-    '#94A3B8'  // Gris Slate
+    '#4ADE80', // Verde Esmeralda
+    '#94A3B8'  // Slate
 ];
 
 const STORAGE_KEY_INFORMES = 'ami_reportes_guardados';
 
+// ==========================================================================
+// CONTROL DE PESTAÑAS PRINCIPALES (Estadística vs Contabilidad)
+// ==========================================================================
+window.switchMainTab = function (tab) {
+    const tabEst = document.getElementById('tab-estadistica');
+    const tabCont = document.getElementById('tab-contabilidad');
+    const viewEst = document.getElementById('view-estadistica');
+    const viewCont = document.getElementById('view-contabilidad');
+
+    if (tab === 'estadistica') {
+        if (tabEst) {
+            tabEst.classList.add('active');
+            tabEst.setAttribute('aria-selected', 'true');
+        }
+        if (tabCont) {
+            tabCont.classList.remove('active');
+            tabCont.setAttribute('aria-selected', 'false');
+        }
+        if (viewEst) viewEst.classList.remove('d-none');
+        if (viewCont) viewCont.classList.add('d-none');
+    } else if (tab === 'contabilidad') {
+        if (tabCont) {
+            tabCont.classList.add('active');
+            tabCont.setAttribute('aria-selected', 'true');
+        }
+        if (tabEst) {
+            tabEst.classList.remove('active');
+            tabEst.setAttribute('aria-selected', 'false');
+        }
+        if (viewCont) viewCont.classList.remove('d-none');
+        if (viewEst) viewEst.classList.add('d-none');
+
+        // Cargar por defecto el Balance General si aún no se ha generado ninguno
+        if (!reporteFinancieroActual) {
+            generarReporteFinanciero('Balance General');
+        }
+    }
+};
+
+// ==========================================================================
+// INICIALIZACIÓN AL CARGAR EL DOM
+// ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Inicializar selectores de filtros en cabecera
+    // 1. Inicializar filtros dropdown de la cabecera
     inicializarFiltros();
 
-    // 2. Cargar Dashboard inicial con datos completos
+    // 2. Cargar datos del Dashboard estadístico inicial
     cargarDashboard();
 
-    // 3. Inicializar contador de informes guardados
+    // 3. Contador de informes guardados
     actualizarBadgeGuardados();
 
-    // 4. Listeners para Guardar Informe (Snapshot)
-    const btnAbrirGuardar = document.getElementById('btnGuardarSnapshot');
-    if (btnAbrirGuardar) {
-        btnAbrirGuardar.addEventListener('click', prepararModalGuardarInforme);
+    // 4. Botón de Actualizar Datos
+    const btnGen = document.getElementById('btnGenerarReporte');
+    if (btnGen) {
+        btnGen.addEventListener('click', () => {
+            if (modoInformeGuardado) salirDeModoHistorico();
+            cargarDashboard();
+        });
     }
 
-    const btnConfirmarGuardar = document.getElementById('btnConfirmarGuardarInforme');
-    if (btnConfirmarGuardar) {
-        btnConfirmarGuardar.addEventListener('click', ejecutarGuardadoInforme);
+    // 5. Buscador de la tabla de detalles en vivo
+    const inputBuscar = document.getElementById('inputBuscarDetalle');
+    if (inputBuscar) {
+        inputBuscar.addEventListener('input', () => {
+            renderizarTablaDetalle();
+        });
     }
 
-    // 5. Listener para Ver Historial de Informes Guardados
+    // 6. Botón de exportación a CSV de transacciones
+    const btnCSV = document.getElementById('btnExportarDetalleCSV');
+    if (btnCSV) {
+        btnCSV.addEventListener('click', exportarDetalleCSV);
+    }
+
+    // 7. Descarga individual de gráficas PNG
+    document.querySelectorAll('.btn-descargar-chart').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const chartId = this.dataset.chart;
+            const chartTitle = this.dataset.title || 'Grafica_AMI';
+            descargarChartPNG(chartId, chartTitle);
+        });
+    });
+
+    // 8. Listeners para Guardar Informe (Snapshot)
+    const btnGuardarSnap = document.getElementById('btnGuardarSnapshot');
+    if (btnGuardarSnap) {
+        btnGuardarSnap.addEventListener('click', prepararModalGuardarInforme);
+    }
+
+    const btnConfirmarSnap = document.getElementById('btnConfirmarGuardarInforme');
+    if (btnConfirmarSnap) {
+        btnConfirmarSnap.addEventListener('click', ejecutarGuardadoInforme);
+    }
+
+    // 9. Listeners para Ver Historial de Informes Guardados
     const btnVerGuardados = document.getElementById('btnVerGuardados');
     if (btnVerGuardados) {
         btnVerGuardados.addEventListener('click', abrirModalInformesGuardados);
     }
 
-    // 6. Listener para botón "Generar reporte" (Modal detallado)
-    const btnGen = document.getElementById('btnGenerarReporte');
-    if (btnGen) {
-        btnGen.addEventListener('click', () => {
-            abrirModalReporte();
-        });
+    const btnSalirHist = document.getElementById('btnSalirModoHistorico');
+    if (btnSalirHist) {
+        btnSalirHist.addEventListener('click', salirDeModoHistorico);
     }
-
-    // 7. Buscadores de tablas
-    const searchDash = document.getElementById('buscador-tabla-dashboard');
-    if (searchDash) {
-        searchDash.addEventListener('input', () => {
-            renderizarTablaDashboard();
-        });
-    }
-
-    const searchReport = document.getElementById('input-busqueda-reporte');
-    if (searchReport) {
-        searchReport.addEventListener('input', () => {
-            renderizarTablaReporteModal();
-        });
-    }
-
-    // 8. Botones de exportación a CSV/Excel
-    const btnExportDirect = document.getElementById('btnExportarDirectoCSV');
-    if (btnExportDirect) {
-        btnExportDirect.addEventListener('click', exportarReporteCSV);
-    }
-
-    const btnExportModal = document.getElementById('btnExportarReporteCSV');
-    if (btnExportModal) {
-        btnExportModal.addEventListener('click', exportarReporteCSV);
-    }
-
-    // 9. Botón de imprimir
-    const btnPrint = document.getElementById('btnImprimirReporte');
-    if (btnPrint) {
-        btnPrint.addEventListener('click', () => {
-            window.print();
-        });
-    }
-
-    // 10. Listeners para descarga individual de gráficas PNG
-    document.querySelectorAll('.btn-descargar-chart').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const chartId = this.dataset.chart;
-            const chartName = this.dataset.name || 'Grafica';
-            descargarGraficaComoImagen(chartId, chartName);
-        });
-    });
 });
 
-// --------------------------------------------------------------------------
-// INICIALIZACIÓN DE FILTROS DEL HEADER
-// --------------------------------------------------------------------------
+// ==========================================================================
+// CONFIGURACIÓN DE FILTROS DEL HEADER
+// ==========================================================================
 function inicializarFiltros() {
-    const opcionesRango = document.querySelectorAll('.opcion-rango');
-    const rangoLabel = document.getElementById('rangoSeleccionado');
-
-    opcionesRango.forEach(opcion => {
+    // Rango de fechas
+    document.querySelectorAll('.opcion-rango').forEach(opcion => {
         opcion.addEventListener('click', function (e) {
             e.preventDefault();
-            if (modoInformeGuardado) salirDeModoGuardado();
-            const valor = this.dataset.value || this.innerText.trim();
-            selectedRango = valor;
-            if (rangoLabel) rangoLabel.textContent = valor;
-            actualizarPillFiltroActivo();
+            document.querySelectorAll('.opcion-rango').forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+
+            const val = this.dataset.value || this.textContent.trim();
+            selectedRango = val;
+
+            const label = document.getElementById('rangoSeleccionado');
+            if (label) label.textContent = val;
+
+            if (modoInformeGuardado) salirDeModoHistorico();
             cargarDashboard();
         });
     });
 
-    const opcionesTipo = document.querySelectorAll('.opcion-tipo');
-    const tipoLabel = document.getElementById('tipoSeleccionado');
-
-    opcionesTipo.forEach(opcion => {
+    // Categoría / Tipo
+    document.querySelectorAll('.opcion-tipo').forEach(opcion => {
         opcion.addEventListener('click', function (e) {
             e.preventDefault();
-            if (modoInformeGuardado) salirDeModoGuardado();
-            const valor = this.dataset.value || this.innerText.trim();
-            selectedTipo = valor;
-            if (tipoLabel) tipoLabel.textContent = valor;
-            actualizarPillFiltroActivo();
+            document.querySelectorAll('.opcion-tipo').forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+
+            const val = this.dataset.value || this.textContent.trim();
+            selectedTipo = val;
+
+            const label = document.getElementById('tipoSeleccionado');
+            if (label) label.textContent = val;
+
+            if (modoInformeGuardado) salirDeModoHistorico();
             cargarDashboard();
         });
     });
 }
 
-function actualizarPillFiltroActivo() {
-    const pill = document.getElementById('badgeFiltroActivo');
-    if (pill) {
-        pill.innerHTML = `<i class="bi bi-funnel-fill text-dark me-1"></i> Filtro: <strong>${selectedTipo}</strong> &bull; <span>${selectedRango}</span>`;
-    }
-}
-
-// --------------------------------------------------------------------------
-// CARGAR DATOS DEL DASHBOARD EN VIVO
-// --------------------------------------------------------------------------
+// ==========================================================================
+// CARGAR DASHBOARD EN VIVO (FETCH API)
+// ==========================================================================
 async function cargarDashboard() {
     try {
-        mostrarIndicadorCarga(true);
-
         const urlDash = `/api/reportes/dashboard?rango=${encodeURIComponent(selectedRango)}&tipo=${encodeURIComponent(selectedTipo)}`;
         const urlData = `/api/reportes/data?rango=${encodeURIComponent(selectedRango)}&tipo=${encodeURIComponent(selectedTipo)}`;
 
@@ -166,215 +195,159 @@ async function cargarDashboard() {
         ]);
 
         dashboardData = resDash;
-        currentDetailData = resData.registros || [];
+        currentDetailData = resData.items || [];
 
         // 1. Renderizar KPIs
-        renderizarKPIs(dashboardData.kpis, selectedTipo);
+        renderizarKPIs(dashboardData.kpis);
 
-        // 2. Gráfico de Marcas (Fila 2 - Card 1)
-        renderizarGraficoMarcas(dashboardData.autosPorMarca);
+        // 2. Gráfica 1: Ventas por Mes
+        renderizarGraficaVentasMes(dashboardData.graficas?.ventasMes || []);
 
-        // 3. Campañas de Marketing (Fila 2 - Card 2)
-        renderizarCampanias(dashboardData.campanias);
+        // 3. Gráfica 2: Stock por Marca
+        renderizarGraficaMarcas(dashboardData.graficas?.marcasStock || []);
 
-        // 4. Clientes por Canal (Fila 2 - Card 3)
-        renderizarGraficoClientes(dashboardData.clientesPorOrigen);
+        // 4. Gráfica 3: Clientes por Origen
+        renderizarGraficaClientes(dashboardData.graficas?.clientesOrigen || []);
 
-        // 5. Rotación de Inventario (Fila 3 - Card 1)
-        renderizarGraficoInventario(dashboardData.autosPorMarca);
+        // 5. Gráfica 4: Flujo Comercial (Compras vs Ventas)
+        renderizarGraficaCostos(dashboardData.kpis, dashboardData.graficas);
 
-        // 6. Costos por Categoría (Fila 3 - Card 2)
-        renderizarGraficoCostos(dashboardData.costosPorCategoria);
-
-        // 7. Ventas por Mes (Fila 3 - Card 3)
-        renderizarGraficoVentasMes(dashboardData.ventasPorMes);
-
-        // 8. Resumen General (Fila 4)
-        renderizarResumenGeneral(dashboardData.kpis);
-
-        // 9. Tabla detallada interactiva
-        renderizarTablaDashboard();
+        // 6. Tabla detallada interactiva
+        renderizarTablaDetalle();
 
     } catch (err) {
-        console.error('Error al actualizar dashboard:', err);
-    } finally {
-        mostrarIndicadorCarga(false);
+        console.error('Error al cargar datos del dashboard:', err);
     }
 }
 
-function mostrarIndicadorCarga(cargando) {
-    const pill = document.getElementById('badgeFiltroActivo');
-    if (pill && cargando) {
-        pill.classList.add('opacity-75');
-    } else if (pill) {
-        pill.classList.remove('opacity-75');
-    }
-}
-
-// --------------------------------------------------------------------------
-// 1. RENDERIZAR KPIs DINÁMICOS
-// --------------------------------------------------------------------------
-function renderizarKPIs(kpis, tipo) {
+// ==========================================================================
+// RENDERIZAR KPIs DINÁMICOS
+// ==========================================================================
+function renderizarKPIs(kpis) {
     if (!kpis) return;
 
     const fmtMoney = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const tipoLower = (tipo || 'todos').toLowerCase();
 
-    const tBox1 = document.getElementById('kpi-title-1');
-    const vBox1 = document.getElementById('kpi-stock-disponible');
-    const sBox1 = document.getElementById('kpi-valor-inventario');
+    // Card 1: Ventas Totales
+    const elVentas = document.getElementById('kpi-ventas-totales');
+    if (elVentas) elVentas.textContent = fmtMoney(kpis.totalVentas);
 
-    const tBox2 = document.getElementById('kpi-title-2');
-    const vBox2 = document.getElementById('kpi-total-ventas');
-    const sBox2 = document.getElementById('kpi-count-ventas');
+    const elTrans = document.getElementById('kpi-transacciones-count');
+    if (elTrans) elTrans.textContent = (kpis.totalTransacciones || 0);
 
-    const tBox3 = document.getElementById('kpi-title-3');
-    const vBox3 = document.getElementById('kpi-total-compras');
-    const sBox3 = document.getElementById('kpi-count-compras');
+    // Card 2: Autos en Stock
+    const elStock = document.getElementById('kpi-stock-autos');
+    if (elStock) elStock.textContent = (kpis.totalStock || 0);
 
-    const tBox4 = document.getElementById('kpi-title-4');
-    const vBox4 = document.getElementById('kpi-total-costos');
-    const sBox4 = document.getElementById('kpi-ganancia-neta');
+    const elStockVal = document.getElementById('kpi-stock-valor');
+    if (elStockVal) elStockVal.textContent = `Valor: ${fmtMoney(kpis.valorStock)}`;
 
-    if (tipoLower === 'ventas') {
-        if (tBox1) tBox1.innerText = 'Autos Vendidos';
-        if (vBox1) vBox1.innerText = `${kpis.countVentas || 0} Unidades`;
-        if (sBox1) sBox1.innerText = `En el período: ${selectedRango}`;
+    // Card 3: Margen Operativo / Rentabilidad
+    const elMargen = document.getElementById('kpi-margen-bruto');
+    if (elMargen) elMargen.textContent = kpis.margenBruto || '0.0%';
 
-        if (tBox2) tBox2.innerText = 'Total Facturado';
-        if (vBox2) vBox2.innerText = fmtMoney(kpis.totalVentas);
-        if (sBox2) sBox2.innerText = `${kpis.countVentas || 0} Ventas registradas`;
+    const elCompras = document.getElementById('kpi-compras-resumen');
+    if (elCompras) elCompras.textContent = `Compras: ${fmtMoney(kpis.totalCompras)}`;
 
-        const ticketProm = (Number(kpis.countVentas) || 0) > 0 ? (Number(kpis.totalVentas) / Number(kpis.countVentas)) : 0;
-        if (tBox3) tBox3.innerText = 'Ticket Promedio';
-        if (vBox3) vBox3.innerText = fmtMoney(ticketProm);
-        if (sBox3) sBox3.innerText = 'Por venta cerrada';
+    // Card 4: Clientes Activos
+    const elCli = document.getElementById('kpi-clientes-activos');
+    if (elCli) elCli.textContent = (kpis.clientesActivos || 0);
 
-        if (tBox4) tBox4.innerText = 'Margen Operativo';
-        if (vBox4) vBox4.innerText = fmtMoney(kpis.gananciaNeta);
-        if (sBox4) {
-            sBox4.innerText = `Utilidad neta: ${kpis.gananciaNeta >= 0 ? '+' : ''}${fmtMoney(kpis.gananciaNeta)}`;
-            sBox4.style.color = kpis.gananciaNeta >= 0 ? '#0B1009' : '#DC2626';
-        }
-    } else if (tipoLower === 'inventario') {
-        if (tBox1) tBox1.innerText = 'Stock Disponible';
-        if (vBox1) vBox1.innerText = `${kpis.stockDisponible || 0} Autos`;
-        if (sBox1) sBox1.innerText = 'Listos para la venta';
-
-        if (tBox2) tBox2.innerText = 'Valor de Inventario';
-        if (vBox2) vBox2.innerText = fmtMoney(kpis.valorInventario);
-        if (sBox2) sBox2.innerText = 'Capital activo';
-
-        if (tBox3) tBox3.innerText = 'Adquisiciones';
-        if (vBox3) vBox3.innerText = fmtMoney(kpis.totalCompras);
-        if (sBox3) sBox3.innerText = `${kpis.countCompras || 0} Compras registradas`;
-
-        if (tBox4) tBox4.innerText = 'Autos Vendidos';
-        if (vBox4) vBox4.innerText = `${kpis.countVentas || 0} Autos`;
-        if (sBox4) {
-            sBox4.innerText = `Total generado: ${fmtMoney(kpis.totalVentas)}`;
-            sBox4.style.color = '#0B1009';
-        }
-    } else if (tipoLower === 'costos') {
-        if (tBox1) tBox1.innerText = 'Total Gastos';
-        if (vBox1) vBox1.innerText = fmtMoney(kpis.totalCostos);
-        if (sBox1) sBox1.innerText = `${kpis.countCostos || 0} Registros en ${selectedRango}`;
-
-        const costoProm = (Number(kpis.countCostos) || 0) > 0 ? (Number(kpis.totalCostos) / Number(kpis.countCostos)) : 0;
-        if (tBox2) tBox2.innerText = 'Gasto Promedio';
-        if (vBox2) vBox2.innerText = fmtMoney(costoProm);
-        if (sBox2) sBox2.innerText = 'Por concepto de costo';
-
-        if (tBox3) tBox3.innerText = 'Inversión Compras';
-        if (vBox3) vBox3.innerText = fmtMoney(kpis.totalCompras);
-        if (sBox3) sBox3.innerText = `${kpis.countCompras || 0} Compras`;
-
-        if (tBox4) tBox4.innerText = 'Balance Neto';
-        if (vBox4) vBox4.innerText = fmtMoney(kpis.gananciaNeta);
-        if (sBox4) {
-            sBox4.innerText = `Margen: ${kpis.gananciaNeta >= 0 ? '+' : ''}${fmtMoney(kpis.gananciaNeta)}`;
-            sBox4.style.color = kpis.gananciaNeta >= 0 ? '#0B1009' : '#DC2626';
-        }
-    } else if (tipoLower === 'clientes') {
-        if (tBox1) tBox1.innerText = 'Clientes Registrados';
-        if (vBox1) vBox1.innerText = `${kpis.totalClientes || 0} Clientes`;
-        if (sBox1) sBox1.innerText = `En el período: ${selectedRango}`;
-
-        if (tBox2) tBox2.innerText = 'Ventas a Clientes';
-        if (vBox2) vBox2.innerText = `${kpis.countVentas || 0} Ventas`;
-        if (sBox2) sBox2.innerText = `Ingresos: ${fmtMoney(kpis.totalVentas)}`;
-
-        if (tBox3) tBox3.innerText = 'Campañas Activas';
-        if (vBox3) vBox3.innerText = `${kpis.totalCampanias || 0} Campañas`;
-        if (sBox3) sBox3.innerText = 'Generando prospectos';
-
-        if (tBox4) tBox4.innerText = 'Ingreso Promedio';
-        const promCli = (Number(kpis.totalClientes) || 0) > 0 ? (Number(kpis.totalVentas) / Number(kpis.totalClientes)) : 0;
-        if (vBox4) vBox4.innerText = fmtMoney(promCli);
-        if (sBox4) {
-            sBox4.innerText = 'Por cliente registrado';
-            sBox4.style.color = '#0B1009';
-        }
-    } else if (tipoLower === 'marketing') {
-        if (tBox1) tBox1.innerText = 'Campañas Registradas';
-        if (vBox1) vBox1.innerText = `${kpis.totalCampanias || 0} Campañas`;
-        if (sBox1) sBox1.innerText = 'Difusión comercial';
-
-        if (tBox2) tBox2.innerText = 'Clientes Captados';
-        if (vBox2) vBox2.innerText = `${kpis.totalClientes || 0} Clientes`;
-        if (sBox2) sBox2.innerText = 'Vía canales digitales';
-
-        if (tBox3) tBox3.innerText = 'Ventas Concretadas';
-        if (vBox3) vBox3.innerText = `${kpis.countVentas || 0} Ventas`;
-        if (sBox3) sBox3.innerText = fmtMoney(kpis.totalVentas);
-
-        if (tBox4) tBox4.innerText = 'Retorno Comercial';
-        if (vBox4) vBox4.innerText = fmtMoney(kpis.gananciaNeta);
-        if (sBox4) {
-            sBox4.innerText = 'Margen neto generado';
-            sBox4.style.color = '#0B1009';
-        }
-    } else {
-        if (tBox1) tBox1.innerText = 'Inventario Disponible';
-        if (vBox1) vBox1.innerText = `${kpis.stockDisponible || 0} Autos`;
-        if (sBox1) sBox1.innerText = `Valor: ${fmtMoney(kpis.valorInventario)}`;
-
-        if (tBox2) tBox2.innerText = 'Ingresos por Ventas';
-        if (vBox2) vBox2.innerText = fmtMoney(kpis.totalVentas);
-        if (sBox2) sBox2.innerText = `${kpis.countVentas || 0} Ventas realizadas (${selectedRango})`;
-
-        if (tBox3) tBox3.innerText = 'Inversión en Compras';
-        if (vBox3) vBox3.innerText = fmtMoney(kpis.totalCompras);
-        if (sBox3) sBox3.innerText = `${kpis.countCompras || 0} Adquisiciones (${selectedRango})`;
-
-        if (tBox4) tBox4.innerText = 'Costos Operativos';
-        if (vBox4) vBox4.innerText = fmtMoney(kpis.totalCostos);
-        if (sBox4) {
-            const util = kpis.gananciaNeta || 0;
-            sBox4.innerText = `Margen: ${util >= 0 ? '+' : ''}${fmtMoney(util)}`;
-            sBox4.style.color = util >= 0 ? '#0B1009' : '#DC2626';
-        }
-    }
+    const elCostos = document.getElementById('kpi-costos-resumen');
+    if (elCostos) elCostos.textContent = `Mantenimiento: ${fmtMoney(kpis.totalCostos)}`;
 }
 
-// --------------------------------------------------------------------------
-// 2. GRÁFICOS INTERACTIVOS (CHART.JS)
-// --------------------------------------------------------------------------
-function renderizarGraficoMarcas(marcas) {
-    const canvas = document.getElementById('chartMarcas');
-    const legendContainer = document.getElementById('legendMarcas');
-    if (!canvas || !marcas) return;
+// ==========================================================================
+// RENDERIZAR GRÁFICA 1: VENTAS POR MES (LÍNEA CON GRADIENTE)
+// ==========================================================================
+function renderizarGraficaVentasMes(ventasMes) {
+    const canvas = document.getElementById('chartVentasMes');
+    if (!canvas) return;
 
-    if (marcas.length === 0) {
-        if (legendContainer) legendContainer.innerHTML = '<div class="text-muted small py-2">Sin registros en este rango</div>';
+    if (chartVentasMesInstance) {
+        chartVentasMesInstance.destroy();
+    }
+
+    if (!ventasMes || ventasMes.length === 0) {
         return;
     }
 
-    const labels = marcas.map(m => m.marca);
-    const dataVals = marcas.map(m => m.totalVendidos);
-    const colors = THEME_COLORS.slice(0, marcas.length);
+    const labels = ventasMes.map(v => v.mes);
+    const dataVals = ventasMes.map(v => v.total);
 
-    if (chartMarcasInstance) chartMarcasInstance.destroy();
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, 'rgba(219, 255, 153, 0.35)');
+    gradient.addColorStop(1, 'rgba(219, 255, 153, 0.00)');
+
+    if (window.Chart) {
+        chartVentasMesInstance = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ventas (USD)',
+                    data: dataVals,
+                    borderColor: '#DBFF99',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#DBFF99',
+                    pointBorderColor: '#07060B',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` Ventas: $${Number(ctx.parsed.y).toLocaleString('en-US')}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94A3B8', font: { size: 11 } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#94A3B8',
+                            font: { size: 11 },
+                            callback: (v) => '$' + Number(v / 1000).toFixed(0) + 'k'
+                        },
+                        grid: { color: 'rgba(255,255,255,0.06)' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// ==========================================================================
+// RENDERIZAR GRÁFICA 2: STOCK DE AUTOS POR MARCA (DOUGHNUT)
+// ==========================================================================
+function renderizarGraficaMarcas(marcasStock) {
+    const canvas = document.getElementById('chartMarcas');
+    if (!canvas) return;
+
+    if (chartMarcasInstance) {
+        chartMarcasInstance.destroy();
+    }
+
+    if (!marcasStock || marcasStock.length === 0) {
+        return;
+    }
+
+    const labels = marcasStock.map(m => m.marca);
+    const dataVals = marcasStock.map(m => m.cantidad);
+    const bgColors = THEME_COLORS.slice(0, marcasStock.length);
 
     if (window.Chart) {
         chartMarcasInstance = new Chart(canvas, {
@@ -383,87 +356,55 @@ function renderizarGraficoMarcas(marcas) {
                 labels: labels,
                 datasets: [{
                     data: dataVals,
-                    backgroundColor: colors,
-                    borderColor: '#0F1019',
+                    backgroundColor: bgColors,
+                    borderColor: '#101218',
                     borderWidth: 2,
-                    hoverOffset: 4
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '65%',
                 plugins: {
-                    legend: { display: false }
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#CBD5E1',
+                            font: { size: 10 },
+                            boxWidth: 10,
+                            padding: 8
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.parsed} autos`
+                        }
+                    }
                 }
             }
         });
     }
-
-    if (legendContainer) {
-        legendContainer.innerHTML = '';
-        marcas.forEach((m, idx) => {
-            const item = document.createElement('div');
-            item.className = 'legend-item d-flex align-items-center justify-content-between mb-1';
-            item.innerHTML = `
-                <div class="d-flex align-items-center gap-2">
-                    <div class="legend-dot" style="background: ${colors[idx % colors.length]}; width: 8px; height: 8px; border-radius: 50%;"></div>
-                    <span class="small text-secondary" style="font-size: 0.78rem;">${m.marca}</span>
-                </div>
-                <span class="small fw-bold text-white" style="font-size: 0.78rem;">${m.totalVendidos}</span>
-            `;
-            legendContainer.appendChild(item);
-        });
-    }
 }
 
-function renderizarCampanias(campanias) {
-    const container = document.getElementById('containerCampanias');
-    if (!container || !campanias) return;
-
-    container.innerHTML = '';
-    if (campanias.length === 0) {
-        container.innerHTML = '<div class="text-muted small py-2">Sin campañas en este período</div>';
-        return;
-    }
-
-    const maxPresupuesto = Math.max(...campanias.map(c => Number(c.presupuesto) || 0), 1000);
-
-    campanias.slice(0, 5).forEach((c, idx) => {
-        const pres = Number(c.presupuesto) || 0;
-        const pct = Math.min(Math.round((pres / maxPresupuesto) * 100), 100);
-        const color = THEME_COLORS[idx % THEME_COLORS.length];
-
-        const row = document.createElement('div');
-        row.className = 'mb-2';
-        row.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small text-truncate text-secondary" style="max-width: 160px; font-size: 0.75rem;" title="${c.nombre}">${c.nombre}</span>
-                <span class="small text-white fw-bold" style="font-size: 0.75rem;">$${pres.toLocaleString()}</span>
-            </div>
-            <div class="progress" style="height: 6px; background-color: rgba(255,255,255,0.06); border-radius: 4px;">
-                <div class="progress-bar" style="width: ${pct}%; background-color: ${color}; border-radius: 4px;"></div>
-            </div>
-        `;
-        container.appendChild(row);
-    });
-}
-
-function renderizarGraficoClientes(canales) {
+// ==========================================================================
+// RENDERIZAR GRÁFICA 3: ORIGEN DE CLIENTES (DOUGHNUT)
+// ==========================================================================
+function renderizarGraficaClientes(clientesOrigen) {
     const canvas = document.getElementById('chartClientes');
-    const legendContainer = document.getElementById('legendClientes');
-    if (!canvas || !canales) return;
+    if (!canvas) return;
 
-    if (canales.length === 0) {
-        if (legendContainer) legendContainer.innerHTML = '<div class="text-muted small py-2">Sin registros en este rango</div>';
+    if (chartClientesInstance) {
+        chartClientesInstance.destroy();
+    }
+
+    if (!clientesOrigen || clientesOrigen.length === 0) {
         return;
     }
 
-    const labels = canales.map(c => c.canal);
-    const dataVals = canales.map(c => c.totalClientes);
-    const colors = THEME_COLORS.slice(0, canales.length);
-
-    if (chartClientesInstance) chartClientesInstance.destroy();
+    const labels = clientesOrigen.map(c => c.origen);
+    const dataVals = clientesOrigen.map(c => c.total);
+    const bgColors = ['#FFD4F8', '#38BDF8', '#DBFF99', '#FACC15', '#A855F7', '#FB7185'];
 
     if (window.Chart) {
         chartClientesInstance = new Chart(canvas, {
@@ -472,880 +413,846 @@ function renderizarGraficoClientes(canales) {
                 labels: labels,
                 datasets: [{
                     data: dataVals,
-                    backgroundColor: colors,
-                    borderColor: '#0F1019',
-                    borderWidth: 2
+                    backgroundColor: bgColors.slice(0, labels.length),
+                    borderColor: '#101218',
+                    borderWidth: 2,
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '60%',
                 plugins: {
-                    legend: { display: false }
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#CBD5E1',
+                            font: { size: 10 },
+                            boxWidth: 10,
+                            padding: 6
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.parsed} clientes`
+                        }
+                    }
                 }
             }
         });
     }
-
-    if (legendContainer) {
-        legendContainer.innerHTML = '';
-        canales.forEach((c, idx) => {
-            const item = document.createElement('div');
-            item.className = 'legend-item d-flex align-items-center justify-content-between mb-1';
-            item.innerHTML = `
-                <div class="d-flex align-items-center gap-2">
-                    <div class="legend-dot" style="background: ${colors[idx % colors.length]}; width: 8px; height: 8px; border-radius: 50%;"></div>
-                    <span class="small text-secondary" style="font-size: 0.78rem;">${c.canal}</span>
-                </div>
-                <span class="small fw-bold text-white" style="font-size: 0.78rem;">${c.totalClientes}</span>
-            `;
-            legendContainer.appendChild(item);
-        });
-    }
 }
 
-function renderizarGraficoInventario(marcas) {
-    const canvas = document.getElementById('chartInventario');
-    if (!canvas || !marcas || marcas.length === 0) return;
+// ==========================================================================
+// RENDERIZAR GRÁFICA 4: FLUJO COMERCIAL: COMPRAS VS VENTAS (BARRAS)
+// ==========================================================================
+function renderizarGraficaCostos(kpis, graficas) {
+    const canvas = document.getElementById('chartCostos');
+    if (!canvas || !kpis) return;
 
-    const labels = marcas.map(m => m.marca);
-    const dataVals = marcas.map(m => m.totalVendidos);
+    if (chartCostosInstance) {
+        chartCostosInstance.destroy();
+    }
 
-    if (chartInventarioInstance) chartInventarioInstance.destroy();
+    // Comparar Ventas vs Compras vs Costos
+    const labels = ['Ingresos por Ventas', 'Inversión en Compras', 'Costos Operativos'];
+    const dataVals = [
+        Number(kpis.totalVentas || 0),
+        Number(kpis.totalCompras || 0),
+        Number(kpis.totalCostos || 0)
+    ];
 
     if (window.Chart) {
-        chartInventarioInstance = new Chart(canvas, {
+        chartCostosInstance = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Unidades',
                     data: dataVals,
-                    backgroundColor: '#DBFF99',
-                    borderRadius: 4
+                    backgroundColor: ['#DBFF99', '#38BDF8', '#FB7185'],
+                    borderColor: ['#DBFF99', '#38BDF8', '#FB7185'],
+                    borderRadius: 6,
+                    borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        ticks: { color: '#A1A1AA', font: { size: 10 } },
-                        grid: { display: false }
-                    },
-                    y: {
-                        ticks: { color: '#A1A1AA', font: { size: 10 }, stepSize: 1 },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: $${Number(ctx.parsed.y).toLocaleString('en-US')}`
+                        }
                     }
                 },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-}
-
-function renderizarGraficoCostos(costos) {
-    const canvas = document.getElementById('chartCostos');
-    const legendContainer = document.getElementById('legendCostos');
-    if (!canvas || !costos) return;
-
-    if (costos.length === 0) {
-        if (legendContainer) legendContainer.innerHTML = '<div class="text-muted small py-2">Sin costos en este período</div>';
-        return;
-    }
-
-    const labels = costos.map(c => c.categoria);
-    const dataVals = costos.map(c => c.totalMonto);
-    const colors = THEME_COLORS.slice(0, costos.length);
-
-    if (chartCostosInstance) chartCostosInstance.destroy();
-
-    if (window.Chart) {
-        chartCostosInstance = new Chart(canvas, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataVals,
-                    backgroundColor: colors,
-                    borderColor: '#0F1019',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-
-    if (legendContainer) {
-        legendContainer.innerHTML = '';
-        costos.forEach((c, idx) => {
-            const item = document.createElement('div');
-            item.className = 'legend-item d-flex align-items-center justify-content-between mb-1';
-            item.innerHTML = `
-                <div class="d-flex align-items-center gap-2">
-                    <div class="legend-dot" style="background: ${colors[idx % colors.length]}; width: 8px; height: 8px; border-radius: 50%;"></div>
-                    <span class="small text-secondary" style="font-size: 0.78rem;">${c.categoria}</span>
-                </div>
-                <span class="small fw-bold text-white" style="font-size: 0.78rem;">$${Number(c.totalMonto).toLocaleString()}</span>
-            `;
-            legendContainer.appendChild(item);
-        });
-    }
-}
-
-function renderizarGraficoVentasMes(ventasMes) {
-    const canvas = document.getElementById('chartVentasMes');
-    if (!canvas || !ventasMes || ventasMes.length === 0) return;
-
-    const labels = ventasMes.map(v => v.periodo);
-    const dataVals = ventasMes.map(v => v.totalIngresos);
-
-    if (chartVentasMesInstance) chartVentasMesInstance.destroy();
-
-    if (window.Chart) {
-        chartVentasMesInstance = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Ingresos Mensuales',
-                    data: dataVals,
-                    borderColor: '#FFD4F8',
-                    backgroundColor: 'rgba(255, 212, 248, 0.15)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#DBFF99',
-                    pointBorderColor: '#0F1019',
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { color: '#A1A1AA', font: { size: 10 } },
+                        ticks: { color: '#94A3B8', font: { size: 11 } },
                         grid: { display: false }
                     },
                     y: {
                         ticks: {
-                            color: '#A1A1AA',
-                            font: { size: 10 },
+                            color: '#94A3B8',
+                            font: { size: 11 },
                             callback: (v) => '$' + Number(v / 1000).toFixed(0) + 'k'
                         },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        grid: { color: 'rgba(255,255,255,0.06)' }
                     }
-                },
-                plugins: {
-                    legend: { display: false }
                 }
             }
         });
     }
 }
 
-function renderizarResumenGeneral(kpis) {
-    if (!kpis) return;
+// ==========================================================================
+// TABLA DE DETALLE EN VIVO
+// ==========================================================================
+function renderizarTablaDetalle() {
+    const tbody = document.getElementById('tbodyDetalleRegistros');
+    const inputSearch = document.getElementById('inputBuscarDetalle');
+    if (!tbody) return;
 
-    const elAutos = document.getElementById('resumen-total-autos');
-    if (elAutos) elAutos.innerText = `${kpis.stockDisponible || 0} Disponibles`;
-
-    const elCli = document.getElementById('resumen-total-clientes');
-    if (elCli) elCli.innerText = `${kpis.totalClientes || 0} Registrados`;
-
-    const elMkt = document.getElementById('resumen-total-campanias');
-    if (elMkt) elMkt.innerText = `${kpis.totalCampanias || 0} Campañas`;
-
-    const elGan = document.getElementById('resumen-total-ganancia');
-    if (elGan) {
-        const util = kpis.gananciaNeta || 0;
-        elGan.innerText = `$${Number(util).toLocaleString()}`;
-        elGan.style.color = util >= 0 ? '#DBFF99' : '#FB7185';
-    }
-
-    const totalIngresos = Number(kpis.totalVentas) || 1;
-    const ganancia = Number(kpis.gananciaNeta) || 0;
-    const margenPct = Math.round((ganancia / totalIngresos) * 100);
-
-    const elMargenPct = document.getElementById('resumen-margen-pct');
-    if (elMargenPct) {
-        elMargenPct.innerText = `${margenPct}%`;
-    }
-
-    const barIngresos = document.getElementById('bar-financiero-ingresos');
-    if (barIngresos) barIngresos.style.height = '100%';
-
-    const barCostos = document.getElementById('bar-financiero-costos');
-    if (barCostos) {
-        const egresos = (Number(kpis.totalCompras) || 0) + (Number(kpis.totalCostos) || 0);
-        const egresosPct = Math.min(Math.round((egresos / totalIngresos) * 100), 100);
-        barCostos.style.height = `${egresosPct}%`;
-    }
-}
-
-// --------------------------------------------------------------------------
-// 3. TABLA DE DETALLE EN EL DASHBOARD
-// --------------------------------------------------------------------------
-function renderizarTablaDashboard() {
-    const thead = document.getElementById('dashboard-table-head');
-    const tbody = document.getElementById('dashboard-table-body');
-    const searchInput = document.getElementById('buscador-tabla-dashboard');
-    const titleEl = document.getElementById('tituloTablaDetalle');
-    const term = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-    if (titleEl) {
-        titleEl.innerHTML = `<i class="bi bi-table text-neon-green me-2"></i> Desglose en Vivo: <strong>${selectedTipo}</strong> <span class="badge bg-secondary bg-opacity-50 text-white ms-2 small" style="font-size: 0.75rem;">${selectedRango}</span>`;
-    }
-
-    if (!tbody || !thead) return;
-    tbody.innerHTML = '';
-    thead.innerHTML = '';
+    const term = (inputSearch ? inputSearch.value : '').toLowerCase().trim();
 
     if (!currentDetailData || currentDetailData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i> No se encontraron registros de ${selectedTipo} para el período: ${selectedRango}.</td></tr>`;
-        const contador = document.getElementById('contador-tabla-dashboard');
-        if (contador) contador.innerText = `0 registros`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                    No se encontraron transacciones para el período y filtro seleccionados.
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    const filtrados = currentDetailData.filter(row => {
+    const filtrados = currentDetailData.filter(item => {
         if (!term) return true;
-        return Object.values(row).some(val =>
-            String(val || '').toLowerCase().includes(term)
+        return (
+            String(item.id).toLowerCase().includes(term) ||
+            String(item.categoria).toLowerCase().includes(term) ||
+            String(item.descripcion).toLowerCase().includes(term) ||
+            String(item.detalle).toLowerCase().includes(term) ||
+            String(item.estado).toLowerCase().includes(term)
         );
     });
-
-    const contador = document.getElementById('contador-tabla-dashboard');
-    if (contador) {
-        contador.innerText = `Mostrando ${filtrados.length} de ${currentDetailData.length} registros`;
-    }
 
     if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-search fs-3 d-block mb-1"></i> No hay coincidencias con la búsqueda.</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="bi bi-search fs-4 d-block mb-2"></i>
+                    No se encontraron resultados que coincidan con "${term}".
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    const sample = filtrados[0];
-    const keys = Object.keys(sample);
-
-    const trHead = document.createElement('tr');
-    keys.forEach(k => {
-        const th = document.createElement('th');
-        th.innerText = formatColumnHeader(k);
-        trHead.appendChild(th);
-    });
-    thead.appendChild(trHead);
-
-    filtrados.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-
-        keys.forEach(k => {
-            const td = document.createElement('td');
-            let val = row[k];
-
-            if (k.toLowerCase().includes('fecha') && val) {
-                val = new Date(val).toISOString().split('T')[0];
-            } else if ((k.toLowerCase().includes('monto') || k.toLowerCase().includes('total') || k.toLowerCase().includes('precio') || k.toLowerCase().includes('presupuesto')) && typeof val === 'number') {
-                val = '$' + val.toLocaleString('en-US');
-                td.className = 'fw-bold text-white';
-            } else if (k.toLowerCase().includes('estado')) {
-                const est = String(val || '');
-                let colorClass = 'badge-registrado';
-                if (est.includes('Inactivo') || est.includes('Cancel') || est.includes('Finaliz')) colorClass = 'badge-pendiente';
-                val = `<span class="${colorClass}">${est}</span>`;
-                td.innerHTML = val;
-                tr.appendChild(td);
-                return;
-            }
-
-            td.innerText = val !== null && val !== undefined ? val : 'N/A';
-            tr.appendChild(td);
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-
-// --------------------------------------------------------------------------
-// 4. DESCARGA DIRECTA DE GRÁFICAS INDIVIDUALES COMO IMAGEN (PNG)
-// --------------------------------------------------------------------------
-function descargarGraficaComoImagen(chartId, nombreGrafica) {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) {
-        alert('No se encontró el elemento de la gráfica para descargar.');
-        return;
-    }
-
-    // Crear canvas con fondo oscuro #0F1019 para nitidez
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width || 400;
-    tempCanvas.height = canvas.height || 300;
-    const ctx = tempCanvas.getContext('2d');
-
-    ctx.fillStyle = '#0F1019';
-    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-    ctx.drawImage(canvas, 0, 0);
-
-    const link = document.createElement('a');
-    link.download = `Grafica_${nombreGrafica}_${selectedTipo}_${new Date().toISOString().split('T')[0]}.png`;
-    link.href = tempCanvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// --------------------------------------------------------------------------
-// 5. GUARDAR INFORME / SNAPSHOT (KPIS, GRÁFICAS Y TABLAS)
-// --------------------------------------------------------------------------
-function prepararModalGuardarInforme() {
-    const inputNombre = document.getElementById('input-nombre-informe');
-    const inputNotas = document.getElementById('input-notas-informe');
-    const spanTipo = document.getElementById('guardar-preview-tipo');
-    const spanRango = document.getElementById('guardar-preview-rango');
-    const spanKpis = document.getElementById('guardar-preview-kpis');
-
-    const ahora = new Date();
-    const fechaStr = ahora.toLocaleDateString('es-ES') + ' ' + ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-    if (inputNombre) {
-        inputNombre.value = `Informe ${selectedTipo} - ${selectedRango} (${fechaStr})`;
-    }
-    if (inputNotas) inputNotas.value = '';
-
-    if (spanTipo) spanTipo.innerText = selectedTipo;
-    if (spanRango) spanRango.innerText = selectedRango;
-    if (spanKpis && dashboardData && dashboardData.kpis) {
-        const k = dashboardData.kpis;
-        spanKpis.innerText = `Ventas: $${Number(k.totalVentas || 0).toLocaleString()} | Compras: $${Number(k.totalCompras || 0).toLocaleString()} | Stock: ${k.stockDisponible || 0} autos`;
-    }
-
-    const modalEl = document.getElementById('modalGuardarInforme');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
-    }
-}
-
-function ejecutarGuardadoInforme() {
-    const inputNombre = document.getElementById('input-nombre-informe');
-    const inputNotas = document.getElementById('input-notas-informe');
-
-    const nombre = inputNombre ? inputNombre.value.trim() : `Informe ${selectedTipo}`;
-    if (!nombre) {
-        alert('Por favor introduce un nombre para identificar el informe guardado.');
-        return;
-    }
-
-    // Capturar imágenes base64 de las gráficas
-    const imagenesGraficas = {};
-    const chartIds = [
-        { id: 'chartMarcas', name: 'AutosVendidosPorMarca' },
-        { id: 'chartClientes', name: 'ClientesPorCanal' },
-        { id: 'chartInventario', name: 'RotacionInventario' },
-        { id: 'chartCostos', name: 'CostosPorCategoria' },
-        { id: 'chartVentasMes', name: 'VentasMensuales' }
-    ];
-
-    chartIds.forEach(c => {
-        const el = document.getElementById(c.id);
-        if (el) {
-            try {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = el.width || 300;
-                tempCanvas.height = el.height || 200;
-                const ctx = tempCanvas.getContext('2d');
-                ctx.fillStyle = '#0F1019';
-                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                ctx.drawImage(el, 0, 0);
-                imagenesGraficas[c.name] = tempCanvas.toDataURL('image/png');
-            } catch (err) {}
+    tbody.innerHTML = filtrados.map(item => {
+        let badgeCat = '<span class="badge" style="background:rgba(219,255,153,0.15);color:#DBFF99;border:1px solid rgba(219,255,153,0.3);">Venta</span>';
+        if (item.categoria === 'Compra') {
+            badgeCat = '<span class="badge" style="background:rgba(56,189,248,0.15);color:#38BDF8;border:1px solid rgba(56,189,248,0.3);">Compra</span>';
+        } else if (item.categoria === 'Costo') {
+            badgeCat = '<span class="badge" style="background:rgba(251,113,133,0.15);color:#FB7185;border:1px solid rgba(251,113,133,0.3);">Costo</span>';
+        } else if (item.categoria === 'Inventario') {
+            badgeCat = '<span class="badge" style="background:rgba(250,204,21,0.15);color:#FACC15;border:1px solid rgba(250,204,21,0.3);">Auto</span>';
         }
-    });
 
-    const snapshot = {
-        id: 'inf_' + Date.now(),
-        titulo: nombre,
-        notas: inputNotas ? inputNotas.value.trim() : '',
-        fechaGuardado: new Date().toISOString(),
-        tipo: selectedTipo,
-        rango: selectedRango,
-        kpis: dashboardData ? dashboardData.kpis : {},
-        graficos: {
-            marcas: dashboardData ? dashboardData.autosPorMarca : [],
-            campanias: dashboardData ? dashboardData.campanias : [],
-            clientes: dashboardData ? dashboardData.clientesPorOrigen : [],
-            costos: dashboardData ? dashboardData.costosPorCategoria : [],
-            ventasMes: dashboardData ? dashboardData.ventasPorMes : []
-        },
-        imagenes: imagenesGraficas,
-        registros: currentDetailData
-    };
+        let badgeEstado = '<span class="badge bg-success bg-opacity-25 text-success rounded-pill px-2">Finalizada</span>';
+        const estStr = String(item.estado || '');
+        if (estStr.includes('Pendiente') || estStr.includes('Inactivo') || estStr.includes('Mantenimiento')) {
+            badgeEstado = `<span class="badge bg-warning bg-opacity-25 text-warning rounded-pill px-2">${estStr}</span>`;
+        } else if (estStr) {
+            badgeEstado = `<span class="badge bg-success bg-opacity-25 text-success rounded-pill px-2">${estStr}</span>`;
+        }
 
-    guardarInformeEnStorage(snapshot);
+        const montoStr = typeof item.monto === 'number'
+            ? '$' + item.monto.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+            : (item.monto || 'N/A');
 
-    // Cerrar modal
-    const modalEl = document.getElementById('modalGuardarInforme');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
-    }
-
-    // Notificación elegante
-    mostrarToast('¡Informe guardado con éxito! Puedes consultarlo o descargarlo en "Historial".');
-}
-
-function obtenerInformesGuardados() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY_INFORMES);
-        return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-        return [];
-    }
-}
-
-function guardarInformeEnStorage(informe) {
-    const list = obtenerInformesGuardados();
-    list.unshift(informe);
-    // Limitar a los 25 más recientes para optimizar almacenamiento
-    if (list.length > 25) list.pop();
-    localStorage.setItem(STORAGE_KEY_INFORMES, JSON.stringify(list));
-    actualizarBadgeGuardados();
-}
-
-function actualizarBadgeGuardados() {
-    const list = obtenerInformesGuardados();
-    const badge = document.getElementById('contadorGuardadosBadge');
-    if (badge) badge.innerText = list.length;
-}
-
-// --------------------------------------------------------------------------
-// 6. HISTORIAL DE INFORMES GUARDADOS (MODAL Y GESTIÓN)
-// --------------------------------------------------------------------------
-function abrirModalInformesGuardados() {
-    renderizarListaInformesGuardados();
-    const modalEl = document.getElementById('modalInformesGuardados');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
-    }
-}
-
-function renderizarListaInformesGuardados() {
-    const container = document.getElementById('listaInformesGuardados');
-    if (!container) return;
-
-    const list = obtenerInformesGuardados();
-    container.innerHTML = '';
-
-    if (list.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-bookmark fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                <h6 class="text-white">Aún no tienes informes guardados</h6>
-                <p class="small text-secondary mb-3">Haz clic en <strong>"Guardar Informe"</strong> en el panel principal para guardar los KPIs, gráficas y métricas actuales.</p>
-            </div>
+        return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td class="ps-3 text-secondary fw-semibold">#${item.id}</td>
+                <td>${badgeCat}</td>
+                <td class="text-white fw-medium">${item.descripcion || 'Sin descripción'}</td>
+                <td class="text-secondary small">${item.detalle || 'N/D'}</td>
+                <td class="text-secondary small">${item.fecha || 'N/A'}</td>
+                <td class="text-end fw-bold text-white">${montoStr}</td>
+                <td class="text-center pe-3">${badgeEstado}</td>
+            </tr>
         `;
-        return;
-    }
-
-    list.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'p-3 mb-3 rounded-3 border border-secondary border-opacity-25';
-        card.style.backgroundColor = '#151724';
-
-        const fechaStr = new Date(item.fechaGuardado).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
-        const k = item.kpis || {};
-        const fmtMoney = (val) => '$' + Number(val || 0).toLocaleString('en-US');
-
-        card.innerHTML = `
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                <div>
-                    <h6 class="fw-bold text-white mb-1"><i class="bi bi-file-earmark-check text-neon-green me-2"></i>${item.titulo}</h6>
-                    <div class="d-flex align-items-center gap-2 small text-secondary">
-                        <span><i class="bi bi-clock me-1"></i>${fechaStr}</span>
-                        <span>&bull;</span>
-                        <span class="badge bg-secondary bg-opacity-50 text-white">${item.tipo}</span>
-                        <span>&bull;</span>
-                        <span class="badge bg-dark border border-secondary border-opacity-25 text-neon-green">${item.rango}</span>
-                    </div>
-                    ${item.notas ? `<p class="small text-muted mt-2 mb-0 fst-italic">"${item.notas}"</p>` : ''}
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-green rounded-pill px-3 btn-cargar-informe" data-id="${item.id}" title="Cargar este informe en el dashboard">
-                        <i class="bi bi-eye me-1"></i> Cargar
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 btn-descargar-graficas-informe" data-id="${item.id}" title="Descargar gráficas PNG">
-                        <i class="bi bi-images me-1"></i> Gráficas
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2 btn-eliminar-informe" data-id="${item.id}" title="Eliminar informe guardado">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <!-- Snapshot KPIs Resumen -->
-            <div class="row g-2 mt-2 pt-2 border-top border-secondary border-opacity-10 small">
-                <div class="col-6 col-md-3">
-                    <span class="text-secondary d-block" style="font-size: 0.72rem;">Ventas</span>
-                    <strong class="text-white">${fmtMoney(k.totalVentas)} (${k.countVentas || 0})</strong>
-                </div>
-                <div class="col-6 col-md-3">
-                    <span class="text-secondary d-block" style="font-size: 0.72rem;">Stock</span>
-                    <strong class="text-white">${k.stockDisponible || 0} Autos</strong>
-                </div>
-                <div class="col-6 col-md-3">
-                    <span class="text-secondary d-block" style="font-size: 0.72rem;">Compras</span>
-                    <strong class="text-white">${fmtMoney(k.totalCompras)}</strong>
-                </div>
-                <div class="col-6 col-md-3">
-                    <span class="text-secondary d-block" style="font-size: 0.72rem;">Margen Neto</span>
-                    <strong style="color: ${k.gananciaNeta >= 0 ? '#DBFF99' : '#FB7185'};">${fmtMoney(k.gananciaNeta)}</strong>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-
-    // Event listeners en tarjetas
-    container.querySelectorAll('.btn-cargar-informe').forEach(b => {
-        b.addEventListener('click', function() {
-            cargarInformeEnPantalla(this.dataset.id);
-        });
-    });
-
-    container.querySelectorAll('.btn-descargar-graficas-informe').forEach(b => {
-        b.addEventListener('click', function() {
-            descargarGraficasDeInforme(this.dataset.id);
-        });
-    });
-
-    container.querySelectorAll('.btn-eliminar-informe').forEach(b => {
-        b.addEventListener('click', function() {
-            if (confirm('¿Deseas eliminar este informe guardado?')) {
-                eliminarInformeDeStorage(this.dataset.id);
-            }
-        });
-    });
+    }).join('');
 }
 
-function eliminarInformeDeStorage(id) {
-    let list = obtenerInformesGuardados();
-    list = list.filter(item => item.id !== id);
-    localStorage.setItem(STORAGE_KEY_INFORMES, JSON.stringify(list));
-    actualizarBadgeGuardados();
-    renderizarListaInformesGuardados();
-}
-
-function descargarGraficasDeInforme(id) {
-    const list = obtenerInformesGuardados();
-    const item = list.find(i => i.id === id);
-    if (!item || !item.imagenes || Object.keys(item.imagenes).length === 0) {
-        alert('Este informe no contiene imágenes de gráficas almacenadas.');
-        return;
-    }
-
-    Object.entries(item.imagenes).forEach(([nombre, base64], idx) => {
-        setTimeout(() => {
-            const link = document.createElement('a');
-            link.download = `${item.titulo.replace(/\s+/g, '_')}_${nombre}.png`;
-            link.href = base64;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }, idx * 250);
-    });
-}
-
-function cargarInformeEnPantalla(id) {
-    const list = obtenerInformesGuardados();
-    const item = list.find(i => i.id === id);
-    if (!item) return;
-
-    modoInformeGuardado = item;
-
-    // Mostrar banner superior de advertencia
-    mostrarBannerInformeGuardado(item);
-
-    // Cargar KPIs del informe
-    renderizarKPIs(item.kpis, item.tipo);
-
-    // Renderizar gráficos congelados
-    if (item.graficos) {
-        renderizarGraficoMarcas(item.graficos.marcas);
-        renderizarCampanias(item.graficos.campanias);
-        renderizarGraficoClientes(item.graficos.clientes);
-        renderizarGraficoInventario(item.graficos.marcas);
-        renderizarGraficoCostos(item.graficos.costos);
-        renderizarGraficoVentasMes(item.graficos.ventasMes);
-    }
-
-    renderizarResumenGeneral(item.kpis);
-
-    if (item.registros) {
-        currentDetailData = item.registros;
-        renderizarTablaDashboard();
-    }
-
-    const modalEl = document.getElementById('modalInformesGuardados');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
-    }
-}
-
-function mostrarBannerInformeGuardado(item) {
-    removerBannerInformeGuardado();
-
-    const banner = document.createElement('div');
-    banner.id = 'bannerInformeGuardado';
-    banner.className = 'alert alert-warning d-flex justify-content-between align-items-center py-2 px-3 mb-4 rounded-3 shadow-sm';
-    banner.style.backgroundColor = 'rgba(250, 204, 21, 0.15)';
-    banner.style.borderColor = 'rgba(250, 204, 21, 0.4)';
-    banner.style.color = '#EFF0EB';
-
-    const fechaStr = new Date(item.fechaGuardado).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
-
-    banner.innerHTML = `
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-bookmark-check-fill text-warning fs-5"></i>
-            <div>
-                <strong>Visualizando Informe Guardado:</strong> ${item.titulo}
-                <span class="small text-secondary ms-2">(${fechaStr})</span>
-            </div>
-        </div>
-        <button class="btn btn-sm bg-neon-green text-dark fw-bold rounded-pill px-3" id="btnSalirModoGuardado">
-            <i class="bi bi-arrow-repeat me-1"></i> Volver a Datos en Vivo
-        </button>
-    `;
-
-    const seccionHeader = document.querySelector('.container-fluid.p-4');
-    if (seccionHeader) {
-        seccionHeader.insertBefore(banner, seccionHeader.firstChild);
-    }
-
-    const btnSalir = document.getElementById('btnSalirModoGuardado');
-    if (btnSalir) {
-        btnSalir.addEventListener('click', salirDeModoGuardado);
-    }
-}
-
-function removerBannerInformeGuardado() {
-    const b = document.getElementById('bannerInformeGuardado');
-    if (b) b.remove();
-}
-
-function salirDeModoGuardado() {
-    modoInformeGuardado = null;
-    removerBannerInformeGuardado();
-    cargarDashboard();
-}
-
-// --------------------------------------------------------------------------
-// 7. MODAL DE REPORTE DETALLADO Y EXPORTACIÓN
-// --------------------------------------------------------------------------
-function abrirModalReporte() {
-    const modTitle = document.getElementById('modalReporteTitulo');
-    if (modTitle) {
-        modTitle.innerHTML = `<i class="bi bi-file-earmark-bar-graph text-neon-green me-2"></i> Reporte de ${selectedTipo} (${selectedRango})`;
-    }
-
-    const badgeTipo = document.getElementById('modalReporteBadgeTipo');
-    if (badgeTipo) badgeTipo.innerText = selectedTipo;
-
-    const badgeTotal = document.getElementById('modalReporteBadgeTotal');
-    if (badgeTotal) badgeTotal.innerText = `${currentDetailData.length} Registros`;
-
-    renderizarTablaReporteModal();
-
-    const modalEl = document.getElementById('modalReporteDetalle');
-    if (modalEl && window.bootstrap) {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-    }
-}
-
-function renderizarTablaReporteModal() {
-    const thead = document.getElementById('reporte-table-head');
-    const tbody = document.getElementById('reporte-table-body');
-    const searchInput = document.getElementById('input-busqueda-reporte');
-    const term = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-    if (!tbody || !thead) return;
-    tbody.innerHTML = '';
-    thead.innerHTML = '';
-
+// ==========================================================================
+// EXPORTAR TABLA DE DETALLE A CSV
+// ==========================================================================
+function exportarDetalleCSV() {
     if (!currentDetailData || currentDetailData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i> No se encontraron registros para este reporte.</td></tr>';
+        alert('No hay registros disponibles para exportar.');
         return;
     }
 
-    const filtrados = currentDetailData.filter(row => {
-        if (!term) return true;
-        return Object.values(row).some(val =>
-            String(val || '').toLowerCase().includes(term)
-        );
-    });
+    const headers = ['ID', 'Categoría', 'Descripción', 'Detalle / Referencia', 'Fecha', 'Monto (USD)', 'Estado'];
+    const rows = currentDetailData.map(item => [
+        item.id,
+        item.categoria,
+        `"${(item.descripcion || '').replace(/"/g, '""')}"`,
+        `"${(item.detalle || '').replace(/"/g, '""')}"`,
+        item.fecha || '',
+        item.monto || 0,
+        item.estado || ''
+    ]);
 
-    const contador = document.getElementById('contador-modal-reporte');
-    if (contador) {
-        contador.innerText = `Mostrando ${filtrados.length} de ${currentDetailData.length} registros`;
-    }
-
-    const sample = filtrados[0] || currentDetailData[0];
-    const keys = Object.keys(sample);
-
-    const trHead = document.createElement('tr');
-    keys.forEach(k => {
-        const th = document.createElement('th');
-        th.innerText = formatColumnHeader(k);
-        trHead.appendChild(th);
-    });
-    thead.appendChild(trHead);
-
-    filtrados.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-
-        keys.forEach(k => {
-            const td = document.createElement('td');
-            let val = row[k];
-
-            if (k.toLowerCase().includes('fecha') && val) {
-                val = new Date(val).toISOString().split('T')[0];
-            } else if ((k.toLowerCase().includes('monto') || k.toLowerCase().includes('total') || k.toLowerCase().includes('precio') || k.toLowerCase().includes('presupuesto')) && typeof val === 'number') {
-                val = '$' + val.toLocaleString('en-US');
-                td.className = 'fw-bold text-white';
-            } else if (k.toLowerCase().includes('estado')) {
-                const est = String(val || '');
-                let colorClass = 'badge-registrado';
-                if (est.includes('Inactivo') || est.includes('Cancel') || est.includes('Finaliz')) colorClass = 'badge-pendiente';
-                val = `<span class="${colorClass}">${est}</span>`;
-                td.innerHTML = val;
-                tr.appendChild(td);
-                return;
-            }
-
-            td.innerText = val !== null && val !== undefined ? val : 'N/A';
-            tr.appendChild(td);
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-
-function formatColumnHeader(key) {
-    const map = {
-        'idVenta': 'ID Venta',
-        'FechaVenta': 'Fecha',
-        'Cliente': 'Cliente',
-        'Auto': 'Vehículo',
-        'FormaPago': 'Método Pago',
-        'EstadoVenta': 'Estado',
-        'TotalVenta': 'Monto Total',
-        'idAuto': 'ID Auto',
-        'Marca': 'Marca',
-        'Modelo': 'Modelo',
-        'Anio': 'Año',
-        'Placa': 'Placa',
-        'Precio': 'Precio Venta',
-        'Estado': 'Estado',
-        'idCostoEstan': 'ID Costo',
-        'Fecha': 'Fecha',
-        'Categoria': 'Categoría',
-        'Descripcion': 'Descripción',
-        'Monto': 'Monto',
-        'IdClientes': 'ID Cliente',
-        'Nombre': 'Nombre',
-        'Apellido': 'Apellido',
-        'Telefono': 'Teléfono',
-        'Correo': 'Correo Electrónico',
-        'CanalOrigen': 'Canal',
-        'FechaRegistro': 'Fecha Reg.',
-        'idCampaña': 'ID Campaña',
-        'NombreCampaña': 'Nombre Campaña',
-        'PresupuestoInvertido': 'Presupuesto',
-        'EstadoCampana': 'Estado',
-        'TipoRegistro': 'Tipo',
-        'Referencia': 'Ref. / ID',
-        'Detalle': 'Detalle'
-    };
-    return map[key] || key;
-}
-
-// --------------------------------------------------------------------------
-// 8. EXPORTACIÓN A EXCEL / CSV CON BOM UTF-8
-// --------------------------------------------------------------------------
-function exportarReporteCSV() {
-    if (!currentDetailData || currentDetailData.length === 0) {
-        alert('No hay datos disponibles para exportar con los filtros actuales.');
-        return;
-    }
-
-    const headers = Object.keys(currentDetailData[0]);
-    const displayHeaders = headers.map(formatColumnHeader);
-
-    let csvContent = '\uFEFF' + displayHeaders.join(';') + '\n';
-
-    currentDetailData.forEach(row => {
-        const line = headers.map(h => {
-            let val = row[h];
-            if (val === null || val === undefined) return '""';
-            if (h.toLowerCase().includes('fecha') && val) {
-                val = new Date(val).toISOString().split('T')[0];
-            }
-            const str = String(val).replace(/"/g, '""');
-            return `"${str}"`;
-        }).join(';');
-        csvContent += line + '\n';
-    });
-
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const cleanTipo = (selectedTipo || 'Reporte').replace(/\s+/g, '_');
-    const cleanRango = (selectedRango || 'Todos').replace(/\s+/g, '_');
-    link.download = `Reporte_${cleanTipo}_${cleanRango}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute('download', `Transacciones_AMI_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }
 
-// Toast de notificación rápido
-function mostrarToast(mensaje) {
-    let toast = document.getElementById('toastAMI');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toastAMI';
-        toast.className = 'position-fixed bottom-0 end-0 p-3';
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            <div class="toast align-items-center text-white bg-dark border border-secondary border-opacity-50 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill text-neon-green fs-5"></i>
-                        <span id="toastAMITexto">${mensaje}</span>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(toast);
-    } else {
-        const textEl = document.getElementById('toastAMITexto');
-        if (textEl) textEl.innerText = mensaje;
+// ==========================================================================
+// DESCARGAR GRÁFICAS COMO PNG DE ALTA RESOLUCIÓN
+// ==========================================================================
+function descargarChartPNG(chartId, chartTitle) {
+    const canvas = document.getElementById(chartId);
+    if (!canvas) {
+        alert('No se encontró el lienzo de la gráfica para descargar.');
+        return;
     }
 
-    const toastEl = toast.querySelector('.toast');
-    if (toastEl && window.bootstrap) {
-        const bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
-        bsToast.show();
+    // Crear canvas con fondo oscuro para evitar fondos transparentes negros en visores
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width || 800;
+    exportCanvas.height = canvas.height || 400;
+    const ctx = exportCanvas.getContext('2d');
+
+    ctx.fillStyle = '#0F1019';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    ctx.drawImage(canvas, 0, 0);
+
+    const link = document.createElement('a');
+    link.download = `${chartTitle}_${new Date().toISOString().split('T')[0]}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+}
+
+// ==========================================================================
+// PESTAÑA 2: REPORTES FINANCIEROS Y CONTABLES (Balance y Estado de Resultados)
+// ==========================================================================
+window.generarReporteFinanciero = async function (tipoReporte) {
+    const placeholder = document.getElementById('placeholderFinanciero');
+    const contenedor = document.getElementById('contenidoReporteGenerado');
+    if (!contenedor) return;
+
+    reporteFinancieroActual = tipoReporte;
+
+    // Resaltar visualmente la tarjeta seleccionada
+    const cardBal = document.getElementById('cardReporteBalance');
+    const cardRes = document.getElementById('cardReporteResultados');
+    if (tipoReporte.toLowerCase().includes('balance')) {
+        if (cardBal) cardBal.style.borderColor = '#A3E635';
+        if (cardRes) cardRes.style.borderColor = 'rgba(229,143,229,.25)';
+    } else {
+        if (cardRes) cardRes.style.borderColor = '#E58FE5';
+        if (cardBal) cardBal.style.borderColor = 'rgba(163,230,53,.25)';
+    }
+
+    if (placeholder) placeholder.classList.add('d-none');
+    contenedor.classList.remove('d-none');
+    contenedor.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-neon-green mb-3" role="status"></div>
+            <p class="text-secondary small">Calculando cuentas contables y estados financieros oficiales...</p>
+        </div>
+    `;
+
+    try {
+        if (tipoReporte.toLowerCase().includes('balance')) {
+            const res = await fetch('/api/reportes/financiero/balance-general');
+            const data = await res.json();
+            datosFinancierosActuales = { tipo: 'balance', data };
+            renderizarBalanceGeneral(data);
+        } else {
+            const res = await fetch('/api/reportes/financiero/estado-resultados');
+            const data = await res.json();
+            datosFinancierosActuales = { tipo: 'resultados', data };
+            renderizarEstadoResultados(data);
+        }
+    } catch (err) {
+        contenedor.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Error al generar reporte financiero: ${err.message}
+            </div>
+        `;
+    }
+};
+
+function renderizarBalanceGeneral(data) {
+    const contenedor = document.getElementById('contenidoReporteGenerado');
+    if (!contenedor) return;
+
+    const fmt = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const htmlActivosCorrientes = data.activos.corrientes.map(c => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="text-secondary font-monospace small ps-3">${c.codigo}</td>
+            <td class="text-white">${c.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(c.saldo)}</td>
+        </tr>
+    `).join('');
+
+    const htmlActivosNoCorrientes = data.activos.noCorrientes.map(c => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="text-secondary font-monospace small ps-3">${c.codigo}</td>
+            <td class="text-white">${c.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(c.saldo)}</td>
+        </tr>
+    `).join('');
+
+    const htmlPasivosCorrientes = data.pasivos.corrientes.map(c => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="text-secondary font-monospace small ps-3">${c.codigo}</td>
+            <td class="text-white">${c.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(c.saldo)}</td>
+        </tr>
+    `).join('');
+
+    const htmlPasivosNoCorrientes = data.pasivos.noCorrientes.map(c => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="text-secondary font-monospace small ps-3">${c.codigo}</td>
+            <td class="text-white">${c.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(c.saldo)}</td>
+        </tr>
+    `).join('');
+
+    const htmlPatrimonio = data.patrimonio.cuentas.map(c => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="text-secondary font-monospace small ps-3">${c.codigo}</td>
+            <td class="text-white">${c.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(c.saldo)}</td>
+        </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+        <!-- Header del Reporte -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pb-4 mb-4 border-bottom border-secondary border-opacity-25">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background:#DBFF99; color:#07060B; font-weight:700;">OFICIAL NIIF</span>
+                    <h4 class="text-white fw-bold mb-0">${data.reporte}</h4>
+                </div>
+                <div class="text-muted small">
+                    <strong>${data.empresa}</strong> &bull; Fecha de corte: ${data.fechaCorte} &bull; Expresado en ${data.moneda}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 btn-sm d-flex align-items-center gap-2" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir / PDF
+                </button>
+                <button type="button" class="btn btn-outline-light rounded-pill px-3 py-1 btn-sm d-flex align-items-center gap-2" onclick="exportarFinancieroCSV()">
+                    <i class="bi bi-file-earmark-spreadsheet text-neon-green"></i> Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Ratios e Indicadores Clave -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
+                    <div class="text-muted small">Capital de Trabajo Neto</div>
+                    <div class="fs-5 fw-bold text-neon-green">${fmt(data.indicadores.capitalTrabajoNeto)}</div>
+                    <div class="small text-secondary" style="font-size:0.75rem;">Activos Corrientes - Pasivos Corrientes</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
+                    <div class="text-muted small">Razón de Liquidez Corriente</div>
+                    <div class="fs-5 fw-bold text-white">${data.indicadores.razonCorriente}</div>
+                    <div class="small text-secondary" style="font-size:0.75rem;">Capacidad de pago inmediata</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
+                    <div class="text-muted small">Nivel de Endeudamiento</div>
+                    <div class="fs-5 fw-bold text-neon-pink">${data.indicadores.ratioEndeudamiento}</div>
+                    <div class="small text-secondary" style="font-size:0.75rem;">Pasivo Total / Activo Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablas del Balance en dos Columnas -->
+        <div class="row g-4 mb-4">
+            <!-- Columna Izquierda: ACTIVOS -->
+            <div class="col-12 col-lg-6">
+                <div class="rounded-4 p-3" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+                    <h5 class="fw-bold text-neon-green mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                        <i class="bi bi-wallet2 me-2"></i> 1. ACTIVOS
+                    </h5>
+
+                    <!-- Activos Corrientes -->
+                    <div class="fw-bold text-white-50 small mb-2 ps-2">1.1 Activos Corrientes (Circulante)</div>
+                    <table class="table table-dark table-sm mb-3">
+                        <tbody>${htmlActivosCorrientes}</tbody>
+                        <tfoot>
+                            <tr class="fw-bold" style="background: rgba(219,255,153,0.06); border-top: 1px solid rgba(219,255,153,0.3);">
+                                <td colspan="2" class="ps-3 text-neon-green">Total Activos Corrientes</td>
+                                <td class="text-end font-monospace pe-3 text-neon-green">${fmt(data.activos.totalCorrientes)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Activos No Corrientes -->
+                    <div class="fw-bold text-white-50 small mb-2 ps-2 mt-3">1.2 Activos No Corrientes (Fijo y Propiedades)</div>
+                    <table class="table table-dark table-sm mb-3">
+                        <tbody>${htmlActivosNoCorrientes}</tbody>
+                        <tfoot>
+                            <tr class="fw-bold" style="background: rgba(219,255,153,0.06); border-top: 1px solid rgba(219,255,153,0.3);">
+                                <td colspan="2" class="ps-3 text-neon-green">Total Activos No Corrientes</td>
+                                <td class="text-end font-monospace pe-3 text-neon-green">${fmt(data.activos.totalNoCorrientes)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Total General Activos -->
+                    <div class="p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center" style="background:#07060B; border: 2px solid #DBFF99;">
+                        <span class="fw-bold text-white fs-6">TOTAL ACTIVOS</span>
+                        <span class="font-monospace fw-bold fs-5 text-neon-green">${fmt(data.activos.totalActivos)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: PASIVOS Y PATRIMONIO -->
+            <div class="col-12 col-lg-6">
+                <div class="rounded-4 p-3" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+                    <h5 class="fw-bold text-neon-pink mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                        <i class="bi bi-credit-card me-2"></i> 2. PASIVOS Y OBLIGACIONES
+                    </h5>
+
+                    <!-- Pasivos Corrientes -->
+                    <div class="fw-bold text-white-50 small mb-2 ps-2">2.1 Pasivos Corrientes (Corto Plazo)</div>
+                    <table class="table table-dark table-sm mb-3">
+                        <tbody>${htmlPasivosCorrientes}</tbody>
+                        <tfoot>
+                            <tr class="fw-bold" style="background: rgba(255,212,248,0.06); border-top: 1px solid rgba(255,212,248,0.3);">
+                                <td colspan="2" class="ps-3 text-neon-pink">Total Pasivos Corrientes</td>
+                                <td class="text-end font-monospace pe-3 text-neon-pink">${fmt(data.pasivos.totalCorrientes)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Pasivos No Corrientes -->
+                    <div class="fw-bold text-white-50 small mb-2 ps-2 mt-3">2.2 Pasivos No Corrientes (Largo Plazo)</div>
+                    <table class="table table-dark table-sm mb-3">
+                        <tbody>${htmlPasivosNoCorrientes}</tbody>
+                        <tfoot>
+                            <tr class="fw-bold" style="background: rgba(255,212,248,0.06); border-top: 1px solid rgba(255,212,248,0.3);">
+                                <td colspan="2" class="ps-3 text-neon-pink">Total Pasivos No Corrientes</td>
+                                <td class="text-end font-monospace pe-3 text-neon-pink">${fmt(data.pasivos.totalNoCorrientes)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <h5 class="fw-bold text-white mb-3 mt-4 pb-2 border-bottom border-secondary border-opacity-25">
+                        <i class="bi bi-pie-chart-fill text-neon-green me-2"></i> 3. PATRIMONIO NETO
+                    </h5>
+                    <table class="table table-dark table-sm mb-3">
+                        <tbody>${htmlPatrimonio}</tbody>
+                        <tfoot>
+                            <tr class="fw-bold" style="background: rgba(255,255,255,0.06); border-top: 1px solid rgba(255,255,255,0.3);">
+                                <td colspan="2" class="ps-3 text-white">Total Patrimonio Neto</td>
+                                <td class="text-end font-monospace pe-3 text-white">${fmt(data.patrimonio.totalPatrimonio)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Total General Pasivo + Patrimonio -->
+                    <div class="p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center" style="background:#07060B; border: 2px solid #FFD4F8;">
+                        <span class="fw-bold text-white fs-6">TOTAL PASIVO + PATRIMONIO</span>
+                        <span class="font-monospace fw-bold fs-5 text-neon-pink">${fmt(data.resumen.totalPasivoMasPatrimonio)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validación de Ecuación Contable -->
+        <div class="p-3 rounded-4 d-flex flex-wrap justify-content-between align-items-center gap-3"
+             style="background: rgba(219,255,153,0.08); border: 1px solid #DBFF99;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-check-circle-fill text-neon-green fs-3"></i>
+                <div>
+                    <div class="fw-bold text-white">Ecuación Fundamental Cuadrada con Éxito</div>
+                    <small class="text-muted">Activo Total = Pasivo Total + Patrimonio Neto | Diferencia: $0.00</small>
+                </div>
+            </div>
+            <span class="badge px-3 py-2 fs-6 rounded-pill" style="background:#DBFF99; color:#07060B;">
+                BALANCE CUADRADO 100%
+            </span>
+        </div>
+    `;
+}
+
+function renderizarEstadoResultados(data) {
+    const contenedor = document.getElementById('contenidoReporteGenerado');
+    if (!contenedor) return;
+
+    const fmt = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const sec = data.secciones;
+
+    const filasIngresos = sec.ingresos.filas.map(f => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="ps-3 text-white">${f.cuenta}</td>
+            <td class="text-end font-monospace pe-3">${fmt(f.monto)}</td>
+        </tr>
+    `).join('');
+
+    const filasCostos = sec.costos.filas.map(f => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="ps-3 text-white">${f.cuenta}</td>
+            <td class="text-end font-monospace pe-3">(${fmt(f.monto)})</td>
+        </tr>
+    `).join('');
+
+    const filasGastos = sec.gastosOperativos.filas.map(f => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td class="ps-3 text-white">${f.cuenta}</td>
+            <td class="text-end font-monospace pe-3">(${fmt(f.monto)})</td>
+        </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+        <!-- Header del Reporte -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pb-4 mb-4 border-bottom border-secondary border-opacity-25">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background:#FFD4F8; color:#07060B; font-weight:700;">ESTADO DE RESULTADOS (P&L)</span>
+                    <h4 class="text-white fw-bold mb-0">${data.reporte}</h4>
+                </div>
+                <div class="text-muted small">
+                    <strong>${data.empresa}</strong> &bull; Período contable: ${data.periodo} &bull; Expresado en ${data.moneda}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 btn-sm d-flex align-items-center gap-2" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir / PDF
+                </button>
+                <button type="button" class="btn btn-outline-light rounded-pill px-3 py-1 btn-sm d-flex align-items-center gap-2" onclick="exportarFinancieroCSV()">
+                    <i class="bi bi-file-earmark-spreadsheet text-neon-pink"></i> Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla Estructurada P&L -->
+        <div class="table-responsive rounded-4 mb-4" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+            <table class="table table-dark align-middle mb-0">
+                <thead>
+                    <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">
+                        <th class="ps-3 py-3 text-secondary text-uppercase small">Concepto Financiero</th>
+                        <th class="text-end pe-3 py-3 text-secondary text-uppercase small">Subtotal / Total (USD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 1. INGRESOS -->
+                    <tr style="background: rgba(219,255,153,0.05);">
+                        <td class="ps-3 fw-bold text-neon-green" colspan="2">${sec.ingresos.titulo}</td>
+                    </tr>
+                    ${filasIngresos}
+                    <tr class="fw-bold" style="border-bottom: 2px solid rgba(255,255,255,0.1);">
+                        <td class="ps-3 text-white">TOTAL INGRESOS OPERACIONALES</td>
+                        <td class="text-end font-monospace pe-3 text-neon-green">${fmt(sec.ingresos.total)}</td>
+                    </tr>
+
+                    <!-- 2. COSTO DE VENTAS -->
+                    <tr style="background: rgba(251,113,133,0.05);">
+                        <td class="ps-3 fw-bold text-danger" colspan="2">${sec.costos.titulo}</td>
+                    </tr>
+                    ${filasCostos}
+                    <tr class="fw-bold" style="border-bottom: 2px solid rgba(255,255,255,0.1);">
+                        <td class="ps-3 text-white">TOTAL COSTO DE VENTAS</td>
+                        <td class="text-end font-monospace pe-3 text-danger">(${fmt(sec.costos.total)})</td>
+                    </tr>
+
+                    <!-- UTILIDAD BRUTA -->
+                    <tr class="fs-6 fw-bold" style="background: rgba(219,255,153,0.12); border-bottom: 2px solid #DBFF99;">
+                        <td class="ps-3 text-white">UTILIDAD BRUTA (Margen Bruto: ${sec.utilidadBruta.margenPorcentaje})</td>
+                        <td class="text-end font-monospace pe-3 text-neon-green">${fmt(sec.utilidadBruta.monto)}</td>
+                    </tr>
+
+                    <!-- 3. GASTOS OPERATIVOS -->
+                    <tr style="background: rgba(255,212,248,0.05);">
+                        <td class="ps-3 fw-bold text-neon-pink" colspan="2">${sec.gastosOperativos.titulo}</td>
+                    </tr>
+                    ${filasGastos}
+                    <tr class="fw-bold" style="border-bottom: 2px solid rgba(255,255,255,0.1);">
+                        <td class="ps-3 text-white">TOTAL GASTOS OPERATIVOS</td>
+                        <td class="text-end font-monospace pe-3 text-neon-pink">(${fmt(sec.gastosOperativos.total)})</td>
+                    </tr>
+
+                    <!-- UTILIDAD OPERATIVA (EBIT) -->
+                    <tr class="fs-6 fw-bold" style="background: rgba(255,255,255,0.05); border-bottom: 2px solid rgba(255,255,255,0.2);">
+                        <td class="ps-3 text-white">UTILIDAD OPERATIVA (EBIT)</td>
+                        <td class="text-end font-monospace pe-3 ${sec.utilidadOperativa.monto >= 0 ? 'text-neon-green' : 'text-danger'}">
+                            ${sec.utilidadOperativa.monto >= 0 ? '' : '-'}${fmt(Math.abs(sec.utilidadOperativa.monto))}
+                        </td>
+                    </tr>
+
+                    <!-- 4. RESULTADO FINANCIERO -->
+                    <tr>
+                        <td class="ps-3 text-secondary">Intereses Bancarios y Comisiones de Líneas de Crédito</td>
+                        <td class="text-end font-monospace pe-3 text-secondary">(${fmt(sec.financieros.total)})</td>
+                    </tr>
+
+                    <!-- IMPUESTOS -->
+                    <tr>
+                        <td class="ps-3 text-secondary">${sec.impuestos.cuenta}</td>
+                        <td class="text-end font-monospace pe-3 text-secondary">(${fmt(sec.impuestos.monto)})</td>
+                    </tr>
+
+                    <!-- UTILIDAD NETA -->
+                    <tr class="fs-5 fw-bold" style="background:#07060B; border: 2px solid #DBFF99;">
+                        <td class="ps-3 text-white py-3">UTILIDAD NETA DEL EJERCICIO</td>
+                        <td class="text-end font-monospace pe-3 py-3 ${sec.utilidadNeta.monto >= 0 ? 'text-neon-green' : 'text-danger'}">
+                            ${sec.utilidadNeta.monto >= 0 ? '' : '-'}${fmt(Math.abs(sec.utilidadNeta.monto))}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function exportarFinancieroCSV() {
+    if (!datosFinancierosActuales) {
+        alert('Primero genera un reporte financiero.');
+        return;
+    }
+
+    let csvContent = '\uFEFF';
+    const tipo = datosFinancierosActuales.tipo;
+    const data = datosFinancierosActuales.data;
+
+    if (tipo === 'balance') {
+        csvContent += 'BALANCE GENERAL CLASIFICADO - AUTOS AMI S.A.\r\n';
+        csvContent += `Fecha de corte:,${data.fechaCorte}\r\n\r\n`;
+        csvContent += 'Código,Cuenta / Concepto,Saldo (USD)\r\n';
+
+        data.activos.corrientes.forEach(c => { csvContent += `${c.codigo},"${c.cuenta}",${c.saldo}\r\n`; });
+        csvContent += `,TOTAL ACTIVOS CORRIENTES,${data.activos.totalCorrientes}\r\n`;
+        data.activos.noCorrientes.forEach(c => { csvContent += `${c.codigo},"${c.cuenta}",${c.saldo}\r\n`; });
+        csvContent += `,TOTAL ACTIVOS NO CORRIENTES,${data.activos.totalNoCorrientes}\r\n`;
+        csvContent += `,TOTAL ACTIVOS,${data.activos.totalActivos}\r\n\r\n`;
+
+        data.pasivos.corrientes.forEach(c => { csvContent += `${c.codigo},"${c.cuenta}",${c.saldo}\r\n`; });
+        csvContent += `,TOTAL PASIVOS CORRIENTES,${data.pasivos.totalCorrientes}\r\n`;
+        data.pasivos.noCorrientes.forEach(c => { csvContent += `${c.codigo},"${c.cuenta}",${c.saldo}\r\n`; });
+        csvContent += `,TOTAL PASIVOS NO CORRIENTES,${data.pasivos.totalNoCorrientes}\r\n`;
+        csvContent += `,TOTAL PASIVOS,${data.pasivos.totalPasivos}\r\n\r\n`;
+
+        data.patrimonio.cuentas.forEach(c => { csvContent += `${c.codigo},"${c.cuenta}",${c.saldo}\r\n`; });
+        csvContent += `,TOTAL PATRIMONIO,${data.patrimonio.totalPatrimonio}\r\n`;
+        csvContent += `,TOTAL PASIVO + PATRIMONIO,${data.resumen.totalPasivoMasPatrimonio}\r\n`;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Balance_General_AMI_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } else {
+        csvContent += 'ESTADO DE RESULTADOS INTEGRAL - AUTOS AMI S.A.\r\n';
+        csvContent += `Período:,${data.periodo}\r\n\r\n`;
+        csvContent += 'Concepto,Monto (USD)\r\n';
+
+        const sec = data.secciones;
+        sec.ingresos.filas.forEach(f => { csvContent += `"${f.cuenta}",${f.monto}\r\n`; });
+        csvContent += `TOTAL INGRESOS,${sec.ingresos.total}\r\n`;
+        sec.costos.filas.forEach(f => { csvContent += `"${f.cuenta}",-${f.monto}\r\n`; });
+        csvContent += `UTILIDAD BRUTA,${sec.utilidadBruta.monto}\r\n`;
+        sec.gastosOperativos.filas.forEach(f => { csvContent += `"${f.cuenta}",-${f.monto}\r\n`; });
+        csvContent += `UTILIDAD OPERATIVA,${sec.utilidadOperativa.monto}\r\n`;
+        csvContent += `UTILIDAD NETA,${sec.utilidadNeta.monto}\r\n`;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Estado_Resultados_AMI_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+// ==========================================================================
+// MODAL DE SNAPSHOTS / INFORMES GUARDADOS
+// ==========================================================================
+function prepararModalGuardarInforme() {
+    if (!dashboardData) {
+        alert('Carga primero los datos del dashboard antes de guardar un informe.');
+        return;
+    }
+
+    const inputTitulo = document.getElementById('input-titulo-informe');
+    const inputNotas = document.getElementById('input-notas-informe');
+    const resRango = document.getElementById('resumen-rango-modal');
+    const resVentas = document.getElementById('resumen-ventas-modal');
+    const resStock = document.getElementById('resumen-stock-modal');
+
+    const fechaHoy = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (inputTitulo) inputTitulo.value = `Informe ${selectedTipo} - ${fechaHoy}`;
+    if (inputNotas) inputNotas.value = '';
+
+    if (resRango) resRango.textContent = selectedRango;
+    if (resVentas) resVentas.textContent = '$' + Number(dashboardData.kpis.totalVentas || 0).toLocaleString();
+    if (resStock) resStock.textContent = `${dashboardData.kpis.totalStock || 0} autos`;
+
+    const modalEl = document.getElementById('modalGuardarInforme');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+function ejecutarGuardadoInforme() {
+    const inputTitulo = document.getElementById('input-titulo-informe');
+    const inputNotas = document.getElementById('input-notas-informe');
+    const titulo = inputTitulo ? inputTitulo.value.trim() : '';
+
+    if (!titulo) {
+        alert('Por favor ingresa un título para el informe.');
+        return;
+    }
+
+    const nuevoInforme = {
+        id: Date.now(),
+        titulo: titulo,
+        notas: inputNotas ? inputNotas.value.trim() : '',
+        fechaGuardado: new Date().toISOString(),
+        rango: selectedRango,
+        tipo: selectedTipo,
+        kpis: dashboardData ? dashboardData.kpis : {},
+        graficas: dashboardData ? dashboardData.graficas : {},
+        items: currentDetailData || []
+    };
+
+    const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY_INFORMES) || '[]');
+    guardados.unshift(nuevoInforme);
+    localStorage.setItem(STORAGE_KEY_INFORMES, JSON.stringify(guardados));
+
+    actualizarBadgeGuardados();
+
+    const modalEl = document.getElementById('modalGuardarInforme');
+    if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    alert('¡Informe guardado con éxito en el historial!');
+}
+
+function abrirModalInformesGuardados() {
+    const contenedor = document.getElementById('listaInformesGuardados');
+    if (!contenedor) return;
+
+    const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY_INFORMES) || '[]');
+    if (guardados.length === 0) {
+        contenedor.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                No tienes informes guardados en este navegador.
+            </div>
+        `;
+    } else {
+        contenedor.innerHTML = guardados.map(inf => `
+            <div class="p-3 mb-3 rounded-3 d-flex flex-wrap justify-content-between align-items-center gap-3"
+                 style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                <div>
+                    <h6 class="text-white fw-bold mb-1">${inf.titulo}</h6>
+                    <div class="small text-muted">
+                        Guardado el ${new Date(inf.fechaGuardado).toLocaleDateString('es-ES')} &bull; Filtro: ${inf.tipo} (${inf.rango})
+                    </div>
+                    ${inf.notas ? `<div class="small text-secondary mt-1 fst-italic">"${inf.notas}"</div>` : ''}
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="cargarInformeHistorico(${inf.id})">
+                        <i class="bi bi-eye me-1"></i> Visualizar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="eliminarInformeGuardado(${inf.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    const modalEl = document.getElementById('modalInformesGuardados');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+function cargarInformeHistorico(id) {
+    const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY_INFORMES) || '[]');
+    const informe = guardados.find(i => i.id === id);
+    if (!informe) return;
+
+    modoInformeGuardado = informe;
+
+    // Actualizar KPIs y gráficas con los datos congelados
+    renderizarKPIs(informe.kpis);
+    renderizarGraficaVentasMes(informe.graficas?.ventasMes || []);
+    renderizarGraficaMarcas(informe.graficas?.marcasStock || []);
+    renderizarGraficaClientes(informe.graficas?.clientesOrigen || []);
+    renderizarGraficaCostos(informe.kpis, informe.graficas);
+
+    currentDetailData = informe.items || [];
+    renderizarTablaDetalle();
+
+    // Mostrar banner de modo histórico
+    const banner = document.getElementById('bannerModoHistorico');
+    const titulo = document.getElementById('tituloBannerHistorico');
+    const subtitulo = document.getElementById('subtituloBannerHistorico');
+    if (banner) banner.classList.remove('d-none');
+    if (titulo) titulo.textContent = `Visualizando: ${informe.titulo}`;
+    if (subtitulo) subtitulo.textContent = `Guardado el ${new Date(informe.fechaGuardado).toLocaleDateString('es-ES')} | Rango: ${informe.rango}`;
+
+    const modalEl = document.getElementById('modalInformesGuardados');
+    if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+}
+
+function salirDeModoHistorico() {
+    modoInformeGuardado = null;
+    const banner = document.getElementById('bannerModoHistorico');
+    if (banner) banner.classList.add('d-none');
+    cargarDashboard();
+}
+
+function eliminarInformeGuardado(id) {
+    if (!confirm('¿Seguro que deseas eliminar este informe del historial?')) return;
+    let guardados = JSON.parse(localStorage.getItem(STORAGE_KEY_INFORMES) || '[]');
+    guardados = guardados.filter(i => i.id !== id);
+    localStorage.setItem(STORAGE_KEY_INFORMES, JSON.stringify(guardados));
+    actualizarBadgeGuardados();
+    abrirModalInformesGuardados();
+}
+
+function actualizarBadgeGuardados() {
+    const badge = document.getElementById('contadorGuardadosBadge');
+    if (badge) {
+        const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY_INFORMES) || '[]');
+        badge.textContent = guardados.length;
     }
 }

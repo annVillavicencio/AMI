@@ -335,21 +335,38 @@
         <div class="col-12 col-xl-8">
             <div class="card card-custom p-4 rounded-4">
 
+                
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <div class="d-flex gap-2">
-                        <select class="form-select form-control-dark form-select-sm">
-                            <option>Septiembre 2026</option>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <select id="selectPeriodoMes" class="form-select form-control-dark form-select-sm" style="min-width: 140px;" onchange="filtrarPlanilla()">
+                            <option value="Todos">Todos los meses</option>
+                            <option value="Agosto" selected>Agosto 2026</option>
+                            <option value="Septiembre">Septiembre 2026</option>
+                            <option value="Octubre">Octubre 2026</option>
+                            <option value="Noviembre">Noviembre 2026</option>
+                            <option value="Diciembre">Diciembre 2026</option>
                         </select>
 
-                        <select class="form-select form-control-dark form-select-sm">
-                            <option>Primera Quincena</option>
+                        <select id="selectQuincenaPlanilla" class="form-select form-control-dark form-select-sm" style="min-width: 150px;" onchange="filtrarPlanilla()">
+                            <option value="Todos">Todos los períodos</option>
+                            <option value="Mes Completo">Mes Completo</option>
+                            <option value="Primera Quincena">Primera Quincena</option>
+                            <option value="Segunda Quincena">Segunda Quincena</option>
                         </select>
+
+                        <input type="text" id="searchPlanillaInput" class="form-control form-control-dark form-select-sm" placeholder="Buscar colaborador en planilla..." style="min-width: 220px;" oninput="filtrarPlanilla()">
                     </div>
 
-                    <button id="btnGenerarPlanilla" type="button" class="btn btn-light btn-sm fw-bold">
-                        <i class="fa-solid fa-file-invoice me-1"></i>
-                        Generar planilla
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button id="btnDescargarPlanillaExcel" type="button" class="btn btn-outline-info text-white btn-sm fw-bold rounded-pill px-3 shadow-sm d-flex align-items-center gap-1" onclick="descargarPlanillaExcel()" title="Descargar Planilla en formato Excel">
+                            <i class="bi bi-file-earmark-excel text-neon-green"></i>
+                            <span>Descargar Excel</span>
+                        </button>
+                        <button id="btnGenerarPlanilla" type="button" class="btn bg-neon-green text-dark btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="abrirModalGenerarPlanilla()">
+                            <i class="fa-solid fa-file-invoice me-1"></i>
+                            Generar planilla
+                        </button>
+                    </div>
                 </div>
                 <!-- CONTENEDOR DEL SCROLL -->
                 <div class="table-container">
@@ -433,24 +450,28 @@
                 </h6>
                 <div class="d-flex justify-content-between small text-secondary mb-2">
                     <span>Total salario base</span>
-                    <span class="text-white">C$ </span>
+                    <span class="text-white fw-bold" id="resumen-total-base">C$ 0.00</span>
                 </div>
                 <div class="d-flex justify-content-between small text-secondary mb-2">
                     <span>Total horas extra</span>
-                    <span class="text-white">C$ </span>
+                    <span class="text-white fw-bold" id="resumen-total-horas-extra">C$ 0.00</span>
                 </div>
                 <div class="d-flex justify-content-between small text-secondary mb-2">
                     <span>Total ingresos</span>
-                    <span class="text-white">C$ </span>
+                    <span class="text-white fw-bold" id="resumen-total-ingresos">C$ 0.00</span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary mb-2">
+                    <span>Total deducciones (INSS + IR)</span>
+                    <span class="text-danger fw-bold" id="resumen-total-deducciones">C$ 0.00</span>
                 </div>
                 <div class="d-flex justify-content-between small text-secondary mb-3">
-                    <span>Total deducciones</span>
-                    <span class="text-white">C$ </span>
+                    <span>Aporte Patronal (INSS 22.5%)</span>
+                    <span class="text-warning fw-bold" id="resumen-total-patronal">C$ 0.00</span>
                 </div>
                 <hr class="border-secondary opacity-25">
-                <div class="d-flex justify-content-between fw-bold text-white">
-                    <span>Total a pagar</span>
-                    <span class="text-neon-green">C$ </span>
+                <div class="d-flex justify-content-between fw-bold text-white fs-6">
+                    <span>Total a pagar (Neto)</span>
+                    <span class="text-neon-green" id="resumen-total-pagar">C$ 0.00</span>
                 </div>
             </div>
         </div>
@@ -546,6 +567,63 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Modal Reporte RRHH -->
+
+<!-- Modal Generar Planilla Oficial -->
+<div class="modal fade" id="modalGenerarPlanilla" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-custom text-white border-secondary border-opacity-25" style="background-color: #101218;">
+            <div class="modal-header border-bottom border-secondary border-opacity-25">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-file-invoice text-neon-green me-2"></i> Generar Nueva Planilla Salarial
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-secondary small mb-3">Calcula y genera automáticamente la nómina para todos los colaboradores activos aplicando deducciones oficiales de Ley 822 (INSS Laboral 7%, Retención IR Nicaragua e INSS Patronal 22.5%).</p>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Mes del Período *</label>
+                    <select id="modalPlanillaMes" class="form-select form-control-dark">
+                        <option value="Enero">Enero 2026</option>
+                        <option value="Febrero">Febrero 2026</option>
+                        <option value="Marzo">Marzo 2026</option>
+                        <option value="Abril">Abril 2026</option>
+                        <option value="Mayo">Mayo 2026</option>
+                        <option value="Junio">Junio 2026</option>
+                        <option value="Julio">Julio 2026</option>
+                        <option value="Agosto">Agosto 2026</option>
+                        <option value="Septiembre">Septiembre 2026</option>
+                        <option value="Octubre" selected>Octubre 2026</option>
+                        <option value="Noviembre">Noviembre 2026</option>
+                        <option value="Diciembre">Diciembre 2026</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Tipo de Período *</label>
+                    <select id="modalPlanillaQuincena" class="form-select form-control-dark">
+                        <option value="Mes Completo" selected>Mes Completo (30 días)</option>
+                        <option value="Primera Quincena">Primera Quincena (15 días)</option>
+                        <option value="Segunda Quincena">Segunda Quincena (15 días)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Año</label>
+                    <input type="number" id="modalPlanillaAnio" class="form-control form-control-dark" value="2026">
+                </div>
+                <div class="p-3 rounded-3 mb-2" style="background: rgba(219,255,153,0.06); border: 1px solid rgba(219,255,153,0.2);">
+                    <div class="small text-white fw-bold mb-1"><i class="bi bi-info-circle me-1 text-neon-green"></i> Colaboradores a procesar:</div>
+                    <div class="small text-secondary" id="modalPlanillaCountEmpleados">Procesando todos los colaboradores activos...</div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn bg-neon-green text-dark fw-bold rounded-pill px-4" id="btnConfirmarGenerarPlanilla" onclick="ejecutarGeneracionPlanilla()">
+                    <i class="bi bi-check-circle-fill me-1"></i> Generar y Guardar en BD
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalReporteRH" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content card-custom text-white">
@@ -583,7 +661,7 @@
 </div>
 <script src="../JS/script.js?v=3"></script>
 <script src="../JS/auth.js"></script>
-    <script src="../JS/recursosHumanos.js?v=3"></script>
+    <script src="../JS/recursosHumanos.js?v=7"></script>
 </body>
 </html>
 
