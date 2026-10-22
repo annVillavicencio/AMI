@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -12,98 +12,426 @@
         :root {
             --bg-main: #07060B;
             --bg-card: #0F1019;
-            --bg-card-hover: #151724;
             --bg-sidebar: #0B0C12;
-            --bg-input: #161722;
-            
-            /* Rosa bajo sólido para botones activos */
             --pink-soft: #E58FE5;
-            --pink-soft-glow: rgba(229, 143, 229, 0.25);
-            
-            --neon-purple: #A855F7;
-            --neon-purple-glow: rgba(168, 85, 247, 0.35);
             --neon-lime: #A3E635;
-            --neon-lime-glow: rgba(163, 230, 53, 0.35);
-            --neon-blue: #38BDF8;
-            
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --text-muted-custom: #A1A1AA; 
-            --text-banner-sub: #CBD5E1;   
-        } 
-
-        body { background-color: #07060B; color: #EFF0EB; font-family: system-ui, -apple-system, sans-serif; }
-        .card-custom { background-color: #0F1019; border: 1px solid rgba(255, 255, 255, 0.05); }
-        .dark-card { background-color: #0F1019; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; }
-        .text-neon-green { color: #DBFF99 !important; }
-        .bg-neon-green { background-color: #eaebe7 !important; color: #0B1009 !important; }
-        .text-neon-pink { color: #FFD4F8 !important; }
-        .bg-neon-pink { background-color: #FFD4F8 !important; color: #0B1009 !important; }
-        
-        /* Controles de formulario y botones */
-        .form-control-dark { background-color: #1A2218; border: 1px solid rgba(255,255,255,0.1); color: #EFF0EB; }
-        .form-control-dark:focus { background-color: #1A2218; color: #EFF0EB; border-color: #DBFF99; box-shadow: none; }
-        .btn-outline-green { border: 1px solid #DBFF99; color: #DBFF99; }
-        .btn-outline-green:hover { background-color: rgba(219, 255, 153, 0.1); color: #DBFF99; }
-        
-        .table-dark-custom { --bs-table-bg: transparent; --bs-table-color: #EFF0EB; --bs-table-border-color: rgba(255,255,255,0.05); }
-        .table-dark-custom th { font-weight: 600; color: #EFF0EB; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
-        .table-dark-custom td { padding: 1rem 0.5rem; vertical-align: middle; border-bottom: none; }
-        
-        
-        /* Elementos vacíos de la tabla (las barritas grises del diseño) */
-        .placeholder-line { display: inline-block; width: 60%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; }
-        
-        /* Enlaces de acciones rápidas */
-        .action-link { text-decoration: none; color: #EFF0EB; transition: 0.2s; }
-        .action-link:hover { color: #DBFF99; }
-        .badge-registrado { border: 1px solid #DBFF99; color: #DBFF99; background: rgba(219, 255, 153, 0.08); font-weight: 500; padding: 0.35em 0.8em; border-radius: 50px; font-size: 0.75rem; }
-        .badge-pendiente { border: 1px solid #FACC15; color: #FACC15; background: rgba(250, 204, 21, 0.08); font-weight: 500; padding: 0.35em 0.8em; border-radius: 50px; font-size: 0.75rem; }
-
-        .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .bg-icon-green { background: rgba(219, 255, 153, 0.1); color: #DBFF99; }
-        .bg-icon-pink { background: rgba(255, 212, 248, 0.1); color: #FFD4F8; }
-
-        .page-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background-color: #161722; border: 1px solid rgba(255,255,255,0.08); color: #FFF; font-size: 0.85rem; text-decoration: none; }
-        .page-btn.active { background-color: #DBFF99; color: #07060B; border-color: #DBFF99; font-weight: bold; }
-         .hero-banner-img { max-height: 140px; object-fit: contain; }
-
-         
-         .table-custom {
-            --bs-table-bg: transparent;
-            --bs-table-color: #F9FAFB;
-            --bs-table-border-color: var(--border-subtle);
+            --border-subtle: rgba(255,255,255,.08);
+            --text-muted-custom: #A1A1AA;
         }
 
-        .table-custom th {
-            color: var(--text-muted-custom);
-            font-weight: 500;
-            font-size: 0.82rem;
-            border-bottom-width: 1px;
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg-main);
+            color: #EFF0EB;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        .table-custom td {
-            padding: 0.9rem 0.5rem;
-            font-size: 0.88rem;
-        }
-        
-        .sidebar-active-pink {
-            background-color: var(--pink-soft) !important;
-            color: #07060B !important;
-            font-weight: 700;
-            box-shadow: 0 0 12px var(--pink-soft-glow);
-        }
-
-        .sidebar-promo-card {
-            background: linear-gradient(135deg, #1C132B 0%, #0F1019 100%);
-            border: 1px solid rgba(229, 143, 229, 0.2);
-            border-radius: 16px;
+        #wrapper {
+            height: 100vh;
+            overflow: hidden;
         }
 
         #sidebar-wrapper {
-            width: 250px;
+            width: 260px;
+            min-width: 260px;
             min-height: 100vh;
-            background-color: var(--bg-sidebar);
+            background: var(--bg-sidebar);
             border-right: 1px solid var(--border-subtle);
+        }
+
+        #sidebar-wrapper .sidebar-heading img {
+            max-height: 110px;
+            object-fit: contain;
+        }
+
+        #page-content-wrapper {
+            min-width: 0;
+            overflow-y: auto;
+            background: var(--bg-main);
+        }
+
+        .sidebar-link {
+            color: #EFF0EB !important;
+            border: 0 !important;
+            transition: .2s;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,.06) !important;
+        }
+
+        .sidebar-active {
+            background: #fff !important;
+            color: #101218 !important;
+            font-weight: 600;
+        }
+
+        .navbar {
+            background: var(--bg-main);
+            border-color: var(--border-subtle) !important;
+            min-height: 60px;
+        }
+
+        .text-neon-green { color: #DBFF99 !important; }
+        .text-neon-pink { color: #FFD4F8 !important; }
+
+        .card-custom,
+        .dashboard-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 13px;
+        }
+
+        /* Pestañas principales */
+
+        .custom-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 5px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+        }
+
+        .custom-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 17px;
+            border: none;
+            border-radius: 9px;
+            background: transparent;
+            color: #A1A1AA;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .custom-tab:hover {
+            color: #fff;
+            background: rgba(255,255,255,.05);
+        }
+
+        .custom-tab.active {
+            background: var(--pink-soft);
+            color: #07060B;
+            font-weight: 700;
+        }
+
+        /* Cambio de vistas */
+
+        .view-section {
+            width: 100%;
+            animation: fadeInView .2s ease;
+        }
+
+        .view-section.d-none {
+            display: none !important;
+        }
+
+        @keyframes fadeInView {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Filtros */
+
+        .filter-select {
+            min-height: 60px;
+            min-width: 190px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            background: var(--bg-card);
+            color: #EFF0EB;
+            text-align: left;
+        }
+
+        .filter-select::after { margin-left: auto; }
+        .dropdown-toggle-custom::after { display: none; }
+
+        .report-dropdown {
+            background: #151622;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 7px;
+        }
+
+        .report-dropdown .dropdown-item {
+            border-radius: 7px;
+            padding: 9px 12px;
+            color: #EFF0EB;
+        }
+
+        .report-dropdown .dropdown-item:hover {
+            background: rgba(229,143,229,.15);
+            color: #fff;
+        }
+
+        .btn-brand-green {
+            background: #DBFF99;
+            color: #07060B;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-weight: 650;
+        }
+
+        .btn-brand-green:hover {
+            background: #c8f17e;
+            color: #07060B;
+        }
+
+        /* Tarjetas KPI */
+
+        .kpi-box {
+            min-height: 100px;
+            padding: 18px;
+            border-radius: 13px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .kpi-green-light { background: #DBFF99; color: #101218; }
+        .kpi-green-dark { background: #64B60A; color: #fff; }
+        .kpi-gray { background: #EFF0EB; color: #101218; }
+        .kpi-pink { background: #FFD4F8; color: #18101A; }
+
+        .kpi-icon {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.2rem;
+        }
+
+        .kpi-green-light .kpi-icon,
+        .kpi-pink .kpi-icon { background: rgba(0,0,0,.08); }
+
+        .kpi-green-dark .kpi-icon { background: rgba(255,255,255,.1); }
+        .kpi-gray .kpi-icon { background: rgba(0,0,0,.06); }
+
+        .skeleton-line {
+            height: 8px;
+            margin: 8px 0;
+            border-radius: 5px;
+            background: rgba(255,255,255,.13);
+        }
+
+        .kpi-green-light .skeleton-line,
+        .kpi-pink .skeleton-line,
+        .kpi-gray .skeleton-line {
+            background: rgba(0,0,0,.15);
+        }
+
+        /* Tarjetas de gráficos */
+
+        .dashboard-card {
+            padding: 20px;
+            height: 100%;
+            min-height: 230px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .donut-chart-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            min-height: 175px;
+            flex-wrap: wrap;
+        }
+
+        .donut-chart {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: conic-gradient(
+                #64B60A 0 75%,
+                #252630 75% 100%
+            );
+            position: relative;
+        }
+
+        .donut-chart::after {
+            content: "";
+            position: absolute;
+            inset: 22px;
+            border-radius: 50%;
+            background: var(--bg-card);
+        }
+
+        .pie-chart {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: conic-gradient(
+                #FFD4F8 0 100%
+            );
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .bar-chart-horizontal {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 8px;
+        }
+
+        .bar-h {
+            height: 9px;
+            border-radius: 5px;
+            opacity: .9;
+        }
+
+        .bar-chart-vertical {
+            height: 145px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-top: 10px;
+        }
+
+        .bar-v {
+            width: 12%;
+            min-width: 12px;
+            border-radius: 6px 6px 0 0;
+            opacity: .9;
+        }
+
+        .bar-v.h-25 { height: 25% !important; }
+        .bar-v.h-50 { height: 50% !important; }
+        .bar-v.h-75 { height: 75% !important; }
+        .bar-v.h-100 { height: 100% !important; }
+
+        /* Contabilidad */
+
+        .financial-card {
+            background: #0B0C12;
+            border-radius: 18px;
+            padding: 24px;
+            min-height: 245px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .financial-icon {
+            width: 54px;
+            height: 54px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.6rem;
+        }
+
+        .btn-report-lime,
+        .btn-report-pink {
+            transition: transform .2s, filter .2s;
+        }
+
+        .btn-report-lime:hover,
+        .btn-report-pink:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+        }
+
+        .empty-report-panel {
+            min-height: 340px;
+            background: #0F1019;
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+        }
+
+        @media (max-width: 991px) {
+            #sidebar-wrapper {
+                width: 220px;
+                min-width: 220px;
+            }
+
+            .donut-chart-wrapper { gap: 12px; }
+            .donut-chart, .pie-chart {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            #wrapper {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            #sidebar-wrapper {
+                width: 100%;
+                min-width: 0;
+                min-height: auto;
+            }
+
+            #sidebar-wrapper .sidebar-menu {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 5px;
+            }
+
+            #page-content-wrapper { overflow: visible !important; }
+
+            .container-fluid.p-4 { padding: 1rem !important; }
+
+            .custom-tabs { width: 100%; }
+
+            .custom-tab {
+                flex: 1;
+                padding: 10px 8px;
+                font-size: .82rem;
+            }
+
+            .filter-select { width: 100%; }
+            .empty-report-panel { padding: 2rem 1rem !important; }
+
+            .financial-card { padding: 18px; }
         }
     </style>
 </head>
@@ -172,356 +500,672 @@
                 </div>
             </nav>
 
-            <div class="container-fluid p-4">
-                
-                <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon kpi-green-dark" style="width: 48px; height: 48px; font-size: 1.5rem;"><i class="bi bi-bar-chart-fill"></i></div>
-                        <div>
-                            <h3 class="text-white fw-bold mb-1">Reportes</h3>
-                            <p class="text-muted small mb-0">Visualiza y analiza el rendimiento de tu negocio en tiempo real.</p>
-                        </div>
+             <main class="container-fluid p-4">
+
+            <!-- ENCABEZADO COMPARTIDO -->
+            <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon kpi-green-dark"
+                         style="width:48px;height:48px;font-size:1.5rem;">
+                        <i class="bi bi-bar-chart-fill"></i>
                     </div>
-                    <div class="d-flex gap-3">
-            <div class="dropdown">
-                <button class="filter-select dropdown-toggle-custom" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="btnRango">
-                    <i class="bi bi-calendar3 text-muted"></i>
-                    <div class="d-flex flex-column lh-1 text-start">
-                        <span class="text-muted" style="font-size: 0.65rem;"> Rango de fechas</span>
-                    </div>
-                    <i class="bi bi-chevron-down ms-auto"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark report-dropdown">
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Hoy"> Hoy</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Últimos 7 días"> Últimos 7 días</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Últimos 30 días">Últimos 30 días</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Este mes">Este mes </button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Este año"> Este año</button>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <button class="dropdown-item opcion-rango" data-value="Personalizado">
-                            <i class="bi bi-calendar-range me-2"></i>Personalizado</button>
-                    </li>
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button
-                    class="filter-select dropdown-toggle-custom" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="btnTipoReporte">
-                    <i class="bi bi-file-earmark-text text-muted"></i>
-                    <div class="d-flex flex-column lh-1 text-start">
-                        <span class="text-muted" style="font-size: 0.65rem;"> Tipo de reporte </span>
-                    </div>
-                    <i class="bi bi-chevron-down ms-auto"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark report-dropdown">
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Todos"> Todos </button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Ventas"> <i class="bi bi-cart-check me-2"></i> Ventas</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Inventario"><i class="bi bi-car-front me-2"></i> Inventario</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Clientes"> <i class="bi bi-people me-2"></i> Clientes </button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Marketing"><i class="bi bi-megaphone me-2"></i> Marketing</button>
-                    </li>
-                    <li>
-                        <button class="dropdown-item opcion-tipo" data-value="Costos"> <i class="bi bi-calculator me-2"></i>Costos</button>
-                    </li>
-                </ul>
-            </div>
-            <button
-                class="btn btn-brand-green d-flex align-items-center gap-2" id="btnGenerarReporte"> <i class="bi bi-download"></i> Generar reporte
-            </button>
+
+                    <div>
+                        <h3 class="text-white fw-bold mb-1">Reportes</h3>
+                        <p class="text-muted small mb-0">
+                            Visualiza y analiza el rendimiento de tu negocio en tiempo real.
+                        </p>
                     </div>
                 </div>
-                <!-- Fila 1: KPIs -->
+
+                <!-- PESTAÑAS -->
+                <div class="custom-tabs" role="tablist">
+
+                    <button type="button"
+                            id="tab-estadistica"
+                            class="custom-tab active"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="view-estadistica"
+                            onclick="switchMainTab('estadistica')">
+                        <i class="bi bi-bar-chart-line"></i>
+                        Estadística
+                    </button>
+
+                    <button type="button"
+                            id="tab-contabilidad"
+                            class="custom-tab"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="view-contabilidad"
+                            onclick="switchMainTab('contabilidad')">
+                        <i class="bi bi-calculator"></i>
+                        Contabilidad
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 PESTAÑA 1: ESTADÍSTICA
+                 ========================================== -->
+            <section id="view-estadistica"
+                     class="view-section"
+                     role="tabpanel"
+                     aria-labelledby="tab-estadistica">
+
+                <!-- FILTROS -->
+                <div class="d-flex flex-wrap gap-3 mb-4">
+
+                    <div class="dropdown">
+                        <button class="filter-select dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+
+                            <i class="bi bi-calendar3 text-muted"></i>
+
+                            <div class="d-flex flex-column lh-1 text-start">
+                                <span class="text-muted" style="font-size:.65rem;">
+                                    Rango de fechas
+                                </span>
+
+                                <span id="rangoSeleccionado"
+                                      class="fw-semibold small mt-1">
+                                    Selecciona un rango
+                                </span>
+                            </div>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-dark report-dropdown">
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Hoy">Hoy</button></li>
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Últimos 7 días">Últimos 7 días</button></li>
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Últimos 30 días">Últimos 30 días</button></li>
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Este mes">Este mes</button></li>
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Este año">Este año</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item opcion-rango" type="button" data-value="Personalizado">Personalizado</button></li>
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="filter-select dropdown-toggle dropdown-toggle-custom"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+
+                            <i class="bi bi-file-earmark-text text-muted"></i>
+
+                            <div class="d-flex flex-column lh-1 text-start">
+                                <span class="text-muted" style="font-size:.65rem;">
+                                    Tipo de reporte
+                                </span>
+
+                                <span id="tipoSeleccionado" class="fw-semibold small mt-1">
+                                    Todos
+                                </span>
+                            </div>
+
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-dark report-dropdown">
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Todos">Todos</button></li>
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Ventas">Ventas</button></li>
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Inventario">Inventario</button></li>
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Clientes">Clientes</button></li>
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Marketing">Marketing</button></li>
+                            <li><button class="dropdown-item opcion-tipo" type="button" data-value="Costos">Costos</button></li>
+                        </ul>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-brand-green d-flex align-items-center gap-2"
+                            id="btnGenerarReporte">
+                        <i class="bi bi-download"></i>
+                        Generar reporte
+                    </button>
+                </div>
+
+                <!-- TARJETAS KPI -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-3">
+
+                    <div class="col-12 col-sm-6 col-xl-3">
                         <div class="kpi-box kpi-green-light">
                             <div class="kpi-icon"><i class="bi bi-car-front-fill"></i></div>
-                            <div class="w-50 mt-2">
+                            <div class="w-75 mt-2">
                                 <div class="skeleton-line w-100"></div>
                                 <div class="skeleton-line w-75"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+
+                    <div class="col-12 col-sm-6 col-xl-3">
                         <div class="kpi-box kpi-green-dark">
                             <div class="kpi-icon"><i class="bi bi-coin"></i></div>
-                            <div class="w-50 mt-2">
+                            <div class="w-75 mt-2">
                                 <div class="skeleton-line w-100"></div>
                                 <div class="skeleton-line w-75"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+
+                    <div class="col-12 col-sm-6 col-xl-3">
                         <div class="kpi-box kpi-gray">
                             <div class="kpi-icon"><i class="bi bi-tag-fill"></i></div>
-                            <div class="w-50 mt-2">
+                            <div class="w-75 mt-2">
                                 <div class="skeleton-line w-100"></div>
                                 <div class="skeleton-line w-75"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+
+                    <div class="col-12 col-sm-6 col-xl-3">
                         <div class="kpi-box kpi-pink">
                             <div class="kpi-icon"><i class="bi bi-calculator-fill"></i></div>
-                            <div class="w-50 mt-2">
+                            <div class="w-75 mt-2">
                                 <div class="skeleton-line w-100"></div>
                                 <div class="skeleton-line w-75"></div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-                <!-- Fila 2: Gráficos Superiores -->
+                <!-- GRÁFICOS SUPERIORES -->
                 <div class="row g-3 mb-4">
-                    <!-- Autos más vendidos -->
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <div class="chart-header">
-                                <h6 class="mb-0 small"><i class="bi bi-car-front me-2"></i> Autos más vendidos por marca</h6>
-                                <i class="bi bi-chevron-down text-muted small"></i>
-                            </div>
-                            <div class="donut-chart-wrapper">
-                                <div class="donut-chart"></div> <!-- Este div se reemplaza por el Canvas de Chart.js -->
-                                <div class="chart-legend">
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green-dark);"></div><div class="skeleton-line w-75 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-gray);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div><div class="skeleton-line w-50 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-pink);"></div><div class="skeleton-line w-75 m-0"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Campañas de marketing -->
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <div class="chart-header">
-                                <h6 class="mb-0 small"><i class="bi bi-megaphone me-2"></i> Campañas de marketing</h6>
-                                <i class="bi bi-chevron-down text-muted small"></i>
-                            </div>
-                            <div class="bar-chart-horizontal mt-3">
-                                <!-- Barras dinámicas -->
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-75" style="background: var(--brand-green);"></div></div>
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-50" style="background: var(--brand-green-dark);"></div></div>
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-100" style="background: var(--brand-gray);"></div></div>
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-50" style="background: var(--brand-green);"></div></div>
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-75" style="background: var(--text-muted);"></div></div>
-                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0 bg-secondary opacity-25"></div><div class="bar-h w-50" style="background: var(--brand-pink);"></div></div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Clientes por aplicación -->
-                    <div class="col-md-4">
+                    <div class="col-12 col-xl-4">
                         <div class="dashboard-card">
                             <div class="chart-header">
-                                <h6 class="mb-0 small"><i class="bi bi-person me-2"></i> Clientes por aplicación</h6>
+                                <h6 class="mb-0 small">
+                                    <i class="bi bi-car-front me-2"></i>
+                                    Autos más vendidos por marca
+                                </h6>
                                 <i class="bi bi-chevron-down text-muted small"></i>
                             </div>
+
                             <div class="donut-chart-wrapper">
                                 <div class="donut-chart"></div>
-                                <div class="chart-legend">
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green-dark);"></div><div class="skeleton-line w-75 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-gray);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div><div class="skeleton-line w-50 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-pink);"></div><div class="skeleton-line w-75 m-0"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Fila 3: Gráficos Inferiores -->
-                <div class="row g-3 mb-4">
-                    <!-- Rotación de inventario -->
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <h6 class="mb-3 small"><i class="bi bi-bar-chart-line me-2"></i> Rotación de inventario</h6>
-                            <div class="bar-chart-vertical px-3">
-                                <div class="bar-v h-75" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-50" style="background: var(--brand-green-dark);"></div>
-                                <div class="bar-v h-25" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-50" style="background: var(--brand-green-dark);"></div>
-                                <div class="bar-v h-25" style="background: var(--brand-pink);"></div>
-                            </div>
-                            <div class="d-flex justify-content-between px-3 mt-2">
-                                <div class="skeleton-line w-100 m-0 bg-secondary opacity-25"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Costos más frecuentes -->
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <h6 class="mb-3 small"><i class="bi bi-coin me-2"></i> Costos más frecuentes</h6>
-                            <div class="donut-chart-wrapper mt-4">
-                                <div class="pie-chart"></div>
                                 <div class="chart-legend">
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green-dark);"></div><div class="skeleton-line w-75 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-gray);"></div><div class="skeleton-line w-100 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div><div class="skeleton-line w-50 m-0"></div></div>
-                                    <div class="legend-item"><div class="legend-dot" style="background: var(--brand-pink);"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#DBFF99;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#64B60A;"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#71717A;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#A1A1AA;"></div><div class="skeleton-line w-50 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#FFD4F8;"></div><div class="skeleton-line w-75 m-0"></div></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Ventas por mes (Líneas placeholder) -->
-                    <div class="col-md-4">
+                    <div class="col-12 col-xl-4">
                         <div class="dashboard-card">
                             <div class="chart-header">
-                                <h6 class="mb-0 small"><i class="bi bi-calendar-event me-2"></i> Ventas por mes</h6>
-                                <div class="d-flex gap-2">
-                                    <div class="legend-dot" style="background: var(--brand-green);"></div>
-                                    <div class="legend-dot" style="background: var(--brand-pink);"></div>
-                                </div>
+                                <h6 class="mb-0 small">
+                                    <i class="bi bi-megaphone me-2"></i>
+                                    Campañas de marketing
+                                </h6>
+                                <i class="bi bi-chevron-down text-muted small"></i>
                             </div>
-                            <!-- Contenedor listo para inyectar gráfica de líneas -->
-                            <div class="bar-chart-vertical position-relative" style="background: linear-gradient(0deg, rgba(255,179,230,0.1) 0%, transparent 100%);">
-                                <!-- Placeholders visuales simulando puntos de línea -->
-                                <div class="position-absolute" style="bottom: 20%; left: 10%; width: 8px; height: 8px; background: var(--brand-pink); border-radius: 50%;"></div>
-                                <div class="position-absolute" style="bottom: 40%; left: 50%; width: 8px; height: 8px; background: var(--brand-pink); border-radius: 50%;"></div>
-                                <div class="position-absolute" style="bottom: 50%; left: 90%; width: 8px; height: 8px; background: var(--brand-pink); border-radius: 50%;"></div>
-                                
-                                <div class="position-absolute" style="bottom: 30%; left: 10%; width: 8px; height: 8px; background: var(--brand-green); border-radius: 50%;"></div>
-                                <div class="position-absolute" style="bottom: 60%; left: 50%; width: 8px; height: 8px; background: var(--brand-green); border-radius: 50%;"></div>
-                                <div class="position-absolute" style="bottom: 80%; left: 90%; width: 8px; height: 8px; background: var(--brand-green); border-radius: 50%;"></div>
+
+                            <div class="bar-chart-horizontal mt-3">
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-75" style="background:#DBFF99;"></div></div>
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-50" style="background:#64B60A;"></div></div>
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-100" style="background:#71717A;"></div></div>
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-50" style="background:#DBFF99;"></div></div>
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-75" style="background:#A1A1AA;"></div></div>
+                                <div class="d-flex align-items-center gap-2"><div class="skeleton-line w-25 m-0"></div><div class="bar-h w-50" style="background:#FFD4F8;"></div></div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-12 col-xl-4">
+                        <div class="dashboard-card">
+                            <div class="chart-header">
+                                <h6 class="mb-0 small">
+                                    <i class="bi bi-person me-2"></i>
+                                    Clientes por aplicación
+                                </h6>
+                                <i class="bi bi-chevron-down text-muted small"></i>
+                            </div>
+
+                            <div class="donut-chart-wrapper">
+                                <div class="donut-chart"></div>
+
+                                <div class="chart-legend">
+                                    <div class="legend-item"><div class="legend-dot" style="background:#DBFF99;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#64B60A;"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#71717A;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#A1A1AA;"></div><div class="skeleton-line w-50 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#FFD4F8;"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- Fila 4: Resumen y Ganancias -->
-                <div class="row g-3">
-                    <!-- Resumen General -->
-                    <div class="col-md-8">
+                <!-- GRÁFICOS INFERIORES -->
+                <div class="row g-3 mb-4">
+
+                    <div class="col-12 col-xl-4">
                         <div class="dashboard-card">
-                            <h6 class="mb-4 small"><i class="bi bi-file-text me-2"></i> Resumen general</h6>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
+                            <h6 class="mb-3 small">
+                                <i class="bi bi-bar-chart-line me-2"></i>
+                                Rotación de inventario
+                            </h6>
+
+                            <div class="bar-chart-vertical px-3">
+                                <div class="bar-v h-75" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-50" style="background:#64B60A;"></div>
+                                <div class="bar-v h-25" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-50" style="background:#64B60A;"></div>
+                                <div class="bar-v h-25" style="background:#FFD4F8;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-4">
+                        <div class="dashboard-card">
+                            <h6 class="mb-3 small">
+                                <i class="bi bi-coin me-2"></i>
+                                Costos más frecuentes
+                            </h6>
+
+                            <div class="donut-chart-wrapper mt-3">
+                                <div class="pie-chart"></div>
+
+                                <div class="chart-legend">
+                                    <div class="legend-item"><div class="legend-dot" style="background:#DBFF99;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#64B60A;"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#71717A;"></div><div class="skeleton-line w-100 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#A1A1AA;"></div><div class="skeleton-line w-50 m-0"></div></div>
+                                    <div class="legend-item"><div class="legend-dot" style="background:#FFD4F8;"></div><div class="skeleton-line w-75 m-0"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-4">
+                        <div class="dashboard-card">
+                            <div class="chart-header">
+                                <h6 class="mb-3 small">
+                                    <i class="bi bi-calendar-event me-2"></i>
+                                    Ventas por mes
+                                </h6>
+                            </div>
+
+                            <div class="bar-chart-vertical position-relative"
+                                 style="background:linear-gradient(0deg,rgba(255,179,230,.1),transparent);">
+
+                                <div class="position-absolute" style="bottom:20%;left:10%;width:8px;height:8px;background:#FFD4F8;border-radius:50%;"></div>
+                                <div class="position-absolute" style="bottom:40%;left:50%;width:8px;height:8px;background:#FFD4F8;border-radius:50%;"></div>
+                                <div class="position-absolute" style="bottom:50%;left:90%;width:8px;height:8px;background:#FFD4F8;border-radius:50%;"></div>
+
+                                <div class="position-absolute" style="bottom:30%;left:10%;width:8px;height:8px;background:#DBFF99;border-radius:50%;"></div>
+                                <div class="position-absolute" style="bottom:60%;left:50%;width:8px;height:8px;background:#DBFF99;border-radius:50%;"></div>
+                                <div class="position-absolute" style="bottom:80%;left:90%;width:8px;height:8px;background:#DBFF99;border-radius:50%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RESUMEN GENERAL -->
+                <div class="row g-3">
+
+                    <div class="col-12 col-xl-8">
+                        <div class="dashboard-card">
+                            <h6 class="mb-4 small">
+                                <i class="bi bi-file-text me-2"></i>
+                                Resumen general
+                            </h6>
+
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-3">
+
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="kpi-icon kpi-green-dark"><i class="bi bi-car-front"></i></div>
-                                    <div><div class="skeleton-line" style="width: 60px;"></div><div class="skeleton-line" style="width: 40px;"></div></div>
+                                    <div><div class="skeleton-line" style="width:60px;"></div><div class="skeleton-line" style="width:40px;"></div></div>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="kpi-icon kpi-green-dark"><i class="bi bi-person"></i></div>
-                                    <div><div class="skeleton-line" style="width: 60px;"></div><div class="skeleton-line" style="width: 40px;"></div></div>
+                                    <div><div class="skeleton-line" style="width:60px;"></div><div class="skeleton-line" style="width:40px;"></div></div>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="kpi-icon kpi-green-dark"><i class="bi bi-megaphone"></i></div>
-                                    <div><div class="skeleton-line" style="width: 60px;"></div><div class="skeleton-line" style="width: 40px;"></div></div>
+                                    <div><div class="skeleton-line" style="width:60px;"></div><div class="skeleton-line" style="width:40px;"></div></div>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="kpi-icon kpi-green-dark"><i class="bi bi-graph-up"></i></div>
-                                    <div><div class="skeleton-line" style="width: 60px;"></div><div class="skeleton-line" style="width: 40px;"></div></div>
+                                    <div><div class="skeleton-line" style="width:60px;"></div><div class="skeleton-line" style="width:40px;"></div></div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Ganancias por día -->
-                    <div class="col-md-4">
+
+                    <div class="col-12 col-xl-4">
                         <div class="dashboard-card">
-                            <h6 class="mb-2 small"><i class="bi bi-trophy me-2"></i> Ganancias por día</h6>
-                            <div class="bar-chart-vertical px-2 h-75">
-                                <div class="bar-v h-25" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-50" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-75" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-100" style="background: var(--brand-green);"></div>
-                                <div class="bar-v h-75" style="background: var(--brand-pink);"></div>
+                            <h6 class="mb-3 small">
+                                <i class="bi bi-trophy me-2"></i>
+                                Ganancias por día
+                            </h6>
+
+                            <div class="bar-chart-vertical px-2">
+                                <div class="bar-v h-25" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-50" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-75" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-100" style="background:#DBFF99;"></div>
+                                <div class="bar-v h-75" style="background:#FFD4F8;"></div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-            </div>
-        </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+            </section>
 
-    const opcionesRango = document.querySelectorAll('.opcion-rango');
+            <!-- ==========================================
+                 PESTAÑA 2: CONTABILIDAD
+                 ========================================== -->
+            <section id="view-contabilidad"
+                     class="view-section d-none"
+                     role="tabpanel"
+                     aria-labelledby="tab-contabilidad">
+
+                <div class="mb-4">
+                    <h4 class="text-white fw-bold mb-1">Reportes financieros</h4>
+                    <p class="text-muted small mb-0">
+                        Consulta y genera los reportes financieros de la empresa.
+                    </p>
+                </div>
+
+                <!-- TARJETAS FINANCIERAS -->
+                <div class="row g-4 mb-4">
+
+                    <!-- BALANCE GENERAL -->
+                    <div class="col-12 col-xl-6">
+                        <div class="financial-card h-100"
+                             style="border:1px solid rgba(163,230,53,.25);">
+
+                            <div class="d-flex justify-content-between align-items-start position-relative"
+                                 style="z-index:2;">
+
+                                <div class="d-flex gap-3">
+
+                                    <div class="financial-icon"
+                                         style="background:rgba(163,230,53,.1);border:1px solid #A3E635;">
+                                        <i class="bi bi-file-earmark-bar-graph text-neon-green"></i>
+                                    </div>
+
+                                    <div>
+                                        <h5 class="text-white fw-bold mb-1">
+                                            Balance General
+                                        </h5>
+
+                                        <p class="text-muted small mb-0"
+                                           style="max-width:300px;font-size:.82rem;">
+                                            Muestra la situación financiera de la empresa en un momento determinado.
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="mt-4 position-relative" style="z-index:2;">
+                                <button type="button"
+                                        class="btn rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 fw-semibold btn-report-lime"
+                                        style="background:#A3E635;color:#07060B;border:0;font-size:.85rem;"
+                                        onclick="mostrarReporteFinanciero('Balance General')">
+
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                    Generar reporte
+                                    <i class="bi bi-chevron-right ms-1"></i>
+
+                                </button>
+                            </div>
+
+                            <div class="position-absolute end-0 bottom-0 p-3 opacity-25"
+                                 style="pointer-events:none;z-index:1;">
+
+                                <div style="width:110px;height:110px;border-radius:50%;border:1px solid #A3E635;display:flex;align-items:center;justify-content:center;">
+                                    <i class="bi bi-bar-chart-line text-neon-green"
+                                       style="font-size:2.5rem;"></i>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ESTADO DE RESULTADOS -->
+                    <div class="col-12 col-xl-6">
+                        <div class="financial-card h-100"
+                             style="border:1px solid rgba(229,143,229,.25);">
+
+                            <div class="d-flex justify-content-between align-items-start position-relative"
+                                 style="z-index:2;">
+
+                                <div class="d-flex gap-3">
+
+                                    <div class="financial-icon"
+                                         style="background:rgba(229,143,229,.1);border:1px solid #E58FE5;">
+                                        <i class="bi bi-receipt-cutoff text-neon-pink"></i>
+                                    </div>
+
+                                    <div>
+                                        <h5 class="text-white fw-bold mb-1">
+                                            Estado de Resultados
+                                        </h5>
+
+                                        <p class="text-muted small mb-0"
+                                           style="max-width:300px;font-size:.82rem;">
+                                            Muestra los ingresos, costos y utilidades de la empresa en un periodo de tiempo.
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="mt-4 position-relative" style="z-index:2;">
+                                <button type="button"
+                                        class="btn rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 fw-semibold btn-report-pink"
+                                        style="background:#E58FE5;color:#07060B;border:0;font-size:.85rem;"
+                                        onclick="mostrarReporteFinanciero('Estado de Resultados')">
+
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                    Generar reporte
+                                    <i class="bi bi-chevron-right ms-1"></i>
+
+                                </button>
+                            </div>
+
+                            <div class="position-absolute end-0 bottom-0 p-3 opacity-25"
+                                 style="pointer-events:none;z-index:1;">
+
+                                <div style="width:110px;height:110px;border-radius:50%;border:1px solid #E58FE5;display:flex;align-items:center;justify-content:center;">
+                                    <i class="bi bi-graph-up-arrow text-neon-pink"
+                                       style="font-size:2.2rem;"></i>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- PANEL DE SELECCIÓN DEL REPORTE -->
+                <div id="panelReporteFinanciero"
+                     class="card-custom rounded-4 p-5 text-center d-flex flex-column align-items-center justify-content-center empty-report-panel">
+
+                    <div class="mb-4 position-relative d-flex align-items-center justify-content-center">
+
+                        <div style="width:110px;height:110px;background:radial-gradient(circle,rgba(163,230,53,.15),transparent 70%);border-radius:50%;position:absolute;"></div>
+
+                        <div class="p-3 rounded-4 d-flex align-items-center justify-content-center position-relative"
+                             style="background:#0B0C12;border:1px solid rgba(163,230,53,.4);width:80px;height:80px;box-shadow:0 0 20px rgba(163,230,53,.15);">
+
+                            <i id="iconoReporteFinanciero"
+                               class="bi bi-file-earmark-text-fill text-neon-green"
+                               style="font-size:2.2rem;"></i>
+
+                            <i class="bi bi-search text-neon-green position-absolute"
+                               style="font-size:1.1rem;bottom:12px;right:12px;"></i>
+                        </div>
+                    </div>
+
+                    <h5 id="tituloPanelFinanciero"
+                        class="text-white fw-bold mb-2">
+                        Selecciona un reporte para visualizar
+                    </h5>
+
+                    <p id="textoPanelFinanciero"
+                       class="text-muted small mb-0"
+                       style="max-width:440px;line-height:1.5;font-size:.85rem;">
+                        Elige entre Balance General o Estado de Resultados para visualizar la información financiera de tu empresa.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    /*
+     * CAMBIAR ENTRE ESTADÍSTICA Y CONTABILIDAD
+     * Solo se oculta una sección y se muestra la otra.
+     * El sidebar, navbar y encabezado no se modifican.
+     */
+    function switchMainTab(tab) {
+
+        const vistaEstadistica = document.getElementById('view-estadistica');
+        const vistaContabilidad = document.getElementById('view-contabilidad');
+
+        const botonEstadistica = document.getElementById('tab-estadistica');
+        const botonContabilidad = document.getElementById('tab-contabilidad');
+
+        if (tab === 'estadistica') {
+
+            vistaEstadistica.classList.remove('d-none');
+            vistaContabilidad.classList.add('d-none');
+
+            botonEstadistica.classList.add('active');
+            botonContabilidad.classList.remove('active');
+
+            botonEstadistica.setAttribute('aria-selected', 'true');
+            botonContabilidad.setAttribute('aria-selected', 'false');
+
+        } else if (tab === 'contabilidad') {
+
+            vistaEstadistica.classList.add('d-none');
+            vistaContabilidad.classList.remove('d-none');
+
+            botonContabilidad.classList.add('active');
+            botonEstadistica.classList.remove('active');
+
+            botonContabilidad.setAttribute('aria-selected', 'true');
+            botonEstadistica.setAttribute('aria-selected', 'false');
+
+        }
+    }
+
+    /*
+     * SELECCIÓN DEL RANGO DE FECHAS
+     */
     const rangoSeleccionado = document.getElementById('rangoSeleccionado');
 
-    opcionesRango.forEach(opcion => {
+    document.querySelectorAll('.opcion-rango').forEach(function(opcion) {
 
-        opcion.addEventListener('click', function () {
+        opcion.addEventListener('click', function() {
 
             const valor = this.dataset.value;
 
             rangoSeleccionado.textContent = valor;
 
-            console.log("Rango seleccionado:", valor);
+            if (valor === 'Personalizado') {
+                alert('La selección de fechas personalizadas se implementará posteriormente.');
+            }
 
         });
 
     });
 
-    const opcionesTipo = document.querySelectorAll('.opcion-tipo');
+    /*
+     * SELECCIÓN DEL TIPO DE REPORTE
+     */
     const tipoSeleccionado = document.getElementById('tipoSeleccionado');
 
-    opcionesTipo.forEach(opcion => {
+    document.querySelectorAll('.opcion-tipo').forEach(function(opcion) {
 
-        opcion.addEventListener('click', function () {
+        opcion.addEventListener('click', function() {
 
-            const valor = this.dataset.value;
-
-            tipoSeleccionado.textContent = valor;
-
-            console.log("Tipo de reporte:", valor);
+            tipoSeleccionado.textContent = this.dataset.value;
 
         });
 
     });
 
-    const btnGenerarReporte = document.getElementById('btnGenerarReporte');
-
-    btnGenerarReporte.addEventListener('click', function () {
+    /*
+     * BOTÓN GENERAR REPORTE ESTADÍSTICO
+     * Por ahora muestra una confirmación visual.
+     */
+    document.getElementById('btnGenerarReporte').addEventListener('click', function() {
 
         const rango = rangoSeleccionado.textContent;
         const tipo = tipoSeleccionado.textContent;
 
-        if (rango === "Selecciona un rango") {
-
-            alert("Selecciona un rango de fechas antes de generar el reporte.");
-
+        if (rango === 'Selecciona un rango') {
+            alert('Selecciona un rango de fechas antes de generar el reporte.');
             return;
         }
 
         alert(
-            "Reporte preparado\n\n" +
-            "Rango: " + rango + "\n" +
-            "Tipo: " + tipo
+            'Selección de reporte estadístico\n\n' +
+            'Rango: ' + rango + '\n' +
+            'Tipo: ' + tipo + '\n\n' +
+            'La generación real del reporte se implementará posteriormente.'
         );
-
-        console.log("Generar reporte:", {
-            rango: rango,
-            tipo: tipo
-        });
 
     });
 
+    /*
+     * SELECCIÓN VISUAL DE LOS REPORTES FINANCIEROS
+     */
+    function mostrarReporteFinanciero(tipoReporte) {
+
+        const titulo = document.getElementById('tituloPanelFinanciero');
+        const texto = document.getElementById('textoPanelFinanciero');
+        const icono = document.getElementById('iconoReporteFinanciero');
+
+        titulo.textContent = tipoReporte + ' seleccionado';
+
+        texto.textContent =
+            'Has seleccionado ' + tipoReporte +
+            '. Aquí se mostrará su información cuando se implemente la generación de reportes financieros.';
+
+        if (tipoReporte === 'Balance General') {
+
+            icono.className = 'bi bi-file-earmark-bar-graph text-neon-green';
+
+        } else {
+
+            icono.className = 'bi bi-receipt-cutoff text-neon-pink';
+
+        }
+
+    }
 </script>
+
 </body>
 </html>
