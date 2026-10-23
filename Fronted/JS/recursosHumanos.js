@@ -352,6 +352,27 @@ function renderizarTablaPlanilla(items) {
             ? '<span class="badge bg-success bg-opacity-25 text-success rounded-pill px-2">Pagada</span>'
             : '<span class="badge bg-warning bg-opacity-25 text-warning rounded-pill px-2">Pendiente</span>';
 
+        // CÁLCULO EXACTO Y TRANSPARENTE DE HORAS EXTRAS:
+        const salBase = parseFloat(r.SalarioBase) || 0;
+        const cantHoras = parseInt(r.HorasExtra, 10) || 0;
+        const montoHE = parseFloat(r.MontoHorasExtra || 0);
+        const valorHE = parseFloat(r.ValorHoraExtra || (cantHoras > 0 ? (montoHE / cantHoras) : (salBase / 240 * 1.5)));
+
+        let celdaHE = '';
+        if (cantHoras > 0 && montoHE > 0) {
+            celdaHE = `
+                <div class="fw-bold text-white">${fmt(montoHE)}</div>
+                <div class="small text-info opacity-75" title="Tarifa: ${fmt(valorHE)} por hora">${cantHoras} hrs (@${fmt(valorHE)})</div>
+            `;
+        } else if (cantHoras > 0) {
+            celdaHE = `
+                <div class="fw-bold text-white">${cantHoras} hrs</div>
+                <div class="small text-muted">C$ 0.00</div>
+            `;
+        } else {
+            celdaHE = `<span class="text-secondary small">C$ 0.00 <span class="opacity-50">(0 hrs)</span></span>`;
+        }
+
         pTr.innerHTML = `
             <td class="font-monospace small text-secondary">#PL-${r.IdPlanilla}</td>
             <td class="small text-secondary">${r.FechaInicioPeriodo || 'N/A'}</td>
@@ -359,7 +380,7 @@ function renderizarTablaPlanilla(items) {
             <td class="font-monospace small text-secondary">${r.CodigoEmpleado || 'N/A'}</td>
             <td class="text-white">${fmt(r.SalarioBase)}</td>
             <td class="text-center text-secondary">${r.DiasTrabajados}</td>
-            <td class="text-secondary">${fmt(r.HorasExtra)}</td>
+            <td class="text-end pe-3">${celdaHE}</td>
             <td class="text-secondary">${fmt(r.Bonificaciones)}</td>
             <td class="text-secondary">${fmt(r.Comisiones)}</td>
             <td class="text-secondary">${fmt(r.OtrosIngresos)}</td>
@@ -381,19 +402,25 @@ function renderizarTablaPlanilla(items) {
 
 function actualizarResumenPlanilla(items) {
     let sumBase = 0;
-    let sumHorasExtra = 0;
+    let sumMontoHorasExtra = 0;
+    let sumCantHorasExtra = 0;
     let sumIngresos = 0;
     let sumDeducciones = 0;
     let sumPatronal = 0;
     let sumPagar = 0;
 
     (items || []).forEach(r => {
-        sumBase += parseFloat(r.SalarioBase) || 0;
-        sumHorasExtra += parseFloat(r.HorasExtra) || 0;
-        sumIngresos += parseFloat(r.TotalIngresos) || 0;
+        const salBase = parseFloat(r.SalarioBase) || 0;
+        const cantHE = parseInt(r.HorasExtra, 10) || 0;
+        const montoHE = parseFloat(r.MontoHorasExtra || 0);
+
+        sumBase += salBase;
+        sumCantHorasExtra += cantHE;
+        sumMontoHorasExtra += montoHE;
+        sumIngresos += parseFloat(r.TotalIngresos || r.SalarioBruto) || 0;
         sumDeducciones += parseFloat(r.TotalDeducciones) || 0;
         sumPatronal += parseFloat(r.INSSPatronal) || 0;
-        sumPagar += parseFloat(r.TotalAPagar) || 0;
+        sumPagar += parseFloat(r.TotalAPagar || r.SalarioNeto) || 0;
     });
 
     const fmt = (v) => 'C$ ' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -401,8 +428,12 @@ function actualizarResumenPlanilla(items) {
     const elBase = document.getElementById('resumen-total-base');
     if (elBase) elBase.textContent = fmt(sumBase);
 
+    // TOTAL HORAS EXTRA: MONTO EN CÓRDOBAS (NO NÚMERO DE HORAS)
     const elHoras = document.getElementById('resumen-total-horas-extra');
-    if (elHoras) elHoras.textContent = fmt(sumHorasExtra);
+    if (elHoras) elHoras.textContent = fmt(sumMontoHorasExtra);
+
+    const elCantHoras = document.getElementById('resumen-cantidad-horas-extra');
+    if (elCantHoras) elCantHoras.textContent = `${sumCantHorasExtra} hrs acumuladas en el período`;
 
     const elIngresos = document.getElementById('resumen-total-ingresos');
     if (elIngresos) elIngresos.textContent = fmt(sumIngresos);
@@ -451,10 +482,21 @@ window.ejecutarGeneracionPlanilla = async function () {
             btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculando ley...';
         }
 
+        const factorEl = document.getElementById('selectFactorHorasExtra');
+        const checkEl = document.getElementById('checkHorasExtrasEstimadas');
+        const factorRecargo = factorEl ? parseFloat(factorEl.value) : 1.5;
+        const incluirHorasExtrasEstimadas = checkEl ? checkEl.checked : true;
+
         const res = await fetch('/api/recursosHumanos/planilla/generar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mes, anio, quincena })
+            body: JSON.stringify({ 
+                mes, 
+                anio, 
+                quincena,
+                factorRecargo,
+                incluirHorasExtrasEstimadas
+            })
         });
 
         const data = await res.json();
@@ -587,7 +629,7 @@ function descargarPlanillaExcel() {
     const periodoLabel = `${selectMes ? selectMes.value : 'General'}_${selectQuincena ? selectQuincena.value : ''}`.replace(/\s+/g, '_');
 
     let csvContent = "\uFEFF";
-    csvContent += "ID Planilla,Empleado,Código Empleado,Periodo Inicial,Periodo Final,Fecha Pago,Salario Base (C$),Días Trabajados,Horas Extra,Bonificaciones (C$),Comisiones (C$),Otros Ingresos (C$),Salario Bruto (C$),INSS Laboral 7% (C$),IR Retención (C$),Otras Deducciones (C$),Total Deducciones (C$),Salario Neto (C$),INSS Patronal 22.5% (C$),Total a Pagar (C$),Estado\r\n";
+    csvContent += "ID Planilla,Empleado,Código Empleado,Periodo Inicial,Periodo Final,Fecha Pago,Salario Base (C$),Días Trabajados,Horas Extra (Cant),Monto Horas Extra (C$),Bonificaciones (C$),Comisiones (C$),Otros Ingresos (C$),Salario Bruto (C$),INSS Laboral 7% (C$),IR Retención (C$),Otras Deducciones (C$),Total Deducciones (C$),Salario Neto (C$),INSS Patronal 22.5% (C$),Total a Pagar (C$),Estado\r\n";
 
     lista.forEach(r => {
         const id = r.id || r.IdPlanilla || '';
@@ -612,7 +654,8 @@ function descargarPlanillaExcel() {
         const totPagar = parseFloat(r.totalAPagar || r.TotalAPagar || 0).toFixed(2);
         const est = r.estado || r.Estado || 'Pagado';
 
-        csvContent += `"${id}","${emp}","${cod}","${fIni}","${fFin}","${fPago}",${salBase},${dias},${hExtra},${bonif},${com},${otros},${salBruto},${inss},${ir},${otrasDed},${totDed},${salNeto},${inssPat},${totPagar},"${est}"\r\n`;
+        const montoHE = parseFloat(r.MontoHorasExtra || 0).toFixed(2);
+        csvContent += `"${id}","${emp}","${cod}","${fIni}","${fFin}","${fPago}",${salBase},${dias},${hExtra},${montoHE},${bonif},${com},${otros},${salBruto},${inss},${ir},${otrasDed},${totDed},${salNeto},${inssPat},${totPagar},"${est}"\r\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
