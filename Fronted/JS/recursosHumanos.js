@@ -390,7 +390,7 @@ function renderizarTablaPlanilla(items) {
             <td class="text-secondary">-${fmt(r.OtrasDeducciones)}</td>
             <td class="text-danger fw-bold">-${fmt(r.TotalDeducciones)}</td>
             <td class="text-success fw-bold">${fmt(r.SalarioNeto)}</td>
-            <td class="text-warning small">${fmt(r.INSSPatronal)}</td>
+            <td class="text-warning small" title="Aporte asumido por la empresa ante el INSS: ${fmt(r.INSSPatronal)} (No deducible al trabajador)">${fmt(r.INSSPatronal)}</td>
             <td class="fw-bold text-neon-green fs-6">${fmt(r.TotalAPagar)}</td>
             <td class="small text-secondary">${r.FechaPago || 'N/A'}</td>
             <td class="text-center">${estadoBadge}</td>
