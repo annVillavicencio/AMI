@@ -76,6 +76,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.use('/api/inventario', require('./routes/inventario'));
 app.use('/api/ventas', require('./routes/ventas'));
+app.use('/api/facturas', require('./routes/facturas'));
 app.use('/api/compras', require('./routes/compras'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/costos', require('./routes/costos'));

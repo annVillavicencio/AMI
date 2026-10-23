@@ -301,7 +301,30 @@
                     <p class="text-secondary small">Gestiona y administra las ventas realizadas en AMI.</p>
                 </div>
 
-                <div class="row g-4">
+                
+                <!-- Pestañas de Navegación: Ventas, Facturas y Apartado Fiscal DGI -->
+                <ul class="nav nav-pills mb-4 gap-2" id="ventasPills" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill px-4 fw-bold" id="pills-ventas-tab" data-bs-toggle="pill" data-bs-target="#pills-ventas" type="button" role="tab" aria-selected="true">
+                            <i class="bi bi-tag-fill me-2"></i>Gestión de Ventas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4 fw-bold" id="pills-facturas-tab" data-bs-toggle="pill" data-bs-target="#pills-facturas" type="button" role="tab" aria-selected="false">
+                            <i class="bi bi-receipt me-2"></i>Facturas Emitidas (<span id="badge-total-facturas">0</span>)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4 fw-bold border border-success border-opacity-50" id="pills-dgi-tab" data-bs-toggle="pill" data-bs-target="#pills-dgi" type="button" role="tab" aria-selected="false">
+                            <i class="bi bi-shield-check me-2 text-neon-green"></i>Apartado Fiscal DGI (Ley 822)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="ventasPillsContent">
+                    <!-- PESTAÑA 1: GESTIÓN DE VENTAS -->
+                    <div class="tab-pane fade show active" id="pills-ventas" role="tabpanel" aria-labelledby="pills-ventas-tab">
+<div class="row g-4">
                     <div class="col-lg-8">
                       
                          <div class="card dark-card border-0 rounded-4 shadow-sm mb-4 position-relative overflow-hidden">
@@ -546,88 +569,463 @@
         </div>
     </div>
     
+
+                    </div>
+                    <!-- FIN PESTAÑA 1 -->
+
+                    <!-- PESTAÑA 2: FACTURAS EMITIDAS -->
+                    <div class="tab-pane fade" id="pills-facturas" role="tabpanel" aria-labelledby="pills-facturas-tab">
+                        <div class="card card-custom rounded-4 p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                                <div>
+                                    <h5 class="fw-bold text-neon-green mb-1"><i class="bi bi-receipt me-2"></i>Facturas Comerciales y Fiscales</h5>
+                                    <p class="text-secondary small mb-0">Listado oficial de facturas emitidas para traspaso vehicular y control comercial.</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn bg-neon-green text-dark fw-bold rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalFactura" type="button">
+                                        <i class="bi bi-plus-circle me-2"></i>Nueva Factura
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-dark-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nº Factura</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Vehículo / VIN</th>
+                                            <th>Vendedor</th>
+                                            <th>Condición</th>
+                                            <th>Total (USD)</th>
+                                            <th>Total (Córdobas)</th>
+                                            <th>Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpo-tabla-facturas">
+                                        <tr><td colspan="10" class="text-center text-muted py-4"><div class="spinner-border text-success spinner-border-sm me-2"></div>Cargando facturas...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FIN PESTAÑA 2 -->
+
+                    <!-- PESTAÑA 3: APARTADO FISCAL DGI -->
+                    <div class="tab-pane fade" id="pills-dgi" role="tabpanel" aria-labelledby="pills-dgi-tab">
+                        <!-- Banner Oficial DGI -->
+                        <div class="card border border-success border-opacity-50 rounded-4 p-4 mb-4" style="background: linear-gradient(135deg, rgba(20, 35, 25, 0.95), rgba(10, 15, 12, 0.95));">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-success text-dark fw-bold px-3 py-1">REGISTRO FISCAL OFICIAL</span>
+                                        <span class="badge bg-dark border border-secondary text-white small">Ley 822 de Concertación Tributaria</span>
+                                    </div>
+                                    <h4 class="fw-bold text-white mb-1"><i class="bi bi-shield-check text-neon-green me-2"></i>Apartado Fiscal DGI - Libro de Ventas y Retenciones</h4>
+                                    <p class="text-secondary small mb-0">
+                                        Contribuyente: <strong class="text-white">AUTOS AMI S.A.</strong> | RUC: <strong class="text-neon-green">J0310000123456</strong> | Resolución DGI: <strong class="text-white">DGI-RES-2026-98432</strong> | Serie: <strong class="text-white">AMI-A</strong>
+                                    </p>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button class="btn btn-outline-light rounded-pill px-3" onclick="cargarApartadoDGI()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                                    </button>
+                                    <button class="btn bg-neon-green text-dark fw-bold rounded-pill px-4" onclick="exportarLibroVentasDGIExcel()">
+                                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar Libro DGI (Excel)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjetas KPIs DGI -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="card card-custom rounded-4 p-3 border-start border-4 border-primary">
+                                    <div class="text-secondary small">Ventas Gravadas DGI</div>
+                                    <h4 id="dgi-kpi-gravado" class="fw-bold text-white mb-0">$ 0.00</h4>
+                                    <div id="dgi-kpi-gravado-nio" class="text-neon-green small">C$ 0.00</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-custom rounded-4 p-3 border-start border-4 border-success">
+                                    <div class="text-secondary small">Débito Fiscal IVA (15%)</div>
+                                    <h4 id="dgi-kpi-iva" class="fw-bold text-neon-green mb-0">$ 0.00</h4>
+                                    <div id="dgi-kpi-iva-nio" class="text-white-50 small">C$ 0.00</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-custom rounded-4 p-3 border-start border-4 border-warning">
+                                    <div class="text-secondary small">Retención DGI en Fuente (2%)</div>
+                                    <h4 id="dgi-kpi-ret-dgi" class="fw-bold text-warning mb-0">$ 0.00</h4>
+                                    <div id="dgi-kpi-ret-dgi-nio" class="text-white-50 small">C$ 0.00</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-custom rounded-4 p-3 border-start border-4 border-info">
+                                    <div class="text-secondary small">Retención Alcaldía IMI (1%)</div>
+                                    <h4 id="dgi-kpi-ret-alcaldia" class="fw-bold text-info mb-0">$ 0.00</h4>
+                                    <div id="dgi-kpi-ret-alcaldia-nio" class="text-white-50 small">C$ 0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla Libro de Ventas Fiscales DGI -->
+                        <div class="card card-custom rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-white mb-0"><i class="bi bi-journal-text text-neon-green me-2"></i>Libro de Ventas Fiscales Autorizadas por la DGI</h6>
+                                <span class="badge bg-secondary text-white" id="dgi-badge-tasa">Tasa Oficial BCN: C$ 36.6243</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-dark-custom align-middle small mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Folio Fiscal</th>
+                                            <th>Emisión</th>
+                                            <th>RUC / Cédula Cliente</th>
+                                            <th>Nombre o Razón Social</th>
+                                            <th>Nº Autorización DGI</th>
+                                            <th class="text-end">Base Gravada</th>
+                                            <th class="text-end">IVA (15%)</th>
+                                            <th class="text-end">Ret. DGI (2%)</th>
+                                            <th class="text-end">Ret. Alcaldía (1%)</th>
+                                            <th class="text-end">Total USD</th>
+                                            <th class="text-end">Total Córdobas (C$)</th>
+                                            <th class="text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpo-tabla-dgi">
+                                        <tr><td colspan="12" class="text-center text-muted py-4">Cargando Libro de Ventas Fiscales...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FIN PESTAÑA 3 -->
+                </div>
+                <!-- FIN TAB CONTENT -->
+
+
 <!-- Modal para generar factura -->
-<div class="modal fade" id="modalFactura"
-     tabindex="-1" aria-hidden="true">
-
-    <div class="modal-dialog modal-dialog-centered">
-
+<div class="modal fade" id="modalFactura" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content card-custom text-white">
-
             <div class="modal-header border-bottom border-secondary border-opacity-25">
                 <h5 class="modal-title fw-bold">
                     <i class="bi bi-receipt text-neon-green me-2"></i>
-                    Generar factura
+                    Generar Factura Comercial / Fiscal (DGI)
                 </h5>
-
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar">
-                </button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
-            <div class="modal-body">
-
-                <p class="text-secondary small">
-                    Selecciona una venta registrada para generar
-                    su factura con los datos correspondientes.
-                </p>
-
+            <div class="modal-body p-4">
                 <form id="formGenerarFactura">
-
-                    <div class="mb-3">
-                        <label for="ventaFactura" class="form-label">
-                            Venta
-                        </label>
-
-                        <select
-                            id="ventaFactura"
-                            name="idVenta"
-                            class="form-select form-control-dark"
-                            required>
-                            <option value="">
-                                Selecciona una venta...
-                            </option>
-                        </select>
-
-                        <div class="form-text text-secondary">
-                            Se mostrarán las ventas que aún no tengan
-                            una factura emitida.
+                    <!-- Sección 1: Selección de Venta -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label for="ventaFactura" class="form-label small text-secondary fw-semibold">
+                                Venta Registrada a Facturar <span class="text-danger">*</span>
+                            </label>
+                            <select id="ventaFactura" name="idVenta" class="form-select form-control-dark" required>
+                                <option value="">Selecciona una venta pendiente...</option>
+                            </select>
+                            <div class="form-text text-secondary">
+                                Muestra las ventas finalizadas que aún no tienen factura emitida.
+                            </div>
                         </div>
                     </div>
 
-                    <div id="mensajeFactura"
-                         class="small mb-3"
-                         role="status"
-                         aria-live="polite">
+                    <!-- Datos autocompletados del cliente y auto -->
+                    <div id="bloqueInfoVenta" class="p-3 rounded-3 mb-3 border border-secondary border-opacity-25" style="background-color: rgba(255,255,255,0.03); display: none;">
+                        <div class="row g-2 small">
+                            <div class="col-md-6">
+                                <span class="text-secondary">Cliente:</span> <strong id="lblClienteNombre" class="text-white">-</strong><br>
+                                <span class="text-secondary">Cédula / RUC:</span> <strong id="lblClienteId" class="text-neon-pink">-</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-secondary">Vehículo:</span> <strong id="lblAutoNombre" class="text-white">-</strong><br>
+                                <span class="text-secondary">VIN / Chasis:</span> <strong id="lblAutoVIN" class="text-neon-green">-</strong> | 
+                                <span class="text-secondary">Placa:</span> <strong id="lblAutoPlaca" class="text-white">-</strong>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Sección 2: Vendedor y Términos Comerciales -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="facturaVendedor" class="form-label small text-secondary fw-semibold">
+                                Vendedor Responsable (FK Empleado) <span class="text-danger">*</span>
+                            </label>
+                            <select id="facturaVendedor" class="form-select form-control-dark" required>
+                                <option value="">Cargando vendedores...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="facturaCondicion" class="form-label small text-secondary fw-semibold">
+                                Condición de Venta
+                            </label>
+                            <select id="facturaCondicion" class="form-select form-control-dark">
+                                <option value="Contado">Contado</option>
+                                <option value="Crédito">Crédito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3" id="grupoPlazo" style="display: none;">
+                            <label for="facturaPlazo" class="form-label small text-secondary fw-semibold">
+                                Plazo (Meses)
+                            </label>
+                            <input type="number" id="facturaPlazo" class="form-control form-control-dark" value="24" min="1" max="72">
+                        </div>
+                    </div>
+
+                    <!-- Sección 3: Moneda, Tasa BCN y Garantía -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="facturaMoneda" class="form-label small text-secondary fw-semibold">
+                                Moneda de Facturación
+                            </label>
+                            <select id="facturaMoneda" class="form-select form-control-dark">
+                                <option value="USD">Dólares (USD $)</option>
+                                <option value="NIO">Córdobas (NIO C$)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="facturaTipoCambio" class="form-label small text-secondary fw-semibold">
+                                Tipo de Cambio BCN (Oficial)
+                            </label>
+                            <input type="number" step="0.0001" id="facturaTipoCambio" class="form-control form-control-dark" value="36.6243" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="facturaGarantia" class="form-label small text-secondary fw-semibold">
+                                Garantía Concesionaria
+                            </label>
+                            <select id="facturaGarantia" class="form-select form-control-dark">
+                                <option value="12">12 Meses (1 Año)</option>
+                                <option value="24">24 Meses (2 Años)</option>
+                                <option value="36">36 Meses (3 Años)</option>
+                                <option value="6">6 Meses</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Sección 4: Apartado Fiscal DGI y Retenciones Ley 822 -->
+                    <div class="p-3 rounded-3 mb-3 border border-success border-opacity-25" style="background-color: rgba(20, 40, 25, 0.4);">
+                        <h6 class="fw-bold text-neon-green mb-2"><i class="bi bi-shield-check me-2"></i>Apartado Fiscal DGI (Nicaragua - Ley 822)</h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="chkRetencionDGI" checked>
+                                    <label class="form-check-label small" for="chkRetencionDGI">
+                                        Retención en la Fuente DGI (<strong>2.00%</strong> a cuenta del IR)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="chkRetencionAlcaldia" checked>
+                                    <label class="form-check-label small" for="chkRetencionAlcaldia">
+                                        Retención Municipal IMI (<strong>1.00%</strong> Alcaldía)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Financiero en Vivo -->
+                        <div class="row g-2 pt-2 border-top border-secondary border-opacity-25 small">
+                            <div class="col-6 text-secondary">Subtotal Gravado:</div>
+                            <div class="col-6 text-end fw-bold text-white" id="prevSubtotal">$ 0.00</div>
+
+                            <div class="col-6 text-secondary">(+) IVA Oficial (15%):</div>
+                            <div class="col-6 text-end fw-bold text-neon-green" id="prevIVA">+ $ 0.00</div>
+
+                            <div class="col-6 text-secondary">(-) Retención DGI (2%):</div>
+                            <div class="col-6 text-end text-warning" id="prevRetDGI">- $ 0.00</div>
+
+                            <div class="col-6 text-secondary">(-) Retención Alcaldía (1%):</div>
+                            <div class="col-6 text-end text-info" id="prevRetAlcaldia">- $ 0.00</div>
+
+                            <div class="col-6 text-white fw-bold fs-6 pt-1 border-top border-secondary border-opacity-25">Total Neto a Pagar:</div>
+                            <div class="col-6 text-end fw-bold text-neon-green fs-6 pt-1 border-top border-secondary border-opacity-25" id="prevTotalUSD">$ 0.00</div>
+
+                            <div class="col-6 text-secondary">Equivalente Oficial DGI en Córdobas:</div>
+                            <div class="col-6 text-end fw-bold text-white" id="prevTotalNIO">C$ 0.00</div>
+                        </div>
+                    </div>
+
+                    <div id="mensajeFactura" class="small mb-3" role="status" aria-live="polite"></div>
 
                     <div class="d-flex justify-content-end gap-2">
-
-                        <button type="button"
-                                class="btn border-secondary text-white rounded-pill px-4"
-                                data-bs-dismiss="modal">
+                        <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">
                             Cancelar
                         </button>
-
-                        <button type="submit"
-                                id="btnGenerarFactura"
-                                class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">
-                            <i class="bi bi-file-earmark-pdf me-1"></i>
-                            Generar
+                        <button type="submit" id="btnGenerarFactura" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Emitir Factura Autorizada
                         </button>
-
                     </div>
-
                 </form>
             </div>
-
         </div>
     </div>
 </div>
 
-    <!-- Bootstrap JS -->
+<!-- Modal para Ver / Imprimir Factura Oficial DGI -->
+<div class="modal fade" id="modalVerFactura" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content card-custom text-white">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 d-print-none">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-pdf text-neon-green me-2"></i>
+                    Factura Legal de Venta - AUTOS AMI S.A.
+                </h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-3" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Imprimir / Guardar PDF
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+            </div>
+
+            <div class="modal-body p-4" id="contenedorFacturaImprimible">
+                <!-- Plantilla de la factura oficial -->
+                <div class="p-4 rounded-3 border border-secondary border-opacity-25" style="background-color: #0d0f12; color: #fff;">
+                    <!-- Cabecera Fiscal -->
+                    <div class="row pb-3 border-bottom border-secondary border-opacity-50">
+                        <div class="col-sm-7">
+                            <h3 class="fw-bold text-neon-green mb-0">AUTOS AMI S.A.</h3>
+                            <div class="small text-secondary">Concesionaria y Comercializadora de Vehículos Nuevos y Seminuevos</div>
+                            <div class="small text-secondary">RUC: <strong class="text-white">J0310000123456</strong></div>
+                            <div class="small text-secondary">Dirección: Pista Jean Paul Genie, Managua, Nicaragua</div>
+                            <div class="small text-secondary">PBX: (505) 2278-9000 | info@autosami.com.ni</div>
+                        </div>
+                        <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+                            <div class="badge bg-danger text-white px-3 py-2 fs-6 mb-2" id="vfEstadoBadge">FACTURA EMITIDA</div>
+                            <h5 class="fw-bold text-white mb-0" id="vfNumeroFactura">AMI-FAC-0001</h5>
+                            <div class="small text-secondary">Serie: <strong class="text-white" id="vfSerie">AMI-A</strong></div>
+                            <div class="small text-secondary">Resolución DGI: <strong class="text-white" id="vfResolucionDGI">DGI-RES-2026-98432</strong></div>
+                            <div class="small text-secondary">Rango: <span id="vfRango">000001 - 010000</span> | Límite: 31/12/2026</div>
+                        </div>
+                    </div>
+
+                    <!-- Datos del Cliente y la Operación -->
+                    <div class="row py-3 border-bottom border-secondary border-opacity-25 small">
+                        <div class="col-md-6">
+                            <div class="text-secondary text-uppercase fw-bold mb-1">Datos del Comprador</div>
+                            <div>Cliente: <strong class="text-white" id="vfClienteNombre">-</strong></div>
+                            <div>Cédula / RUC: <strong class="text-white" id="vfClienteId">-</strong></div>
+                            <div>Teléfono: <span id="vfClienteTel">-</span></div>
+                            <div>Dirección: <span id="vfClienteDir">Managua, Nicaragua</span></div>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                            <div class="text-secondary text-uppercase fw-bold mb-1">Términos Comerciales</div>
+                            <div>Fecha de Emisión: <strong class="text-white" id="vfFechaEmision">-</strong></div>
+                            <div>Condición de Venta: <strong class="text-neon-green" id="vfCondicion">-</strong></div>
+                            <div>Fecha de Vencimiento: <span id="vfFechaVencimiento">-</span></div>
+                            <div>Vendedor: <span id="vfVendedorNombre">-</span> (<span id="vfVendedorCodigo">-</span>)</div>
+                        </div>
+                    </div>
+
+                    <!-- Datos del Vehículo (Requisito legal automotriz) -->
+                    <div class="my-3 p-3 rounded-3" style="background-color: rgba(255,255,255,0.03); border-left: 4px solid var(--neon-green, #10b981);">
+                        <div class="small text-uppercase fw-bold text-neon-green mb-2"><i class="bi bi-car-front me-2"></i>Especificaciones del Vehículo Vendido (Traspaso Legal)</div>
+                        <div class="row g-2 small">
+                            <div class="col-md-3">Vehículo: <strong class="text-white" id="vfAutoNombre">-</strong></div>
+                            <div class="col-md-3">Año / Modelo: <strong class="text-white" id="vfAutoAnio">-</strong></div>
+                            <div class="col-md-3">Número de Chasis (VIN): <strong class="text-neon-pink" id="vfAutoVIN">-</strong></div>
+                            <div class="col-md-3">Número de Motor: <strong class="text-white" id="vfAutoMotor">-</strong></div>
+                            <div class="col-md-3">Placa: <strong class="text-white" id="vfAutoPlaca">-</strong></div>
+                            <div class="col-md-3">Kilometraje de Entrega: <span id="vfAutoKm">- km</span></div>
+                            <div class="col-md-3">Garantía Otorgada: <span id="vfGarantia">12 Meses</span></div>
+                            <div class="col-md-3">Forma de Pago: <span id="vfFormaPago">-</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Detalle de la Factura -->
+                    <div class="table-responsive my-3">
+                        <table class="table table-dark table-sm align-middle mb-0">
+                            <thead>
+                                <tr class="text-secondary">
+                                    <th style="width: 50px;">Ítem</th>
+                                    <th>Descripción</th>
+                                    <th class="text-center" style="width: 80px;">Cant.</th>
+                                    <th class="text-end" style="width: 130px;">Precio Unit.</th>
+                                    <th class="text-end" style="width: 130px;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vfCuerpoDetalle">
+                                <tr>
+                                    <td>1</td>
+                                    <td id="vfDetalleDesc">Automotor vendido</td>
+                                    <td class="text-center">1</td>
+                                    <td class="text-end" id="vfDetallePrecio">$ 0.00</td>
+                                    <td class="text-end" id="vfDetalleSubtotal">$ 0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Desglose Fiscal DGI -->
+                    <div class="row justify-content-end pt-2">
+                        <div class="col-md-6 col-lg-5">
+                            <div class="p-3 rounded-3 border border-secondary border-opacity-25" style="background-color: rgba(0,0,0,0.4);">
+                                <div class="d-flex justify-content-between small text-secondary mb-1">
+                                    <span>Subtotal Gravado:</span>
+                                    <strong class="text-white" id="vfSubtotalGravado">$ 0.00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small text-secondary mb-1">
+                                    <span>IVA Trasladado (15% Ley 822):</span>
+                                    <strong class="text-neon-green" id="vfMontoIVA">+ $ 0.00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small text-secondary mb-1">
+                                    <span>Subtotal con Impuesto:</span>
+                                    <strong class="text-white" id="vfTotalConIVA">$ 0.00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small text-warning mb-1">
+                                    <span>(-) Retención DGI (2% IR):</span>
+                                    <strong id="vfRetDGI">- $ 0.00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small text-info mb-2">
+                                    <span>(-) Retención Alcaldía (1% IMI):</span>
+                                    <strong id="vfRetAlcaldia">- $ 0.00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between fs-5 fw-bold text-white pt-2 border-top border-secondary border-opacity-50">
+                                    <span>Total a Pagar:</span>
+                                    <span class="text-neon-green" id="vfTotalPagarUSD">$ 0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between small text-secondary mt-1">
+                                    <span>Tasa BCN Oficial:</span>
+                                    <span id="vfTipoCambio">C$ 36.6243</span>
+                                </div>
+                                <div class="d-flex justify-content-between fw-bold text-white mt-1 pt-1 border-top border-secondary border-opacity-25">
+                                    <span>Total en Córdobas (DGI):</span>
+                                    <span class="text-warning" id="vfTotalCordobas">C$ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Fiscal Legal -->
+                    <div class="mt-4 pt-3 border-top border-secondary border-opacity-25 text-center text-secondary small">
+                        <p class="mb-1">Esta factura constituye título ejecutivo de acuerdo con el Código de Comercio de Nicaragua.</p>
+                        <p class="mb-0">Autorizado por la Dirección General de Ingresos (DGI) mediante resolución Nº DGI-RES-2026-98432. Original: Cliente | Duplicado: Contabilidad.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top border-secondary border-opacity-25 d-print-none">
+                <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">
+                    Cerrar
+                </button>
+                <button type="button" class="btn bg-neon-green text-dark fw-bold rounded-pill px-4" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Imprimir Factura
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../JS/script.js?v=3"></script>
 <script src="../JS/auth.js"></script>

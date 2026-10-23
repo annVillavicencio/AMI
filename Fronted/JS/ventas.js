@@ -1,17 +1,27 @@
 // ==========================================================================
-// AMI - Módulo de Ventas (ventas.js)
-// Gestión integral de ventas de vehículos, clientes, formas de pago, KPIs y CRUD completo
+// AMI - Módulo de Ventas, Facturación Legal y Apartado Fiscal DGI
+// Gestión integral de ventas de vehículos, emisión de facturas autorizadas por
+// la DGI, retenciones de ley (Ley 822), libro de ventas fiscales y reportes.
 // ==========================================================================
 
 let ventasData = [];
+let facturasData = [];
+let dgiData = null;
 let clientesLista = [];
 let autosLista = [];
+let ventasPendientesFactura = [];
+let vendedoresLista = [];
 let ventaEnEdicion = null;
+
+const TIPO_CAMBIO_BCN_DEFAULT = 36.6243;
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarDatos();
+    cargarFacturas();
+    cargarApartadoDGI();
+    cargarVendedoresYPendientes();
 
-    // 1. Buscador en tiempo real
+    // 1. Buscador en tiempo real de ventas
     const searchInput = document.getElementById('input-busqueda-venta') || document.querySelector('input[placeholder*="Buscar"]');
     if (searchInput) {
         searchInput.addEventListener('input', () => { renderizarTabla(); });
@@ -40,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. Cuando se selecciona un auto en el modal, autocompletar el precio
+    // 4. Cuando se selecciona un auto en el modal de venta, autocompletar el precio
     const selAuto = document.getElementById('venta-auto');
     if (selAuto) {
         selAuto.addEventListener('change', (e) => {
@@ -53,59 +63,102 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 5. Limpieza del modal al cerrarse
+    // 5. Limpieza del modal de venta al cerrarse
     const modalEl = document.getElementById('modalVenta');
     if (modalEl) {
         modalEl.addEventListener('hidden.bs.modal', () => {
             limpiarFormularioVenta();
         });
     }
+
+    // 6. Configurar eventos interactivos del Modal de Generar Factura
+    configurarEventosModalFactura();
 });
 
 // --------------------------------------------------------------------------
-// CARGAR DATOS DESDE LA API
+// CARGA INICIAL DE DATOS
 // --------------------------------------------------------------------------
+
 async function cargarDatos() {
     try {
         const [resVentas, resClientes, resAutos] = await Promise.all([
             fetch('/api/ventas'),
-            fetch('/api/ventas/clientes').catch(() => null),
-            fetch('/api/ventas/autos').catch(() => null)
+            fetch('/api/ventas/clientes'),
+            fetch('/api/ventas/autos')
         ]);
 
-        if (!resVentas.ok) throw new Error('Error al cargar ventas del servidor');
-        ventasData = await resVentas.json();
+        if (resVentas.ok) ventasData = await resVentas.json();
+        if (resClientes.ok) clientesLista = await resClientes.json();
+        if (resAutos.ok) autosLista = await resAutos.json();
 
-        if (resClientes && resClientes.ok) {
-            clientesLista = await resClientes.json();
-            poblarSelectClientes();
-        }
-
-        if (resAutos && resAutos.ok) {
-            autosLista = await resAutos.json();
-            poblarSelectAutos();
-        }
-
+        poblarSelectClientes();
+        poblarSelectAutos();
         renderizarTabla();
-        actualizarKPIsPrincipales(ventasData);
-    } catch (error) {
-        console.error("Error al cargar ventas:", error);
+    } catch (err) {
+        console.error("Error al cargar datos del módulo de ventas:", err);
         const tbody = document.getElementById("cuerpo-tabla");
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle-fill me-2"></i> Error al cargar datos del servidor.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Error al conectar con el servidor.</td></tr>';
         }
     }
 }
 
-// --------------------------------------------------------------------------
-// POBLAR SELECTS DE CLIENTES Y AUTOS
-// --------------------------------------------------------------------------
+// Cargar facturas emitidas para la pestaña 2
+async function cargarFacturas() {
+    try {
+        const res = await fetch('/api/facturas');
+        if (res.ok) {
+            facturasData = await res.json();
+            const badgeTotal = document.getElementById('badge-total-facturas');
+            if (badgeTotal) badgeTotal.textContent = facturasData.length;
+            renderizarTablaFacturas();
+        }
+    } catch (err) {
+        console.error("Error al cargar facturas:", err);
+    }
+}
+
+// Cargar Apartado Fiscal DGI para la pestaña 3
+async function cargarApartadoDGI() {
+    try {
+        const res = await fetch('/api/facturas/dgi/resumen');
+        if (res.ok) {
+            dgiData = await res.json();
+            renderizarApartadoDGI();
+        }
+    } catch (err) {
+        console.error("Error al cargar apartado DGI:", err);
+    }
+}
+
+// Cargar datos auxiliares para el modal de facturación
+async function cargarVendedoresYPendientes() {
+    try {
+        const [resPend, resVend] = await Promise.all([
+            fetch('/api/facturas/ventas-pendientes'),
+            fetch('/api/facturas/vendedores')
+        ]);
+
+        if (resPend.ok) {
+            ventasPendientesFactura = await resPend.json();
+            poblarSelectVentasPendientes();
+        }
+
+        if (resVend.ok) {
+            vendedoresLista = await resVend.json();
+            poblarSelectVendedores();
+        }
+    } catch (err) {
+        console.error("Error al cargar vendedores y pendientes:", err);
+    }
+}
+
 function poblarSelectClientes() {
-    const sel = document.getElementById('venta-cliente');
+    const sel = document.getElementById("venta-cliente");
     if (!sel) return;
-    sel.innerHTML = '<option value="" selected disabled>Seleccione un cliente</option>';
+    sel.innerHTML = '<option value="">Selecciona un cliente...</option>';
     clientesLista.forEach(c => {
-        const opt = document.createElement('option');
+        const opt = document.createElement("option");
         opt.value = c.IdClientes;
         opt.textContent = `${c.NombreCompleto} (${c.Cedula || 'Sin cédula'})`;
         sel.appendChild(opt);
@@ -113,21 +166,50 @@ function poblarSelectClientes() {
 }
 
 function poblarSelectAutos() {
-    const sel = document.getElementById('venta-auto');
+    const sel = document.getElementById("venta-auto");
     if (!sel) return;
-    sel.innerHTML = '<option value="" selected disabled>Seleccione un vehículo</option>';
+    sel.innerHTML = '<option value="">Selecciona un auto...</option>';
     autosLista.forEach(a => {
-        const opt = document.createElement('option');
+        const opt = document.createElement("option");
         opt.value = a.idAuto;
-        const est = a.Estado ? ` - [${a.Estado}]` : '';
-        opt.textContent = `#${a.idAuto} - ${a.Auto}${est}`;
+        opt.textContent = `${a.Auto} - C$ ${parseFloat(a.Precio || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        sel.appendChild(opt);
+    });
+}
+
+function poblarSelectVentasPendientes() {
+    const sel = document.getElementById("ventaFactura");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecciona una venta pendiente...</option>';
+    if (ventasPendientesFactura.length === 0) {
+        sel.innerHTML = '<option value="">No hay ventas pendientes de facturar</option>';
+        return;
+    }
+    ventasPendientesFactura.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v.idVenta;
+        const montoFmt = parseFloat(v.TotalVenta || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        opt.textContent = `Venta #${v.idVenta} - ${v.NombreCliente} | ${v.Vehiculo || 'Auto'} ($ ${montoFmt})`;
+        sel.appendChild(opt);
+    });
+}
+
+function poblarSelectVendedores() {
+    const sel = document.getElementById("facturaVendedor");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecciona el vendedor responsable...</option>';
+    vendedoresLista.forEach(vend => {
+        const opt = document.createElement("option");
+        opt.value = vend.IdEmpleado;
+        opt.textContent = `${vend.NombreCompleto} (${vend.CodigoEmpleado} - ${vend.NombreCargo})`;
         sel.appendChild(opt);
     });
 }
 
 // --------------------------------------------------------------------------
-// RENDERIZAR TABLA CON FILTROS
+// RENDERIZADO: TABLA DE VENTAS
 // --------------------------------------------------------------------------
+
 function renderizarTabla() {
     const tbody = document.getElementById("cuerpo-tabla");
     if (!tbody) return;
@@ -179,11 +261,20 @@ function renderizarTabla() {
         if (estLower.includes('pendiente')) badgeClass = 'badge-programada';
         else if (estLower.includes('cancel')) badgeClass = 'badge-finalizada';
 
+        // Indicador de factura
+        let facturaBadgeHtml = '';
+        if (v.idFactura) {
+            facturaBadgeHtml = `<div class="mt-1"><span class="badge bg-success bg-opacity-25 text-neon-green border border-success border-opacity-50 small cursor-pointer" onclick="abrirModalVerFactura(${v.idFactura})" title="Ver factura emitida"><i class="bi bi-receipt me-1"></i>${v.NumeroFactura}</span></div>`;
+        }
+
         tr.innerHTML = `
-            <td class="text-center fw-bold text-neon-green">#${v.idVenta}</td>
+            <td class="text-center fw-bold text-neon-green">
+                #${v.idVenta}
+                ${facturaBadgeHtml}
+            </td>
             <td class="text-center text-white fw-bold">${v.Cliente || 'Desconocido'}</td>
             <td class="text-center text-secondary small text-truncate" style="max-width: 180px;" title="${v.Vehiculo || ''}">${v.Vehiculo || 'No asignado'}</td>
-            <td class="text-center text-success fw-bold">C$ ${montoFormateado}</td>
+            <td class="text-center text-success fw-bold">$ ${montoFormateado}</td>
             <td class="text-center text-secondary">${fecha}</td>
             <td class="text-center"><span class="badge bg-dark border border-secondary px-2 py-1">${v.FormaPago || 'Efectivo'}</span></td>
             <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3 py-1">${v.EstadoVenta || 'Finalizada'}</span></td>
@@ -193,12 +284,25 @@ function renderizarTabla() {
                         <i class="bi bi-three-dots-vertical fs-5"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow" style="background-color: #1A2218; border: 1px solid rgba(255,255,255,0.1);">
+                        ${v.idFactura ? `
+                            <li>
+                                <a class="dropdown-item text-neon-green py-2" href="javascript:void(0)" onclick="abrirModalVerFactura(${v.idFactura})">
+                                    <i class="bi bi-file-earmark-pdf me-2 text-neon-green"></i> Ver Factura DGI
+                                </a>
+                            </li>
+                        ` : `
+                            <li>
+                                <a class="dropdown-item text-info py-2" href="javascript:void(0)" onclick="abrirModalEmitirFactura(${v.idVenta})">
+                                    <i class="bi bi-receipt me-2 text-info"></i> Emitir Factura DGI
+                                </a>
+                            </li>
+                        `}
+                        <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
                         <li>
                             <a class="dropdown-item text-white py-2" href="javascript:void(0)" onclick="abrirModalEditarVenta(${v.idVenta})">
                                 <i class="bi bi-pencil-square me-2" style="color: #DBFF99;"></i> Editar
                             </a>
                         </li>
-                        <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
                         <li>
                             <a class="dropdown-item text-danger py-2" href="javascript:void(0)" onclick="eliminarVenta(${v.idVenta})">
                                 <i class="bi bi-trash me-2"></i> Eliminar
@@ -213,59 +317,593 @@ function renderizarTabla() {
 }
 
 // --------------------------------------------------------------------------
-// GUARDAR VENTA (CREAR O EDITAR)
+// RENDERIZADO: TABLA DE FACTURAS EMITIDAS (PESTAÑA 2)
 // --------------------------------------------------------------------------
+
+function renderizarTablaFacturas() {
+    const tbody = document.getElementById("cuerpo-tabla-facturas");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (facturasData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox fs-4 d-block mb-1"></i> No se han emitido facturas aún. Haz clic en "Nueva Factura" para generar una.</td></tr>';
+        return;
+    }
+
+    facturasData.forEach(f => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+        const fechaFmt = f.FechaEmision ? new Date(f.FechaEmision).toISOString().split('T')[0] : 'N/A';
+        const totalUsdFmt = parseFloat(f.TotalPagar || f.Total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const totalNioFmt = parseFloat(f.TotalCordobas || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const isAnulada = f.EstadoFactura === 'Anulada';
+        const badgeEstado = isAnulada
+            ? '<span class="badge bg-danger bg-opacity-25 text-danger border border-danger">Anulada</span>'
+            : '<span class="badge bg-success bg-opacity-25 text-neon-green border border-success">Emitida</span>';
+
+        tr.innerHTML = `
+            <td class="fw-bold ${isAnulada ? 'text-decoration-line-through text-muted' : 'text-neon-green'}">
+                <i class="bi bi-receipt me-1"></i>${f.NumeroFactura}
+            </td>
+            <td class="text-secondary small">${fechaFmt}</td>
+            <td>
+                <div class="text-white fw-bold">${f.NombreCliente}</div>
+                <div class="text-secondary small">${f.IdentificacionCliente || 'Sin cédula'}</div>
+            </td>
+            <td>
+                <div class="text-white">${f.NombreMarca || ''} ${f.NombreModelo || 'Automotor'}</div>
+                <div class="text-neon-pink small font-monospace">${f.VIN || 'Chasis N/D'}</div>
+            </td>
+            <td class="text-secondary small">${f.NombreVendedor || 'Vendedor'}</td>
+            <td><span class="badge bg-dark border border-secondary">${f.CondicionVenta || 'Contado'}</span></td>
+            <td class="text-success fw-bold">$ ${totalUsdFmt}</td>
+            <td class="text-white small">C$ ${totalNioFmt}</td>
+            <td>${badgeEstado}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-success rounded-pill px-3 me-1" onclick="abrirModalVerFactura(${f.idFactura})" title="Ver / Imprimir Factura">
+                    <i class="bi bi-printer me-1"></i> Ver
+                </button>
+                ${!isAnulada ? `
+                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="anularFactura(${f.idFactura})" title="Anular Factura">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// --------------------------------------------------------------------------
+// RENDERIZADO: APARTADO FISCAL DGI (PESTAÑA 3)
+// --------------------------------------------------------------------------
+
+function renderizarApartadoDGI() {
+    if (!dgiData || !dgiData.kpis) return;
+    const { kpis, libroVentasFiscales } = dgiData;
+
+    // Actualizar KPIs de tarjetas
+    const elGravado = document.getElementById('dgi-kpi-gravado');
+    const elGravadoNio = document.getElementById('dgi-kpi-gravado-nio');
+    if (elGravado) elGravado.textContent = `$ ${(kpis.subtotalGravadoUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elGravadoNio) elGravadoNio.textContent = `C$ ${((kpis.subtotalGravadoUSD || 0) * kpis.tipoCambioOficialBCN).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const elIva = document.getElementById('dgi-kpi-iva');
+    const elIvaNio = document.getElementById('dgi-kpi-iva-nio');
+    if (elIva) elIva.textContent = `$ ${(kpis.iva15RecaudadoUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elIvaNio) elIvaNio.textContent = `C$ ${((kpis.iva15RecaudadoUSD || 0) * kpis.tipoCambioOficialBCN).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const elRetDgi = document.getElementById('dgi-kpi-ret-dgi');
+    const elRetDgiNio = document.getElementById('dgi-kpi-ret-dgi-nio');
+    if (elRetDgi) elRetDgi.textContent = `$ ${(kpis.retencionDgi2USD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elRetDgiNio) elRetDgiNio.textContent = `C$ ${((kpis.retencionDgi2USD || 0) * kpis.tipoCambioOficialBCN).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const elRetAlc = document.getElementById('dgi-kpi-ret-alcaldia');
+    const elRetAlcNio = document.getElementById('dgi-kpi-ret-alcaldia-nio');
+    if (elRetAlc) elRetAlc.textContent = `$ ${(kpis.retencionAlcaldia1USD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elRetAlcNio) elRetAlcNio.textContent = `C$ ${((kpis.retencionAlcaldia1USD || 0) * kpis.tipoCambioOficialBCN).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    // Renderizar tabla Libro de Ventas Fiscales
+    const tbody = document.getElementById("cuerpo-tabla-dgi");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (!libroVentasFiscales || libroVentasFiscales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-4">No hay registros fiscales en el Libro de Ventas DGI.</td></tr>';
+        return;
+    }
+
+    libroVentasFiscales.forEach(f => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+        const isAnulada = f.EstadoFactura === 'Anulada';
+        const fechaFmt = f.FechaEmision ? new Date(f.FechaEmision).toISOString().split('T')[0] : 'N/A';
+        const gravFmt = parseFloat(f.SubtotalGravado || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const ivaFmt = parseFloat(f.MontoIVA || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const retDgiFmt = parseFloat(f.RetencionDGI || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const retAlcFmt = parseFloat(f.RetencionAlcaldia || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const totalUsdFmt = parseFloat(f.TotalPagar || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const totalNioFmt = parseFloat(f.TotalCordobas || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        tr.innerHTML = `
+            <td class="fw-bold ${isAnulada ? 'text-decoration-line-through text-muted' : 'text-neon-green'}">${f.NumeroFactura}</td>
+            <td class="text-secondary small">${fechaFmt}</td>
+            <td class="text-neon-pink font-monospace small">${f.IdentificacionCliente || 'N/D'}</td>
+            <td class="text-white fw-semibold small">${f.NombreCliente}</td>
+            <td class="text-secondary small font-monospace">${f.NumeroAutorizacionDGI || 'DGI-RES-2026-98432'}</td>
+            <td class="text-end text-white">$ ${gravFmt}</td>
+            <td class="text-end text-neon-green">$ ${ivaFmt}</td>
+            <td class="text-end text-warning">-$ ${retDgiFmt}</td>
+            <td class="text-end text-info">-$ ${retAlcFmt}</td>
+            <td class="text-end fw-bold text-success">$ ${totalUsdFmt}</td>
+            <td class="text-end text-warning fw-bold small">C$ ${totalNioFmt}</td>
+            <td class="text-center">
+                ${isAnulada ? '<span class="badge bg-danger bg-opacity-25 text-danger">Anulada</span>' : '<span class="badge bg-success bg-opacity-25 text-neon-green">Declarada</span>'}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// --------------------------------------------------------------------------
+// EXPORTAR LIBRO DE VENTAS DGI A EXCEL
+// --------------------------------------------------------------------------
+
+function exportarLibroVentasDGIExcel() {
+    if (!dgiData || !dgiData.libroVentasFiscales || dgiData.libroVentasFiscales.length === 0) {
+        alert("No hay facturas fiscales en el libro de ventas para exportar.");
+        return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+        alert("La librería de exportación Excel no está disponible.");
+        return;
+    }
+
+    const { kpis, libroVentasFiscales } = dgiData;
+
+    // Encabezado oficial DGI
+    const datosExcel = [
+        ["DIRECCIÓN GENERAL DE INGRESOS (DGI) - REPÚBLICA DE NICARAGUA"],
+        ["LIBRO OFICIAL DE VENTAS FISCALES Y RETENCIONES EN LA FUENTE (LEY 822)"],
+        [`CONTRIBUYENTE: ${kpis.razonSocial} | RUC: ${kpis.rucEmisor}`],
+        [`RESOLUCIÓN FISCAL: ${kpis.resolucionDGI} | SERIE: ${kpis.serieFiscal} | TASA OFICIAL BCN: C$ ${kpis.tipoCambioOficialBCN}`],
+        [`FECHA DE GENERACIÓN: ${new Date().toLocaleDateString('es-NI')} | ESTADO: VIGENTE`],
+        [], // Fila en blanco
+        [
+            "Nº Factura",
+            "Fecha Emisión",
+            "RUC / Cédula Cliente",
+            "Razón Social / Cliente",
+            "Nº Autorización DGI",
+            "Serie",
+            "VIN / Chasis",
+            "Condición",
+            "Base Gravada (USD)",
+            "IVA 15% (USD)",
+            "Ret. DGI 2% (USD)",
+            "Ret. Alcaldía 1% (USD)",
+            "Total a Pagar (USD)",
+            "Total en Córdobas (C$)",
+            "Estado Fiscal"
+        ]
+    ];
+
+    libroVentasFiscales.forEach(f => {
+        datosExcel.push([
+            f.NumeroFactura,
+            f.FechaEmision ? new Date(f.FechaEmision).toISOString().split('T')[0] : '',
+            f.IdentificacionCliente || 'N/D',
+            f.NombreCliente,
+            f.NumeroAutorizacionDGI,
+            f.SerieFactura,
+            f.VIN || '',
+            f.CondicionVenta || 'Contado',
+            parseFloat(f.SubtotalGravado || 0),
+            parseFloat(f.MontoIVA || 0),
+            parseFloat(f.RetencionDGI || 0),
+            parseFloat(f.RetencionAlcaldia || 0),
+            parseFloat(f.TotalPagar || 0),
+            parseFloat(f.TotalCordobas || 0),
+            f.EstadoFactura
+        ]);
+    });
+
+    // Fila de totales
+    datosExcel.push([]);
+    datosExcel.push([
+        "TOTALES FISCALES", "", "", "", "", "", "", "",
+        kpis.subtotalGravadoUSD,
+        kpis.iva15RecaudadoUSD,
+        kpis.retencionDgi2USD,
+        kpis.retencionAlcaldia1USD,
+        kpis.totalPagarUSD,
+        kpis.totalPagarCordobas,
+        `${kpis.totalFacturasEmitidas} Facturas`
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(datosExcel);
+
+    // Ajustar anchos de columnas
+    ws['!cols'] = [
+        { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 25 }, { wch: 20 },
+        { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 15 },
+        { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 14 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Libro_Ventas_DGI");
+
+    const fechaHoy = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Autos_AMI_Libro_Ventas_Fiscales_DGI_${fechaHoy}.xlsx`);
+}
+
+// --------------------------------------------------------------------------
+// LÓGICA INTERACTIVA DEL MODAL DE EMISIÓN DE FACTURA
+// --------------------------------------------------------------------------
+
+function configurarEventosModalFactura() {
+    const selVenta = document.getElementById('ventaFactura');
+    const chkRetDGI = document.getElementById('chkRetencionDGI');
+    const chkRetAlc = document.getElementById('chkRetencionAlcaldia');
+    const selCond = document.getElementById('facturaCondicion');
+    const selMoneda = document.getElementById('facturaMoneda');
+    const formFactura = document.getElementById('formGenerarFactura');
+
+    if (selVenta) {
+        selVenta.addEventListener('change', () => {
+            const idV = parseInt(selVenta.value);
+            const vObj = ventasPendientesFactura.find(v => v.idVenta === idV);
+            const infoBox = document.getElementById('bloqueInfoVenta');
+
+            if (vObj && infoBox) {
+                infoBox.style.display = 'block';
+                document.getElementById('lblClienteNombre').textContent = vObj.NombreCliente || '-';
+                document.getElementById('lblClienteId').textContent = vObj.IdentificacionCliente || '-';
+                document.getElementById('lblAutoNombre').textContent = vObj.Vehiculo || '-';
+                document.getElementById('lblAutoVIN').textContent = vObj.VIN || '3N1AB7AP9KY104829';
+                document.getElementById('lblAutoPlaca').textContent = vObj.Placa || 'S/P';
+
+                // Preseleccionar vendedor si la venta lo tenía
+                if (vObj.IdEmpleado) {
+                    const selVend = document.getElementById('facturaVendedor');
+                    if (selVend) selVend.value = String(vObj.IdEmpleado);
+                }
+            } else if (infoBox) {
+                infoBox.style.display = 'none';
+            }
+
+            actualizarCalculosPreviosFactura();
+        });
+    }
+
+    if (selCond) {
+        selCond.addEventListener('change', () => {
+            const grupoPlazo = document.getElementById('grupoPlazo');
+            if (grupoPlazo) {
+                grupoPlazo.style.display = selCond.value === 'Crédito' ? 'block' : 'none';
+            }
+        });
+    }
+
+    if (chkRetDGI) chkRetDGI.addEventListener('change', actualizarCalculosPreviosFactura);
+    if (chkRetAlc) chkRetAlc.addEventListener('change', actualizarCalculosPreviosFactura);
+    if (selMoneda) selMoneda.addEventListener('change', actualizarCalculosPreviosFactura);
+
+    if (formFactura) {
+        formFactura.addEventListener('submit', emitirFactura);
+    }
+}
+
+function actualizarCalculosPreviosFactura() {
+    const selVenta = document.getElementById('ventaFactura');
+    const chkRetDGI = document.getElementById('chkRetencionDGI');
+    const chkRetAlc = document.getElementById('chkRetencionAlcaldia');
+
+    const idV = selVenta ? parseInt(selVenta.value) : null;
+    const vObj = ventasPendientesFactura.find(v => v.idVenta === idV);
+
+    const subtotal = vObj ? parseFloat(vObj.TotalVenta || 0) : 0;
+    const iva = Math.round((subtotal * 0.15) * 100) / 100;
+    const conIva = subtotal + iva;
+
+    const aplicaDGI = chkRetDGI ? chkRetDGI.checked : true;
+    const aplicaAlc = chkRetAlc ? chkRetAlc.checked : true;
+
+    const retDGI = aplicaDGI ? Math.round((subtotal * 0.02) * 100) / 100 : 0;
+    const retAlc = aplicaAlc ? Math.round((subtotal * 0.01) * 100) / 100 : 0;
+
+    const totalUSD = Math.round((conIva - retDGI - retAlc) * 100) / 100;
+    const totalNIO = Math.round((totalUSD * TIPO_CAMBIO_BCN_DEFAULT) * 100) / 100;
+
+    const elSub = document.getElementById('prevSubtotal');
+    const elIva = document.getElementById('prevIVA');
+    const elRetDGI = document.getElementById('prevRetDGI');
+    const elRetAlc = document.getElementById('prevRetAlcaldia');
+    const elTotUSD = document.getElementById('prevTotalUSD');
+    const elTotNIO = document.getElementById('prevTotalNIO');
+
+    if (elSub) elSub.textContent = `$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elIva) elIva.textContent = `+ $ ${iva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elRetDGI) elRetDGI.textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elRetAlc) elRetAlc.textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elTotUSD) elTotUSD.textContent = `$ ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elTotNIO) elTotNIO.textContent = `C$ ${totalNIO.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+}
+
+// Abrir modal con venta preseleccionada
+function abrirModalEmitirFactura(idVenta) {
+    cargarVendedoresYPendientes().then(() => {
+        const selVenta = document.getElementById('ventaFactura');
+        if (selVenta) {
+            selVenta.value = String(idVenta);
+            selVenta.dispatchEvent(new Event('change'));
+        }
+        const modalEl = document.getElementById('modalFactura');
+        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
+}
+
+// Enviar formulario para emitir factura
+async function emitirFactura(e) {
+    if (e) e.preventDefault();
+
+    const idVenta = document.getElementById('ventaFactura').value;
+    const idEmpleado = document.getElementById('facturaVendedor').value;
+    const condicionVenta = document.getElementById('facturaCondicion').value;
+    const plazoMeses = document.getElementById('facturaPlazo') ? document.getElementById('facturaPlazo').value : 0;
+    const moneda = document.getElementById('facturaMoneda').value;
+    const tipoCambio = parseFloat(document.getElementById('facturaTipoCambio').value) || TIPO_CAMBIO_BCN_DEFAULT;
+    const aplicaRetencionDGI = document.getElementById('chkRetencionDGI').checked;
+    const aplicaRetencionAlcaldia = document.getElementById('chkRetencionAlcaldia').checked;
+    const mesesGarantia = document.getElementById('facturaGarantia').value;
+
+    const btnSubmit = document.getElementById('btnGenerarFactura');
+    const msgEl = document.getElementById('mensajeFactura');
+
+    if (!idVenta) {
+        alert("Por favor selecciona una venta para facturar.");
+        return;
+    }
+
+    if (!idEmpleado) {
+        alert("Por favor selecciona el vendedor responsable.");
+        return;
+    }
+
+    try {
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Emitiendo...';
+        }
+        if (msgEl) msgEl.innerHTML = '';
+
+        const res = await fetch('/api/facturas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                idVenta: parseInt(idVenta),
+                idEmpleado,
+                condicionVenta,
+                plazoMeses: parseInt(plazoMeses) || 0,
+                moneda,
+                tipoCambio,
+                aplicaRetencionDGI,
+                aplicaRetencionAlcaldia,
+                mesesGarantia: parseInt(mesesGarantia) || 12
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Error al emitir la factura');
+        }
+
+        // Éxito: cerrar modal de emisión
+        const modalEl = document.getElementById('modalFactura');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        // Recargar listas
+        await Promise.all([cargarDatos(), cargarFacturas(), cargarApartadoDGI(), cargarVendedoresYPendientes()]);
+
+        // Abrir inmediatamente la factura generada para ver / imprimir
+        if (data.idFactura) {
+            abrirModalVerFactura(data.idFactura);
+        }
+
+    } catch (err) {
+        console.error("Error al emitir factura:", err);
+        if (msgEl) {
+            msgEl.innerHTML = `<div class="alert alert-danger py-2 small mb-0"><i class="bi bi-exclamation-triangle me-1"></i> ${err.message}</div>`;
+        } else {
+            alert(err.message);
+        }
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="bi bi-check-circle me-1"></i> Emitir Factura Autorizada';
+        }
+    }
+}
+
+// --------------------------------------------------------------------------
+// VISOR E IMPRESIÓN DE FACTURA LEGAL (PESTAÑA MODAL VER FACTURA)
+// --------------------------------------------------------------------------
+
+async function abrirModalVerFactura(idFactura) {
+    try {
+        const res = await fetch(`/api/facturas/${idFactura}`);
+        if (!res.ok) throw new Error("No se pudo cargar la factura");
+        const f = await res.json();
+
+        // Llenar campos de cabecera y DGI
+        document.getElementById('vfNumeroFactura').textContent = f.NumeroFactura || 'AMI-FAC-0001';
+        document.getElementById('vfSerie').textContent = f.SerieFactura || 'AMI-A';
+        document.getElementById('vfResolucionDGI').textContent = f.NumeroAutorizacionDGI || 'DGI-RES-2026-98432';
+        document.getElementById('vfRango').textContent = f.RangoAutorizado || '000001 - 010000';
+
+        const badgeEst = document.getElementById('vfEstadoBadge');
+        if (badgeEst) {
+            if (f.EstadoFactura === 'Anulada') {
+                badgeEst.className = 'badge bg-danger text-white px-3 py-2 fs-6 mb-2';
+                badgeEst.textContent = 'FACTURA ANULADA';
+            } else {
+                badgeEst.className = 'badge bg-success text-dark px-3 py-2 fs-6 mb-2 fw-bold';
+                badgeEst.textContent = 'AUTORIZADA POR DGI';
+            }
+        }
+
+        // Datos del Comprador
+        document.getElementById('vfClienteNombre').textContent = f.NombreCliente || '-';
+        document.getElementById('vfClienteId').textContent = f.IdentificacionCliente || '-';
+        document.getElementById('vfClienteTel').textContent = f.TelefonoCliente || f.DireccionCliente || 'Managua, Nicaragua';
+        document.getElementById('vfClienteDir').textContent = f.DireccionCliente || 'Managua, Nicaragua';
+
+        // Términos Comerciales
+        document.getElementById('vfFechaEmision').textContent = f.FechaEmision ? new Date(f.FechaEmision).toLocaleDateString('es-NI') : '-';
+        document.getElementById('vfCondicion').textContent = f.CondicionVenta || 'Contado';
+        document.getElementById('vfFechaVencimiento').textContent = f.FechaVencimiento ? new Date(f.FechaVencimiento).toLocaleDateString('es-NI') : '-';
+        document.getElementById('vfVendedorNombre').textContent = f.NombreVendedor || '-';
+        document.getElementById('vfVendedorCodigo').textContent = f.CodigoEmpleado || 'EMP001';
+
+        // Vehículo
+        document.getElementById('vfAutoNombre').textContent = f.NombreVehiculo || f.AutoDescripcion || 'Automotor';
+        document.getElementById('vfAutoAnio').textContent = f.Anio || 2024;
+        document.getElementById('vfAutoVIN').textContent = f.VIN || '3N1AB7AP9KY104829';
+        document.getElementById('vfAutoMotor').textContent = f.NumeroMotor || 'ENG-2049';
+        document.getElementById('vfAutoPlaca').textContent = f.Placa || 'S/P';
+        document.getElementById('vfAutoKm').textContent = `${(f.Kilometraje || 12000).toLocaleString('en-US')} km`;
+        document.getElementById('vfGarantia').textContent = `${f.MesesGarantia || 12} Meses`;
+        document.getElementById('vfFormaPago').textContent = f.FormaPago || 'Efectivo';
+
+        // Detalle
+        const tbodyDet = document.getElementById('vfCuerpoDetalle');
+        if (tbodyDet) {
+            tbodyDet.innerHTML = '';
+            const detalles = f.detalles && f.detalles.length > 0 ? f.detalles : [{
+                Descripcion: `Venta de Vehículo ${f.NombreVehiculo || 'Automotor'} (Año ${f.Anio || 2024}) - Chasis VIN: ${f.VIN || 'N/D'} - Placa: ${f.Placa || 'S/P'}`,
+                Cantidad: 1,
+                PrecioUnitario: f.Subtotal,
+                TotalLinea: f.Subtotal
+            }];
+
+            detalles.forEach((d, idx) => {
+                const pu = parseFloat(d.PrecioUnitario || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                const sub = parseFloat(d.TotalLinea || (d.Cantidad * d.PrecioUnitario) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                tbodyDet.innerHTML += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td class="text-white">${d.Descripcion}</td>
+                        <td class="text-center">${d.Cantidad}</td>
+                        <td class="text-end">$ ${pu}</td>
+                        <td class="text-end fw-bold text-success">$ ${sub}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Desglose Fiscal DGI
+        const subGrav = parseFloat(f.SubtotalGravado || f.Subtotal || 0);
+        const iva = parseFloat(f.MontoIVA || (subGrav * 0.15) || 0);
+        const conIva = subGrav + iva;
+        const retDGI = parseFloat(f.RetencionDGI || 0);
+        const retAlc = parseFloat(f.RetencionAlcaldia || 0);
+        const totUSD = parseFloat(f.TotalPagar || (conIva - retDGI - retAlc) || 0);
+        const totNIO = parseFloat(f.TotalCordobas || (totUSD * (f.TipoCambio || TIPO_CAMBIO_BCN_DEFAULT)) || 0);
+
+        document.getElementById('vfSubtotalGravado').textContent = `$ ${subGrav.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('vfMontoIVA').textContent = `+ $ ${iva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('vfTotalConIVA').textContent = `$ ${conIva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('vfRetDGI').textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('vfRetAlcaldia').textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('vfTotalPagarUSD').textContent = `$ ${totUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`;
+        document.getElementById('vfTipoCambio').textContent = `C$ ${parseFloat(f.TipoCambio || TIPO_CAMBIO_BCN_DEFAULT).toFixed(4)} por $1 USD`;
+        document.getElementById('vfTotalCordobas').textContent = `C$ ${totNIO.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        const modalEl = document.getElementById('modalVerFactura');
+        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+    } catch (err) {
+        console.error("Error al visualizar factura:", err);
+        alert("Error al abrir la factura: " + err.message);
+    }
+}
+
+// Anular Factura
+async function anularFactura(idFactura) {
+    const motivo = prompt("Ingresa el motivo de anulación fiscal ante la DGI:");
+    if (!motivo) return;
+
+    try {
+        const res = await fetch(`/api/facturas/${idFactura}/anular`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivoAnulacion: motivo })
+        });
+
+        if (!res.ok) throw new Error("No se pudo anular la factura");
+
+        alert("Factura anulada correctamente.");
+        await Promise.all([cargarDatos(), cargarFacturas(), cargarApartadoDGI()]);
+    } catch (err) {
+        alert("Error al anular: " + err.message);
+    }
+}
+
+// --------------------------------------------------------------------------
+// CRUD BÁSICO DE VENTAS (Mantenido intacto y robusto)
+// --------------------------------------------------------------------------
+
 async function guardarVenta(e) {
-    if (e && e.preventDefault) e.preventDefault();
+    if (e) e.preventDefault();
 
-    const idCliente = document.getElementById('venta-cliente')?.value;
-    const idAuto = document.getElementById('venta-auto')?.value;
-    const fecha = document.getElementById('venta-fecha')?.value;
-    const total = document.getElementById('venta-total')?.value;
-    const pago = document.getElementById('venta-pago')?.value;
-    const estado = document.getElementById('venta-estado')?.value;
+    const idVenta = document.getElementById('venta-id').value;
+    const IdClientes = document.getElementById('venta-cliente').value;
+    const idAuto = document.getElementById('venta-auto').value;
+    const FechaVenta = document.getElementById('venta-fecha').value;
+    const TotalVenta = document.getElementById('venta-total').value;
+    const FormaPago = document.getElementById('venta-pago').value;
+    const EstadoVenta = document.getElementById('venta-estado').value;
 
-    if (!idCliente || !idAuto || !total) {
-        alert('Por favor complete los campos obligatorios: Cliente, Vehículo y Monto.');
+    if (!TotalVenta || isNaN(parseFloat(TotalVenta)) || parseFloat(TotalVenta) <= 0) {
+        alert("Por favor ingresa un monto total válido para la venta.");
         return;
     }
 
     const payload = {
-        IdClientes: parseInt(idCliente),
-        idAuto: parseInt(idAuto),
-        FechaVenta: fecha || new Date().toISOString().split('T')[0],
-        TotalVenta: parseFloat(total),
-        FormaPago: pago || 'Efectivo',
-        EstadoVenta: estado || 'Finalizada'
+        IdClientes: IdClientes ? parseInt(IdClientes) : null,
+        idAuto: idAuto ? parseInt(idAuto) : null,
+        FechaVenta: FechaVenta || new Date().toISOString().split('T')[0],
+        TotalVenta: parseFloat(TotalVenta),
+        FormaPago: FormaPago || 'Efectivo',
+        EstadoVenta: EstadoVenta || 'Finalizada'
     };
 
-    const url = ventaEnEdicion ? `/api/ventas/${ventaEnEdicion}` : '/api/ventas';
-    const method = ventaEnEdicion ? 'PUT' : 'POST';
-
-    const btnGuardar = document.getElementById('btn-guardar-venta');
-    const txtOriginal = btnGuardar ? btnGuardar.innerText : 'Guardar Venta';
-
     try {
-        if (btnGuardar) {
-            btnGuardar.disabled = true;
-            btnGuardar.innerText = 'Guardando...';
+        let res;
+        if (ventaEnEdicion) {
+            res = await fetch(`/api/ventas/${idVenta}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            res = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
         }
 
-        const res = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (btnGuardar) {
-            btnGuardar.disabled = false;
-            btnGuardar.innerText = txtOriginal;
-        }
-
-        if (!res.ok) {
-            const errJson = await res.json().catch(() => ({}));
-            throw new Error(errJson.error || 'Error al guardar la venta en el servidor');
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al guardar venta');
 
         const modalEl = document.getElementById('modalVenta');
         if (modalEl) {
@@ -274,225 +912,103 @@ async function guardarVenta(e) {
         }
 
         limpiarFormularioVenta();
-        await cargarDatos();
-        alert(ventaEnEdicion ? 'Venta actualizada con éxito.' : 'Venta registrada con éxito.');
+        await Promise.all([cargarDatos(), cargarFacturas(), cargarVendedoresYPendientes()]);
     } catch (err) {
-        if (btnGuardar) {
-            btnGuardar.disabled = false;
-            btnGuardar.innerText = txtOriginal;
-        }
-        console.error('Error al guardar venta:', err);
-        alert('Error al guardar venta: ' + err.message);
+        console.error("Error al guardar venta:", err);
+        alert(err.message);
     }
 }
 
-// --------------------------------------------------------------------------
-// ABRIR MODAL PARA EDITAR
-// --------------------------------------------------------------------------
 function abrirModalEditarVenta(id) {
-    const venta = ventasData.find(v => v.idVenta === id);
-    if (!venta) {
-        alert('No se encontró la venta seleccionada.');
-        return;
+    const v = ventasData.find(item => item.idVenta === id);
+    if (!v) return;
+
+    ventaEnEdicion = v;
+    document.getElementById('venta-id').value = v.idVenta;
+    document.getElementById('venta-id-display').value = '#' + v.idVenta;
+
+    if (v.IdClientes) document.getElementById('venta-cliente').value = v.IdClientes;
+    if (v.idAuto) document.getElementById('venta-auto').value = v.idAuto;
+
+    if (v.FechaVenta) {
+        document.getElementById('venta-fecha').value = new Date(v.FechaVenta).toISOString().split('T')[0];
     }
-
-    ventaEnEdicion = id;
-
-    const elIdDisplay = document.getElementById('venta-id-display');
-    if (elIdDisplay) elIdDisplay.value = `#${id}`;
-
-    const elCli = document.getElementById('venta-cliente');
-    if (elCli && venta.IdClientes) elCli.value = venta.IdClientes;
-
-    const elAuto = document.getElementById('venta-auto');
-    if (elAuto && venta.idAuto) elAuto.value = venta.idAuto;
-
-    const elFecha = document.getElementById('venta-fecha');
-    if (elFecha) {
-        elFecha.value = venta.FechaVenta ? venta.FechaVenta.split('T')[0] : '';
-    }
-
-    const elTotal = document.getElementById('venta-total');
-    if (elTotal) elTotal.value = venta.Monto != null ? venta.Monto : '';
-
-    const elPago = document.getElementById('venta-pago');
-    if (elPago) elPago.value = venta.FormaPago || 'Efectivo';
-
-    const elEstado = document.getElementById('venta-estado');
-    if (elEstado) elEstado.value = venta.EstadoVenta || 'Finalizada';
+    document.getElementById('venta-total').value = v.Monto || '';
+    if (v.FormaPago) document.getElementById('venta-pago').value = v.FormaPago;
+    if (v.EstadoVenta) document.getElementById('venta-estado').value = v.EstadoVenta;
 
     const label = document.getElementById('modalVentaLabel');
-    if (label) {
-        label.innerHTML = `<i class="bi bi-pencil-square text-neon-green me-2"></i>Editar Venta #${id}`;
-    }
+    if (label) label.innerHTML = '<i class="bi bi-pencil-square text-neon-green me-2"></i>Editar Venta';
 
-    const btnGuardar = document.getElementById('btn-guardar-venta');
-    if (btnGuardar) btnGuardar.innerText = 'Guardar Cambios';
+    const btn = document.getElementById('btn-guardar-venta');
+    if (btn) btn.textContent = 'Actualizar Venta';
 
     const modalEl = document.getElementById('modalVenta');
     if (modalEl) {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 }
 
-// --------------------------------------------------------------------------
-// ELIMINAR VENTA
-// --------------------------------------------------------------------------
 async function eliminarVenta(id) {
-    if (!confirm(`¿Estás seguro de que deseas eliminar la venta con ID #${id}?\n(El vehículo vendido volverá a quedar como 'Disponible' en el inventario).`)) return;
+    if (!confirm(`¿Estás seguro de que deseas eliminar la venta #${id}? Si está vinculada a un auto vendido, su estado volverá a 'Disponible'.`)) {
+        return;
+    }
 
     try {
-        const res = await fetch(`/api/ventas/${id}`, {
-            method: 'DELETE'
-        });
+        const res = await fetch(`/api/ventas/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al eliminar');
 
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || 'No se pudo eliminar la venta.');
-        }
-
-        await cargarDatos();
-        alert('Venta eliminada con éxito y vehículo liberado al inventario.');
+        await Promise.all([cargarDatos(), cargarFacturas(), cargarApartadoDGI(), cargarVendedoresYPendientes()]);
     } catch (err) {
-        console.error('Error eliminando venta:', err);
-        alert('Error al eliminar venta: ' + err.message);
+        console.error("Error al eliminar venta:", err);
+        alert(err.message);
     }
 }
 
-// --------------------------------------------------------------------------
-// LIMPIAR FORMULARIO
-// --------------------------------------------------------------------------
 function limpiarFormularioVenta() {
     ventaEnEdicion = null;
-    const form = document.getElementById('formVenta');
-    if (form) form.reset();
-
-    const elIdDisplay = document.getElementById('venta-id-display');
-    if (elIdDisplay) elIdDisplay.value = '';
+    document.getElementById('venta-id').value = '';
+    document.getElementById('venta-id-display').value = '';
+    document.getElementById('venta-cliente').value = '';
+    document.getElementById('venta-auto').value = '';
+    document.getElementById('venta-fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('venta-total').value = '';
+    document.getElementById('venta-pago').value = 'Efectivo';
+    document.getElementById('venta-estado').value = 'Finalizada';
 
     const label = document.getElementById('modalVentaLabel');
-    if (label) {
-        label.innerHTML = '<i class="bi bi-tag-fill text-neon-green me-2"></i>Registrar Venta';
-    }
+    if (label) label.innerHTML = '<i class="bi bi-tag-fill text-neon-green me-2"></i>Registrar Venta';
 
-    const btnGuardar = document.getElementById('btn-guardar-venta');
-    if (btnGuardar) btnGuardar.innerText = 'Guardar Venta';
+    const btn = document.getElementById('btn-guardar-venta');
+    if (btn) btn.textContent = 'Guardar Venta';
 }
 
-window.abrirModalEditarVenta = abrirModalEditarVenta;
-window.eliminarVenta = eliminarVenta;
-
-// --------------------------------------------------------------------------
-// ACTUALIZAR KPIS PRINCIPALES
-// --------------------------------------------------------------------------
 function actualizarKPIsPrincipales(data) {
     const totalVentas = data.length;
-    const ingresos = data.reduce((sum, v) => sum + (parseFloat(v.Monto) || 0), 0);
+    const ingresos = data.reduce((acc, v) => acc + (parseFloat(v.Monto) || 0), 0);
 
-    const mesActual = new Date().getMonth();
-    const anioActual = new Date().getFullYear();
+    const hoy = new Date();
     const ventasMes = data.filter(v => {
         if (!v.FechaVenta) return false;
         const d = new Date(v.FechaVenta);
-        return d.getMonth() === mesActual && d.getFullYear() === anioActual;
+        return d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear();
     }).length;
 
-    const e1 = document.getElementById('kpi-main-ventas');
-    if (e1) e1.innerText = totalVentas;
+    const elVentas = document.getElementById('kpi-main-ventas');
+    const elIngresos = document.getElementById('kpi-main-ingresos');
+    const elMes = document.getElementById('kpi-main-mes');
 
-    const e2 = document.getElementById('kpi-main-ingresos');
-    if (e2) e2.innerText = 'C$ ' + ingresos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    const e3 = document.getElementById('kpi-main-mes');
-    if (e3) e3.innerText = ventasMes;
+    if (elVentas) elVentas.textContent = totalVentas;
+    if (elIngresos) elIngresos.textContent = '$ ' + ingresos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (elMes) elMes.textContent = ventasMes;
 }
 
-// --------------------------------------------------------------------------
-// REPORTE DE VENTAS Y EXPORTACIÓN A EXCEL
-// --------------------------------------------------------------------------
-let datosReporteVentas = [];
-let kpiVentasTexto = "";
-
-function calcularDatosReporte() {
-    datosReporteVentas = [];
-    let totalIngresos = 0;
-    const metodosPago = {};
-
-    ventasData.forEach(v => {
-        const fecha = v.FechaVenta ? v.FechaVenta.split('T')[0] : 'N/A';
-        const monto = v.Monto ? parseFloat(v.Monto) : 0;
-        totalIngresos += monto;
-
-        datosReporteVentas.push({
-            id: v.idVenta,
-            cliente: v.Cliente || 'N/A',
-            vehiculo: v.Vehiculo || 'N/A',
-            monto: `C$ ${monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-            fecha: fecha,
-            pago: v.FormaPago || 'N/A'
-        });
-
-        const p = v.FormaPago || 'Otro';
-        if (!metodosPago[p]) metodosPago[p] = 0;
-        metodosPago[p] += monto;
-    });
-
-    let maxMetodo = 'N/A';
-    let maxMonto = 0;
-    for (const [m, val] of Object.entries(metodosPago)) {
-        if (val > maxMonto) {
-            maxMonto = val;
-            maxMetodo = m;
-        }
-    }
-
-    kpiVentasTexto = `El método de pago con mayor volumen es <strong>${maxMetodo}</strong> (C$ ${maxMonto.toLocaleString('en-US', { minimumFractionDigits: 2 })}). Ingresos totales por ventas: <strong class="text-success">C$ ${totalIngresos.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>.`;
-}
-
-function generarReporte() {
-    if (ventasData.length === 0) return alert("No hay datos de ventas para generar el reporte.");
-    calcularDatosReporte();
-
-    const kpiEl = document.getElementById('kpi-ventas');
-    if (kpiEl) kpiEl.innerHTML = kpiVentasTexto;
-
-    const tbody = document.getElementById('cuerpo-tabla-reporte-ventas');
-    if (tbody) {
-        tbody.innerHTML = '';
-        datosReporteVentas.forEach(item => {
-            tbody.innerHTML += `
-                <tr>
-                    <td class="text-neon-green fw-bold">#${item.id}</td>
-                    <td class="text-white">${item.cliente}</td>
-                    <td class="text-secondary small">${item.vehiculo}</td>
-                    <td class="text-success fw-bold">${item.monto}</td>
-                    <td class="text-white">${item.fecha}</td>
-                </tr>
-            `;
-        });
-    }
-    const modalEl = document.getElementById('modalReporteVentas');
-    if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-}
-
-function descargarReporteExcel() {
-    if (ventasData.length === 0) return alert("No hay ventas para exportar.");
-    calcularDatosReporte();
-    let csvContent = "\uFEFFID,Cliente,Vehículo,Monto (C$),Fecha,Forma de Pago\n";
-    datosReporteVentas.forEach(item => {
-        let cli = (item.cliente || '').replace(/"/g, '""');
-        let veh = (item.vehiculo || '').replace(/"/g, '""');
-        csvContent += `"${item.id}","${cli}","${veh}","${item.monto}","${item.fecha}","${item.pago}"\n`;
-    });
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_ventas_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-window.generarReporte = generarReporte;
-window.descargarReporteExcel = descargarReporteExcel;
+// Exportar globalmente
+window.abrirModalEditarVenta = abrirModalEditarVenta;
+window.eliminarVenta = eliminarVenta;
+window.abrirModalEmitirFactura = abrirModalEmitirFactura;
+window.abrirModalVerFactura = abrirModalVerFactura;
+window.anularFactura = anularFactura;
+window.cargarApartadoDGI = cargarApartadoDGI;
+window.exportarLibroVentasDGIExcel = exportarLibroVentasDGIExcel;

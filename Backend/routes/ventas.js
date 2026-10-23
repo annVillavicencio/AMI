@@ -16,8 +16,12 @@ router.get('/', async (req, res) => {
                 v.TotalVenta as Monto, 
                 v.FechaVenta, 
                 v.FormaPago, 
-                v.EstadoVenta 
+                v.EstadoVenta,
+                f.idFactura,
+                f.NumeroFactura,
+                f.EstadoFactura AS EstadoFacturaFiscal
             FROM Ventas v
+            LEFT JOIN Facturas f ON v.idVenta = f.idVenta AND f.EstadoFactura != 'Anulada'
             LEFT JOIN Clientes c ON v.IdClientes = c.IdClientes
             LEFT JOIN DetalleVenta dv ON v.idVenta = dv.idVenta
             LEFT JOIN Auto a ON dv.idAuto = a.idAuto
