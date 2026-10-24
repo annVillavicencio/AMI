@@ -73,6 +73,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 6. Configurar eventos interactivos del Modal de Generar Factura
     configurarEventosModalFactura();
+
+    const modalDgiEl = document.getElementById('modalApartadoDGI');
+    if (modalDgiEl) {
+        modalDgiEl.addEventListener('show.bs.modal', () => {
+            cargarApartadoDGI();
+        });
+    }
+
+    const modalHistEl = document.getElementById('modalHistorialFacturas');
+    if (modalHistEl) {
+        modalHistEl.addEventListener('show.bs.modal', () => {
+            cargarFacturas();
+        });
+    }
 });
 
 // --------------------------------------------------------------------------
@@ -476,6 +490,7 @@ function exportarLibroVentasDGIExcel() {
         [
             "Nº Factura",
             "Fecha Emisión",
+            "Tipo Cliente",
             "RUC / Cédula Cliente",
             "Razón Social / Cliente",
             "Nº Autorización DGI",
@@ -496,6 +511,7 @@ function exportarLibroVentasDGIExcel() {
         datosExcel.push([
             f.NumeroFactura,
             f.FechaEmision ? new Date(f.FechaEmision).toISOString().split('T')[0] : '',
+            f.TipoCliente || 'Natural',
             f.IdentificacionCliente || 'N/D',
             f.NombreCliente,
             f.NumeroAutorizacionDGI,
@@ -515,7 +531,7 @@ function exportarLibroVentasDGIExcel() {
     // Fila de totales
     datosExcel.push([]);
     datosExcel.push([
-        "TOTALES FISCALES", "", "", "", "", "", "", "",
+        "TOTALES FISCALES", "", "", "", "", "", "", "", "",
         kpis.subtotalGravadoUSD,
         kpis.iva15RecaudadoUSD,
         kpis.retencionDgi2USD,
@@ -552,12 +568,15 @@ function configurarEventosModalFactura() {
     const selCond = document.getElementById('facturaCondicion');
     const selMoneda = document.getElementById('facturaMoneda');
     const formFactura = document.getElementById('formGenerarFactura');
+    const rdNat = document.getElementById('rdClienteNatural');
+    const rdJur = document.getElementById('rdClienteJuridico');
 
     if (selVenta) {
         selVenta.addEventListener('change', () => {
             const idV = parseInt(selVenta.value);
             const vObj = ventasPendientesFactura.find(v => v.idVenta === idV);
             const infoBox = document.getElementById('bloqueInfoVenta');
+            const bloqueTipo = document.getElementById('bloqueTipoCliente');
 
             if (vObj && infoBox) {
                 infoBox.style.display = 'block';
@@ -567,16 +586,49 @@ function configurarEventosModalFactura() {
                 document.getElementById('lblAutoVIN').textContent = vObj.VIN || '3N1AB7AP9KY104829';
                 document.getElementById('lblAutoPlaca').textContent = vObj.Placa || 'S/P';
 
+                // Clasificación tributaria automática (Nicaragua - Ley 822)
+                const idCli = (vObj.IdentificacionCliente || '').trim().toUpperCase();
+                const esJuridica = idCli.startsWith('J');
+
+                if (bloqueTipo) bloqueTipo.style.display = 'block';
+
+                if (esJuridica) {
+                    if (rdJur) rdJur.checked = true;
+                    aplicarConfiguracionTipoCliente('Jurídica');
+                } else {
+                    if (rdNat) rdNat.checked = true;
+                    aplicarConfiguracionTipoCliente('Natural');
+                }
+
                 // Preseleccionar vendedor si la venta lo tenía
                 if (vObj.IdEmpleado) {
                     const selVend = document.getElementById('facturaVendedor');
                     if (selVend) selVend.value = String(vObj.IdEmpleado);
                 }
-            } else if (infoBox) {
-                infoBox.style.display = 'none';
+            } else {
+                if (infoBox) infoBox.style.display = 'none';
+                if (bloqueTipo) bloqueTipo.style.display = 'none';
             }
 
             actualizarCalculosPreviosFactura();
+        });
+    }
+
+    if (rdNat) {
+        rdNat.addEventListener('change', () => {
+            if (rdNat.checked) {
+                aplicarConfiguracionTipoCliente('Natural');
+                actualizarCalculosPreviosFactura();
+            }
+        });
+    }
+
+    if (rdJur) {
+        rdJur.addEventListener('change', () => {
+            if (rdJur.checked) {
+                aplicarConfiguracionTipoCliente('Jurídica');
+                actualizarCalculosPreviosFactura();
+            }
         });
     }
 
@@ -598,29 +650,78 @@ function configurarEventosModalFactura() {
     }
 }
 
+function aplicarConfiguracionTipoCliente(tipo) {
+    const chkRetDGI = document.getElementById('chkRetencionDGI');
+    const chkRetAlc = document.getElementById('chkRetencionAlcaldia');
+    const badge = document.getElementById('badgeTipoClienteDetectado');
+    const txtInfo = document.getElementById('textoRegimenFiscal');
+
+    if (tipo === 'Jurídica') {
+        if (badge) {
+            badge.className = 'badge bg-warning bg-opacity-25 text-warning px-2 py-1';
+            badge.textContent = 'Persona Jurídica (Agente Retenedor)';
+        }
+        if (txtInfo) {
+            txtInfo.textContent = 'Empresa con RUC: Actúa como agente retenedor fiscal. Aplica 2% DGI (IR a cuenta - Ley 822) y 1% Alcaldía previa entrega de constancia de retención.';
+        }
+        if (chkRetDGI) {
+            chkRetDGI.disabled = false;
+            chkRetDGI.checked = true;
+        }
+        if (chkRetAlc) {
+            chkRetAlc.disabled = false;
+            chkRetAlc.checked = true;
+        }
+    } else {
+        if (badge) {
+            badge.className = 'badge bg-info bg-opacity-25 text-info px-2 py-1';
+            badge.textContent = 'Persona Natural (Consumidor Final)';
+        }
+        if (txtInfo) {
+            txtInfo.textContent = 'Consumidor final (Persona Natural): Conforme al Art. 59 de la Ley 822 y Plan de Arbitrios, las personas naturales NO son agentes retenedores. Pagan el total facturado con IVA (15%) sin retenciones.';
+        }
+        if (chkRetDGI) {
+            chkRetDGI.checked = false;
+            chkRetDGI.disabled = true;
+        }
+        if (chkRetAlc) {
+            chkRetAlc.checked = false;
+            chkRetAlc.disabled = true;
+        }
+    }
+}
+
 function actualizarCalculosPreviosFactura() {
     const selVenta = document.getElementById('ventaFactura');
     const chkRetDGI = document.getElementById('chkRetencionDGI');
     const chkRetAlc = document.getElementById('chkRetencionAlcaldia');
+    const rdJur = document.getElementById('rdClienteJuridico');
 
     const idV = selVenta ? parseInt(selVenta.value) : null;
     const vObj = ventasPendientesFactura.find(v => v.idVenta === idV);
 
     const subtotal = vObj ? parseFloat(vObj.TotalVenta || 0) : 0;
     const iva = Math.round((subtotal * 0.15) * 100) / 100;
-    const conIva = subtotal + iva;
+    const conIva = Math.round((subtotal + iva) * 100) / 100;
 
-    const aplicaDGI = chkRetDGI ? chkRetDGI.checked : true;
-    const aplicaAlc = chkRetAlc ? chkRetAlc.checked : true;
+    const esJuridica = rdJur ? rdJur.checked : false;
 
-    const retDGI = aplicaDGI ? Math.round((subtotal * 0.02) * 100) / 100 : 0;
-    const retAlc = aplicaAlc ? Math.round((subtotal * 0.01) * 100) / 100 : 0;
+    let retDGI = 0;
+    let retAlc = 0;
+
+    if (esJuridica) {
+        const aplicaDGI = chkRetDGI ? chkRetDGI.checked : false;
+        const aplicaAlc = chkRetAlc ? chkRetAlc.checked : false;
+        retDGI = aplicaDGI ? Math.round((subtotal * 0.02) * 100) / 100 : 0;
+        retAlc = aplicaAlc ? Math.round((subtotal * 0.01) * 100) / 100 : 0;
+    }
 
     const totalUSD = Math.round((conIva - retDGI - retAlc) * 100) / 100;
     const totalNIO = Math.round((totalUSD * TIPO_CAMBIO_BCN_DEFAULT) * 100) / 100;
 
     const elSub = document.getElementById('prevSubtotal');
     const elIva = document.getElementById('prevIVA');
+    const elTotBruto = document.getElementById('prevTotalBruto');
     const elRetDGI = document.getElementById('prevRetDGI');
     const elRetAlc = document.getElementById('prevRetAlcaldia');
     const elTotUSD = document.getElementById('prevTotalUSD');
@@ -628,9 +729,29 @@ function actualizarCalculosPreviosFactura() {
 
     if (elSub) elSub.textContent = `$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     if (elIva) elIva.textContent = `+ $ ${iva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    if (elRetDGI) elRetDGI.textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    if (elRetAlc) elRetAlc.textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    if (elTotUSD) elTotUSD.textContent = `$ ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    if (elTotBruto) elTotBruto.textContent = `$ ${conIva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    if (elRetDGI) {
+        if (esJuridica && retDGI > 0) {
+            elRetDGI.className = 'col-6 text-end text-warning fw-bold';
+            elRetDGI.textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        } else {
+            elRetDGI.className = 'col-6 text-end text-secondary';
+            elRetDGI.textContent = '$ 0.00 (No aplica)';
+        }
+    }
+
+    if (elRetAlc) {
+        if (esJuridica && retAlc > 0) {
+            elRetAlc.className = 'col-6 text-end text-info fw-bold';
+            elRetAlc.textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        } else {
+            elRetAlc.className = 'col-6 text-end text-secondary';
+            elRetAlc.textContent = '$ 0.00 (No aplica)';
+        }
+    }
+
+    if (elTotUSD) elTotUSD.textContent = `$ ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`;
     if (elTotNIO) elTotNIO.textContent = `C$ ${totalNIO.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
@@ -687,6 +808,8 @@ async function emitirFactura(e) {
             body: JSON.stringify({
                 idVenta: parseInt(idVenta),
                 idEmpleado,
+                tipoCliente: document.getElementById('rdClienteJuridico')?.checked ? 'Jurídica' : 'Natural',
+                esAgenteRetenedor: document.getElementById('rdClienteJuridico')?.checked || false,
                 condicionVenta,
                 plazoMeses: parseInt(plazoMeses) || 0,
                 moneda,
@@ -809,7 +932,20 @@ async function abrirModalVerFactura(idFactura) {
             });
         }
 
-        // Desglose Fiscal DGI
+        // Tipo de Cliente / Contribuyente
+        const elTipoCli = document.getElementById('vfTipoCliente');
+        const tipoCli = f.TipoCliente || 'Natural';
+        if (elTipoCli) {
+            if (tipoCli === 'Jurídica') {
+                elTipoCli.className = 'badge bg-warning bg-opacity-25 text-warning border border-warning';
+                elTipoCli.textContent = 'Persona Jurídica (Agente Retenedor)';
+            } else {
+                elTipoCli.className = 'badge bg-info bg-opacity-25 text-info border border-info';
+                elTipoCli.textContent = 'Persona Natural (Consumidor Final)';
+            }
+        }
+
+        // Desglose Fiscal DGI (Ley 822)
         const subGrav = parseFloat(f.SubtotalGravado || f.Subtotal || 0);
         const iva = parseFloat(f.MontoIVA || (subGrav * 0.15) || 0);
         const conIva = subGrav + iva;
@@ -821,11 +957,41 @@ async function abrirModalVerFactura(idFactura) {
         document.getElementById('vfSubtotalGravado').textContent = `$ ${subGrav.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('vfMontoIVA').textContent = `+ $ ${iva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('vfTotalConIVA').textContent = `$ ${conIva.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-        document.getElementById('vfRetDGI').textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-        document.getElementById('vfRetAlcaldia').textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        const elVfRetDgi = document.getElementById('vfRetDGI');
+        if (elVfRetDgi) {
+            if (retDGI > 0) {
+                elVfRetDgi.className = 'fw-bold text-warning';
+                elVfRetDgi.textContent = `- $ ${retDGI.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            } else {
+                elVfRetDgi.className = 'text-secondary small';
+                elVfRetDgi.textContent = '$ 0.00 (No aplica)';
+            }
+        }
+
+        const elVfRetAlc = document.getElementById('vfRetAlcaldia');
+        if (elVfRetAlc) {
+            if (retAlc > 0) {
+                elVfRetAlc.className = 'fw-bold text-info';
+                elVfRetAlc.textContent = `- $ ${retAlc.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            } else {
+                elVfRetAlc.className = 'text-secondary small';
+                elVfRetAlc.textContent = '$ 0.00 (No aplica)';
+            }
+        }
+
         document.getElementById('vfTotalPagarUSD').textContent = `$ ${totUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`;
         document.getElementById('vfTipoCambio').textContent = `C$ ${parseFloat(f.TipoCambio || TIPO_CAMBIO_BCN_DEFAULT).toFixed(4)} por $1 USD`;
         document.getElementById('vfTotalCordobas').textContent = `C$ ${totNIO.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        const elVfNota = document.getElementById('vfTextoNotaFiscal');
+        if (elVfNota) {
+            if (tipoCli === 'Jurídica' && (retDGI > 0 || retAlc > 0)) {
+                elVfNota.textContent = 'Cliente Jurídico / Agente Retenedor: Retenciones deducidas al momento del pago contra entrega de Constancia de Retención Fiscal.';
+            } else {
+                elVfNota.textContent = 'Venta a Consumidor Final (Persona Natural): Conforme al Art. 59 de la Ley 822, no sujeta a retenciones en la fuente. Se canceló el 100% del total facturado con IVA.';
+            }
+        }
 
         const modalEl = document.getElementById('modalVerFactura');
         if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();

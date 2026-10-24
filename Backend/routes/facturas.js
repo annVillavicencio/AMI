@@ -18,6 +18,7 @@ router.get('/', async (req, res) => {
                 f.idVenta,
                 f.NumeroFactura,
                 f.FechaEmision,
+                f.TipoCliente,
                 f.NombreVendedor,
                 f.CodigoEmpleado,
                 f.IdEmpleado,
@@ -153,6 +154,10 @@ router.get('/dgi/resumen', async (req, res) => {
                 f.idFactura,
                 f.NumeroFactura,
                 f.FechaEmision,
+                f.TipoCliente,
+                f.Subtotal,
+                f.Impuesto,
+                f.Total,
                 f.NumeroAutorizacionDGI,
                 f.SerieFactura,
                 f.RangoAutorizado,
@@ -187,10 +192,13 @@ router.get('/dgi/resumen', async (req, res) => {
             totalFacturasAnuladas: facturas.filter(f => f.EstadoFactura === 'Anulada').length,
             subtotalGravadoUSD: validas.reduce((acc, f) => acc + (parseFloat(f.SubtotalGravado) || 0), 0),
             iva15RecaudadoUSD: validas.reduce((acc, f) => acc + (parseFloat(f.MontoIVA) || 0), 0),
+            totalFacturadoBrutoUSD: validas.reduce((acc, f) => acc + (parseFloat(f.Total) || 0), 0),
             retencionDgi2USD: validas.reduce((acc, f) => acc + (parseFloat(f.RetencionDGI) || 0), 0),
             retencionAlcaldia1USD: validas.reduce((acc, f) => acc + (parseFloat(f.RetencionAlcaldia) || 0), 0),
             totalPagarUSD: validas.reduce((acc, f) => acc + (parseFloat(f.TotalPagar) || 0), 0),
             totalPagarCordobas: validas.reduce((acc, f) => acc + (parseFloat(f.TotalCordobas) || 0), 0),
+            totalClientesNaturales: validas.filter(f => (f.TipoCliente || 'Natural') === 'Natural').length,
+            totalClientesJuridicos: validas.filter(f => f.TipoCliente === 'Jurídica').length,
             tipoCambioOficialBCN: TIPO_CAMBIO_BCN,
             resolucionDGI: RESOLUCION_DGI_DEFAULT,
             serieFiscal: SERIE_DEFAULT,
@@ -262,12 +270,14 @@ router.post('/', async (req, res) => {
         const {
             idVenta,
             idEmpleado,
+            tipoCliente, // 'Natural' o 'Jurídica'
+            esAgenteRetenedor,
             moneda = 'USD',
             tipoCambio = TIPO_CAMBIO_BCN,
             condicionVenta = 'Contado',
             plazoMeses = 0,
-            aplicaRetencionDGI = true,
-            aplicaRetencionAlcaldia = true,
+            aplicaRetencionDGI = false,
+            aplicaRetencionAlcaldia = false,
             mesesGarantia = 12
         } = req.body;
 
@@ -352,11 +362,32 @@ router.post('/', async (req, res) => {
         const totalConImpuesto = subtotal + montoIVA;
 
         // Retenciones en la fuente
-        const pctRetDGI = (aplicaRetencionDGI === true || aplicaRetencionDGI === 'true') ? 2.00 : 0.00;
-        const montoRetDGI = pctRetDGI > 0 ? Math.round((subtotalGravado * (pctRetDGI / 100)) * 100) / 100 : 0.00;
+        // Clasificación fiscal según Ley 822 y Plan de Arbitrios Municipal:
+        // - Persona Natural (Consumidor Final): NO es agente retenedor. Retenciones = 0. Total a Pagar = Total con IVA.
+        // - Persona Jurídica (Empresa con RUC / Agente Retenedor): Retiene 2% DGI (IR Fuente) y 1% IMI Alcaldía previa constancia.
+        let tipoClienteFinal = tipoCliente;
+        if (!tipoClienteFinal) {
+            const idCli = (venta.IdentificacionCliente || '').trim().toUpperCase();
+            tipoClienteFinal = idCli.startsWith('J') ? 'Jurídica' : 'Natural';
+        }
 
-        const pctRetAlcaldia = (aplicaRetencionAlcaldia === true || aplicaRetencionAlcaldia === 'true') ? 1.00 : 0.00;
-        const montoRetAlcaldia = pctRetAlcaldia > 0 ? Math.round((subtotalGravado * (pctRetAlcaldia / 100)) * 100) / 100 : 0.00;
+        const esRetenedor = (tipoClienteFinal === 'Jurídica') || (esAgenteRetenedor === true || esAgenteRetenedor === 'true');
+
+        let pctRetDGI = 0.00;
+        let montoRetDGI = 0.00;
+        let pctRetAlcaldia = 0.00;
+        let montoRetAlcaldia = 0.00;
+
+        if (esRetenedor) {
+            if (aplicaRetencionDGI === true || aplicaRetencionDGI === 'true') {
+                pctRetDGI = 2.00;
+                montoRetDGI = Math.round((subtotalGravado * (pctRetDGI / 100)) * 100) / 100;
+            }
+            if (aplicaRetencionAlcaldia === true || aplicaRetencionAlcaldia === 'true') {
+                pctRetAlcaldia = 1.00;
+                montoRetAlcaldia = Math.round((subtotalGravado * (pctRetAlcaldia / 100)) * 100) / 100;
+            }
+        }
 
         const totalPagar = Math.round((totalConImpuesto - montoRetDGI - montoRetAlcaldia) * 100) / 100;
 
@@ -418,6 +449,7 @@ router.post('/', async (req, res) => {
             .input('Placa', sql.VarChar(20), venta.Placa || 'S/P')
             .input('Kilometraje', sql.Int, venta.Kilometraje || 12000)
             .input('MesesGarantia', sql.Int, parseInt(mesesGarantia) || 12)
+            .input('TipoCliente', sql.VarChar(30), tipoClienteFinal)
             .query(`
                 INSERT INTO Facturas (
                     idVenta, NumeroFactura, FechaEmision, NombreVendedor, RUCVendedor, CedulaVendedor,
@@ -428,7 +460,7 @@ router.post('/', async (req, res) => {
                     NumeroAutorizacionDGI, SerieFactura, RangoAutorizado, FechaLimiteEmision,
                     SubtotalGravado, SubtotalExento, PorcentajeIVA, MontoIVA,
                     PorcentajeRetencionDGI, RetencionDGI, PorcentajeRetencionAlcaldia, RetencionAlcaldia, TotalPagar,
-                    idAuto, VIN, NumeroMotor, Placa, Kilometraje, MesesGarantia
+                    idAuto, VIN, NumeroMotor, Placa, Kilometraje, MesesGarantia, TipoCliente
                 )
                 OUTPUT INSERTED.idFactura
                 VALUES (
@@ -440,7 +472,7 @@ router.post('/', async (req, res) => {
                     @NumeroAutorizacionDGI, @SerieFactura, @RangoAutorizado, @FechaLimiteEmision,
                     @SubtotalGravado, @SubtotalExento, @PorcentajeIVA, @MontoIVA,
                     @PorcentajeRetencionDGI, @RetencionDGI, @PorcentajeRetencionAlcaldia, @RetencionAlcaldia, @TotalPagar,
-                    @idAuto, @VIN, @NumeroMotor, @Placa, @Kilometraje, @MesesGarantia
+                    @idAuto, @VIN, @NumeroMotor, @Placa, @Kilometraje, @MesesGarantia, @TipoCliente
                 )
             `);
 
