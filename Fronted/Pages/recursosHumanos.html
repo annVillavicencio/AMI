@@ -60,6 +60,72 @@
         .employee-row:hover { background-color: rgba(255, 255, 255, 0.02); }
         .employee-row.selected { background-color: rgba(168, 85, 247, 0.1) !important; }
 
+        
+        
+        .modal { z-index: 1060 !important; }
+        .modal-backdrop { z-index: 1050 !important; }
+        .payroll-row { 
+            cursor: pointer !important; 
+            transition: all 0.15s ease-in-out !important; 
+        }
+        .payroll-row:hover { 
+            background-color: rgba(219, 255, 153, 0.15) !important;
+        }
+        .payroll-row.selected {
+            background-color: rgba(219, 255, 153, 0.22) !important;
+            box-shadow: inset 4px 0 0 var(--neon-green) !important;
+        }
+        .payroll-row td {
+            cursor: pointer !important;
+        }
+        .detalle-box-ingreso { background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); }
+        .detalle-box-deduccion { background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .detalle-box-neto { background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(219, 255, 153, 0.1) 100%); border: 1px solid rgba(16, 185, 129, 0.35); }
+        .detalle-box-patronal { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        @media print {
+            body * { visibility: hidden !important; }
+            #modalBoletaPagoPlanilla, #modalBoletaPagoPlanilla * { visibility: visible !important; }
+            #modalBoletaPagoPlanilla {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+            .modal-content { background: #ffffff !important; color: #000000 !important; border: none !important; box-shadow: none !important; }
+            .no-print { display: none !important; }
+            #boletaPagoPrintArea { color: #000000 !important; background: #ffffff !important; }
+            #boletaPagoPrintArea * { color: #000000 !important; }
+            #boletaPagoPrintArea .border-secondary, #boletaPagoPrintArea .border-opacity-25 { border-color: #ccc !important; }
+            #boletaPagoPrintArea .bg-light-print { background-color: #f8f9fa !important; }
+        }
+
+            #modalBoletaPagoPlanilla, #modalBoletaPagoPlanilla * { visibility: visible !important; }
+            #modalBoletaPagoPlanilla {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+            .modal-content { background: #ffffff !important; color: #000000 !important; border: none !important; box-shadow: none !important; }
+            .no-print { display: none !important; }
+            #boletaPagoPrintArea { color: #000000 !important; background: #ffffff !important; }
+            #boletaPagoPrintArea * { color: #000000 !important; }
+            #boletaPagoPrintArea .border-secondary, #boletaPagoPrintArea .border-opacity-25 { border-color: #ccc !important; }
+            #boletaPagoPrintArea .bg-light-print { background-color: #f8f9fa !important; }
+        }
+
+
          .sidebar-active-pink {
             background-color: var(--pink-soft) !important;
             color: #07060B !important;
@@ -128,6 +194,9 @@
                 </a>
                 <a href="Costos.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-calculator me-2"></i> Costos
+                </a>
+                <a href="finanzas.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-bank me-2"></i> Finanzas & DGI
                 </a>
                 <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent">
                     <i class="bi bi-bar-chart me-2"></i> Análisis
@@ -340,16 +409,16 @@
                     <div class="d-flex gap-2 flex-wrap align-items-center">
                         <select id="selectPeriodoMes" class="form-select form-control-dark form-select-sm" style="min-width: 140px;" onchange="filtrarPlanilla()">
                             <option value="Todos">Todos los meses</option>
-                            <option value="Agosto" selected>Agosto 2026</option>
+                            <option value="Agosto">Agosto 2026</option>
                             <option value="Septiembre">Septiembre 2026</option>
-                            <option value="Octubre">Octubre 2026</option>
+                            <option value="Octubre" selected>Octubre 2026</option>
                             <option value="Noviembre">Noviembre 2026</option>
                             <option value="Diciembre">Diciembre 2026</option>
                         </select>
 
                         <select id="selectQuincenaPlanilla" class="form-select form-control-dark form-select-sm" style="min-width: 150px;" onchange="filtrarPlanilla()">
                             <option value="Todos">Todos los períodos</option>
-                            <option value="Mes Completo">Mes Completo</option>
+                            <option value="Mes Completo" selected>Mes Completo</option>
                             <option value="Primera Quincena">Primera Quincena</option>
                             <option value="Segunda Quincena">Segunda Quincena</option>
                         </select>
@@ -361,6 +430,11 @@
                         <button id="btnDescargarPlanillaExcel" type="button" class="btn btn-outline-info text-white btn-sm fw-bold rounded-pill px-3 shadow-sm d-flex align-items-center gap-1" onclick="descargarPlanillaExcel()" title="Descargar Planilla en formato Excel">
                             <i class="bi bi-file-earmark-excel text-neon-green"></i>
                             <span>Descargar Excel</span>
+                        </button>
+                        
+                        <button id="btnPagarPlanilla" type="button" class="btn btn-success text-white btn-sm fw-bold rounded-pill px-3 shadow-sm d-flex align-items-center gap-2" onclick="abrirModalPagarPlanilla()" title="Calcular y pagar la nómina a todos los trabajadores activos">
+                            <i class="bi bi-cash-stack fs-6"></i>
+                            <span>Pagar Planilla</span>
                         </button>
                         <button id="btnGenerarPlanilla" type="button" class="btn bg-neon-green text-dark btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="abrirModalGenerarPlanilla()">
                             <i class="fa-solid fa-file-invoice me-1"></i>
@@ -474,68 +548,88 @@
                     <span class="text-neon-green" id="resumen-total-pagar">C$ 0.00</span>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-    
-    <div class="modal fade" id="modalEmpleado" tabindex="-1" aria-hidden="true">
+            <!-- Ficha Salarial Completa del Trabajador Seleccionado -->
+            <div id="card-detalle-empleado-planilla" class="card card-custom p-4 rounded-4 mt-3 border border-secondary border-opacity-25 shadow-lg position-relative" style="background: linear-gradient(145deg, #121810 0%, #10151C 100%);">
+                <div id="detalle-planilla-placeholder" class="text-center py-5 text-muted">
+                    <i class="bi bi-person-badge fs-1 text-neon-green d-block mb-2 opacity-75"></i>
+                    <h6 class="text-white fw-bold">Ningún trabajador seleccionado</h6>
+                    <p class="small text-secondary mb-0">Haz clic en cualquier fila de la tabla de planilla para ver toda la información de su liquidación, desglose legal y comprobante oficial de pago.</p>
+                </div>
+                <div id="detalle-planilla-content" style="display: none;">
+                    <!-- Se inyecta dinámicamente -->
+                </div>
+            </div>
+
+        </div> <!-- Fin col-12 col-xl-4 -->
+    </div> <!-- Fin row -->
+</div> <!-- Fin vista planilla -->
+</div> <!-- Fin container-fluid -->
+</div> <!-- Fin page-content-wrapper -->
+</div> <!-- Fin wrapper -->
+
+<!-- ========================================================================= -->
+<!-- MODALES DEL SISTEMA (FUERA DEL WRAPPER PRINCIPAL) -->
+<!-- ========================================================================= -->
+
+<!-- 1. Modal Gestión de Trabajadores (Empleado) -->
+<div class="modal fade" id="modalEmpleado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content card-custom text-white">
+        <div class="modal-content card-custom text-white border-secondary border-opacity-25" style="background-color: #101218;">
             <div class="modal-header border-bottom border-secondary border-opacity-25">
                 <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>Gestión de Trabajadores</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="formEmpleado" novalidate>
                     <div class="row g-3">
-                            <h8 class="modal-title fw-bold"></i>Información Personal</h8>
+                        <h8 class="modal-title fw-bold">Información Personal</h8>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Nombre Completo</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoNombre" placeholder="Nombre del trabajador">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Cedula</label>
+                            <label class="form-label small text-secondary">Cédula</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoCedula" placeholder="Cédula del trabajador">
                         </div>
-                         <div class="col-md-6">
+                        <div class="col-md-6">
                             <label class="form-label small text-secondary">Correo</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoCorreo" placeholder="Correo del trabajador">
                         </div>
-                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Telefono</label>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Teléfono</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Direccion</label>
-                            <input type="text" class="form-control form-control-dark" id="empleadoTelefono" placeholder="Teléfono del trabajador">
+                            <label class="form-label small text-secondary">Dirección</label>
+                            <input type="text" class="form-control form-control-dark" id="empleadoDireccion" placeholder="Dirección del trabajador">
                         </div>
-                        <h8 class="modal-title fw-bold"></i>Información Laboral</h8>
+                        <h8 class="modal-title fw-bold">Información Laboral</h8>
                         <div class="col-md-6">
-                            <label class="form-label small text-secondary">Codigo</label>
+                            <label class="form-label small text-secondary">Código</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoCodigo" placeholder="Código del trabajador">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-secondary">Cargo</label>
                             <input type="text" class="form-control form-control-dark" id="empleadoCargo" placeholder="Cargo del trabajador">
                         </div>
-                         <div class="col-md-6">
+                        <div class="col-md-6">
                             <label class="form-label small text-secondary">Tipo de contrato</label>
                             <select id="empleadoContrato" class="form-select form-control-dark">
-                                    <option>T. Determinado</option>
-                                    <option>T. Indeterminado</option>
-                                </select>
+                                <option>T. Determinado</option>
+                                <option>T. Indeterminado</option>
+                            </select>
                         </div>
-                       <div class="col-md-6">
+                        <div class="col-md-6">
                             <label class="form-label small text-secondary">Departamento</label>
-                             <select id="empleadoDepartamento" class="form-select form-control-dark">
-                                    <option>Ventas</option>
-                                    <option>Contabilidad</option>
-                                    <option>Taller</option>
-                                    <option>Administración</option>
-                                </select>
+                            <select id="empleadoDepartamento" class="form-select form-control-dark">
+                                <option>Ventas</option>
+                                <option>Contabilidad</option>
+                                <option>Taller</option>
+                                <option>Administración</option>
+                            </select>
                         </div>                      
-                               <div class="col-md-6">
+                        <div class="col-md-6">
                             <label class="form-label small text-secondary">Salario (C$)</label>
                             <input type="number" id="empleadoSalario" step="0.01" class="form-control form-control-dark" placeholder="0.00">
                         </div>
@@ -551,24 +645,25 @@
                             <label class="form-label small text-secondary">Fecha de ingreso</label>
                             <input id="empleadoFecha" type="date" class="form-control form-control-dark">
                         </div>
-                         <div class="col-md-6">
-                                <label class="form-label small text-secondary">Estado</label>
-                                <select id="empleadoEstado" class="form-select form-control-dark">
-                                    <option>Activo</option>
-                                    <option>Inactivo</option>
-                                </select>
-                            </div>
-                        <div class="modal-footer border-top border-secondary border-opacity-25">
-                    <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button id="btnGuardarEmpleado" type="button" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar empleado</button>
-                </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary">Estado</label>
+                            <select id="empleadoEstado" class="form-select form-control-dark">
+                                <option>Activo</option>
+                                <option>Inactivo</option>
+                            </select>
+                        </div>
                     </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25">
+                <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btnGuardarEmpleado" type="button" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar empleado</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Modal Reporte RRHH -->
-
-<!-- Modal Generar Planilla Oficial -->
+<!-- 2. Modal Generar Planilla Salarial -->
 <div class="modal fade" id="modalGenerarPlanilla" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-custom text-white border-secondary border-opacity-25" style="background-color: #101218;">
@@ -624,12 +719,107 @@
     </div>
 </div>
 
+<!-- 3. Modal Pagar Planilla Completa -->
+<div class="modal fade" id="modalPagarPlanilla" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-custom text-white border-success border-opacity-25" style="background-color: #101518;">
+            <div class="modal-header border-bottom border-secondary border-opacity-25">
+                <h5 class="modal-title fw-bold text-success d-flex align-items-center gap-2">
+                    <i class="bi bi-cash-stack fs-5"></i> Pagar Nómina de Todos los Trabajadores
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-secondary small mb-3">
+                    Al presionar <strong>Confirmar y Pagar</strong>, el sistema realizará automáticamente los cálculos salariales y legales para <strong>todos los colaboradores activos</strong>:
+                </p>
+                <div class="small p-3 rounded-3 mb-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                    <div class="text-neon-green mb-1 fw-bold"><i class="bi bi-check2-all me-1"></i> Conceptos calculados automáticamente:</div>
+                    <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.82rem;">
+                        <li>Salario Base proporcional al período</li>
+                        <li>Horas Extras con recargo del 150% (1.5x) según Código del Trabajo</li>
+                        <li>Bonificaciones y Comisiones comerciales</li>
+                        <li>Deducción legal de <strong>INSS Laboral (7%)</strong></li>
+                        <li>Retención en la Fuente <strong>IR Salarial Progresivo (Ley 822 de Nicaragua)</strong></li>
+                        <li>Aportes Patronales: <strong>INSS Patronal (22.5%)</strong> e <strong>INATEC (2%)</strong></li>
+                        <li>Actualización inmediata de estado a <span class="badge bg-success text-white">Pagada</span> con fecha de hoy</li>
+                    </ul>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Mes del Período *</label>
+                        <select id="modalPagarMes" class="form-select form-control-dark">
+                            <option value="Enero">Enero 2026</option>
+                            <option value="Febrero">Febrero 2026</option>
+                            <option value="Marzo">Marzo 2026</option>
+                            <option value="Abril">Abril 2026</option>
+                            <option value="Mayo">Mayo 2026</option>
+                            <option value="Junio">Junio 2026</option>
+                            <option value="Julio">Julio 2026</option>
+                            <option value="Agosto">Agosto 2026</option>
+                            <option value="Septiembre">Septiembre 2026</option>
+                            <option value="Octubre" selected>Octubre 2026</option>
+                            <option value="Noviembre">Noviembre 2026</option>
+                            <option value="Diciembre">Diciembre 2026</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Tipo de Período *</label>
+                        <select id="modalPagarQuincena" class="form-select form-control-dark">
+                            <option value="Mes Completo" selected>Mes Completo (30 días)</option>
+                            <option value="Primera Quincena">1ª Quincena (1-15)</option>
+                            <option value="Segunda Quincena">2ª Quincena (16-Fin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3 mb-2" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-white fw-bold"><i class="bi bi-people-fill text-success me-1"></i> Trabajadores activos a procesar:</span>
+                        <span class="badge bg-success text-white fw-bold px-2 py-1" id="modalPagarTotalEmpleados">Todos los activos</span>
+                    </div>
+                    <div class="small text-secondary">El pago quedará guardado y asentado en la base de datos de Autos AMI.</div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-bold rounded-pill px-4 d-flex align-items-center gap-2" id="btnConfirmarPagarPlanilla" onclick="ejecutarPagoPlanillaCompleta()">
+                    <i class="bi bi-check2-circle fs-5"></i> Confirmar y Pagar a Todos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Boleta Oficial de Pago (Printable Voucher) -->
+<div class="modal fade" id="modalBoletaPagoPlanilla" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card-custom text-white border-secondary border-opacity-25" style="background-color: #0F1218;">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 no-print">
+                <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-text text-neon-green"></i> Boleta Oficial de Pago de Salario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="boletaPagoPrintArea">
+                <!-- Se inyecta dinámicamente con abrirBoletaPagoPlanilla() -->
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25 no-print">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success fw-bold rounded-pill px-4 d-flex align-items-center gap-2" onclick="window.print()">
+                    <i class="bi bi-printer-fill"></i> Imprimir Boleta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal Reporte RRHH -->
 <div class="modal fade" id="modalReporteRH" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content card-custom text-white">
             <div class="modal-header border-secondary border-opacity-25">
                 <h5 class="modal-title fw-bold">
-                    <i class="bi bi-file-earmark-person text-info me-2"></i> Reporte Salarial (IR Nicaragua)
+                    <i class="bi bi-file-earmark-person text-info me-2"></i> Reporte Salarial de Colaboradores
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -641,7 +831,7 @@
                                 <th>ID</th>
                                 <th>Empleado</th>
                                 <th>Salario Base (Mensual)</th>
-                                <th>Retencin IR (Mensual)</th>
+                                <th>Retención IR (Mensual)</th>
                                 <th>Salario Neto Estimado</th>
                             </tr>
                         </thead>
@@ -659,10 +849,11 @@
         </div>
     </div>
 </div>
+
+<!-- SCRIPTS (AL FINAL DEL BODY) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../JS/script.js?v=3"></script>
 <script src="../JS/auth.js"></script>
-    <script src="../JS/recursosHumanos.js?v=9"></script>
+<script src="../JS/recursosHumanos.js?v=15"></script>
 </body>
 </html>
-
-

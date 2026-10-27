@@ -105,6 +105,8 @@ router.get('/planilla', async (req, res) => {
                 ISNULL(e.NombreEmpleado, '') AS NombreEmpleado,
                 ISNULL(e.ApellidoEmpleado, '') AS ApellidoEmpleado,
                 ISNULL(e.CodigoEmpleado, '') AS CodigoEmpleado,
+                ISNULL(e.Cedula, '001-000000-0000X') AS Cedula,
+                CONVERT(VARCHAR(10), e.FechaIngreso, 120) AS FechaIngreso,
                 ISNULL(c.NombreCargo, 'Sin Cargo') AS NombreCargo,
                 ISNULL(d.NombreDepartamento, 'Sin Departamento') AS NombreDepartamento
             FROM Planilla p
@@ -536,5 +538,272 @@ router.get('/planilla/exportar-excel', async (req, res) => {
     }
 });
 
+
+
+// -------------------------------------------------------------
+// 7. POST /api/recursosHumanos/planilla/pagar: Realizar cálculos y pagar planilla a todos los trabajadores
+// -------------------------------------------------------------
+router.post('/planilla/pagar', async (req, res) => {
+    try {
+        const { 
+            mes = 'Octubre', 
+            anio = 2026, 
+            quincena = 'Mes Completo',
+            factorRecargo = 1.5,
+            incluirHorasExtrasEstimadas = true
+        } = req.body;
+        const pool = await getPool();
+
+        const mesesMap = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+            'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        };
+        const numMes = mesesMap[mes.toLowerCase().trim()] || (new Date().getMonth() + 1);
+        const anioInt = parseInt(anio, 10) || new Date().getFullYear();
+
+        let fechaInicio, fechaFin, fechaPago, factor, dias;
+        const ultimoDiaMes = new Date(anioInt, numMes, 0).getDate();
+        const hoyStr = new Date().toISOString().slice(0, 10);
+
+        if (quincena.includes('Primera')) {
+            fechaInicio = `${anioInt}-${String(numMes).padStart(2, '0')}-01`;
+            fechaFin = `${anioInt}-${String(numMes).padStart(2, '0')}-15`;
+            fechaPago = hoyStr;
+            factor = 0.5;
+            dias = 15;
+        } else if (quincena.includes('Segunda')) {
+            fechaInicio = `${anioInt}-${String(numMes).padStart(2, '0')}-16`;
+            fechaFin = `${anioInt}-${String(numMes).padStart(2, '0')}-${ultimoDiaMes}`;
+            fechaPago = hoyStr;
+            factor = 0.5;
+            dias = 15;
+        } else {
+            fechaInicio = `${anioInt}-${String(numMes).padStart(2, '0')}-01`;
+            fechaFin = `${anioInt}-${String(numMes).padStart(2, '0')}-${ultimoDiaMes}`;
+            fechaPago = hoyStr;
+            factor = 1.0;
+            dias = 30;
+        }
+
+        // Obtener todos los empleados activos
+        const qEmps = await pool.request().query(`
+            SELECT e.IdEmpleado, e.CodigoEmpleado, e.NombreEmpleado, e.ApellidoEmpleado, e.SalarioBase,
+                   ISNULL(e.Cedula, 'N/A') AS Cedula,
+                   CONVERT(VARCHAR(10), e.FechaIngreso, 120) AS FechaIngreso,
+                   ISNULL(c.NombreCargo, 'Sin Cargo') AS NombreCargo,
+                   ISNULL(d.NombreDepartamento, 'Sin Departamento') AS NombreDepartamento
+            FROM Empleado e
+            LEFT JOIN Cargo c ON e.IdCargo = c.IdCargo
+            LEFT JOIN Departamento d ON e.idDepartamento = d.idDepartamento
+            WHERE e.EstadoEmpleado = 'Activo' AND e.SalarioBase > 0
+        `);
+
+        const empleados = qEmps.recordset;
+        if (empleados.length === 0) {
+            return res.status(400).json({ error: 'No hay empleados activos con salario base para procesar.' });
+        }
+
+        let procesados = 0;
+        let totalNetoPagado = 0;
+        let totalInssLaboral = 0;
+        let totalIrRetenido = 0;
+        let totalInssPatronal = 0;
+
+        for (const emp of empleados) {
+            const salBaseMensual = parseFloat(emp.SalarioBase) || 0;
+            const salBasePeriodo = Math.round(salBaseMensual * factor * 100) / 100;
+            
+            const valorHoraOrdinaria = Math.round((salBaseMensual / 240) * 100) / 100;
+            const valorHoraExtra = Math.round((valorHoraOrdinaria * parseFloat(factorRecargo)) * 100) / 100;
+
+            let horasExtra = 0;
+            let bonificaciones = 0;
+            let comisiones = 0;
+            let otrosIngresos = 0;
+
+            if (incluirHorasExtrasEstimadas) {
+                const cargo = emp.NombreCargo.toLowerCase();
+                const depto = emp.NombreDepartamento.toLowerCase();
+
+                if (depto.includes('venta') || cargo.includes('asesor') || cargo.includes('vendedor')) {
+                    horasExtra = (emp.IdEmpleado % 2 === 0) ? 6 : 4;
+                    bonificaciones = 1000;
+                    comisiones = 3000;
+                } else if (depto.includes('taller') || depto.includes('servicio') || cargo.includes('mecanic') || cargo.includes('bodega')) {
+                    horasExtra = (emp.IdEmpleado % 2 === 0) ? 8 : 5;
+                    bonificaciones = 1200;
+                } else if (cargo.includes('asistente') || cargo.includes('analista') || cargo.includes('auxiliar')) {
+                    horasExtra = 3;
+                    bonificaciones = 500;
+                }
+
+                if (factor === 0.5) {
+                    horasExtra = Math.floor(horasExtra / 2);
+                    bonificaciones = Math.round(bonificaciones * 0.5 * 100) / 100;
+                    comisiones = Math.round(comisiones * 0.5 * 100) / 100;
+                }
+            }
+
+            const montoHorasExtra = Math.round(horasExtra * valorHoraExtra * 100) / 100;
+            const salarioBruto = Math.round((salBasePeriodo + montoHorasExtra + bonificaciones + comisiones + otrosIngresos) * 100) / 100;
+
+            // 1. INSS Laboral (7%)
+            const inssLaboral = Math.round(salarioBruto * 0.07 * 100) / 100;
+
+            // 2. Retención IR Salarial Progresivo Ley 822 de Nicaragua
+            const irMensual = calcularIRNicaragua(salarioBruto) * factor;
+            const irRedondeado = Math.round(irMensual * 100) / 100;
+
+            // 3. Deducciones
+            const otrasDeducciones = (horasExtra > 0) ? 250 : 0;
+            const totalIngresos = salarioBruto;
+            const totalDeducciones = Math.round((inssLaboral + irRedondeado + otrasDeducciones) * 100) / 100;
+            const salarioNeto = Math.round((totalIngresos - totalDeducciones) * 100) / 100;
+
+            // 4. Aporte Patronal (22.5%)
+            const inssPatronal = Math.round(salarioBruto * 0.225 * 100) / 100;
+            const totalAPagar = salarioNeto;
+            const estado = 'Pagada';
+
+            // Verificar si ya existe registro en este período
+            const qExiste = await pool.request()
+                .input('IdEmpleado', sql.VarChar(20), String(emp.IdEmpleado))
+                .input('FechaInicio', sql.Date, fechaInicio)
+                .input('FechaFin', sql.Date, fechaFin)
+                .query(`
+                    SELECT IdPlanilla FROM Planilla 
+                    WHERE IdEmpleado = @IdEmpleado 
+                      AND FechaInicioPeriodo = @FechaInicio 
+                      AND FechaFinPeriodo = @FechaFin
+                `);
+
+            if (qExiste.recordset.length > 0) {
+                // Actualizar a Pagada
+                await pool.request()
+                    .input('IdPlanilla', sql.Int, qExiste.recordset[0].IdPlanilla)
+                    .input('FechaPago', sql.Date, fechaPago)
+                    .input('SalarioBase', sql.Decimal(18, 2), salBasePeriodo)
+                    .input('DiasTrabajados', sql.Int, dias)
+                    .input('HorasExtra', sql.Int, horasExtra)
+                    .input('Bonificaciones', sql.Decimal(18, 2), bonificaciones)
+                    .input('Comisiones', sql.Decimal(18, 2), comisiones)
+                    .input('OtrosIngresos', sql.Decimal(18, 2), otrosIngresos)
+                    .input('SalarioBruto', sql.Decimal(18, 2), salarioBruto)
+                    .input('INSS', sql.Decimal(18, 2), inssLaboral)
+                    .input('IR', sql.Decimal(18, 2), irRedondeado)
+                    .input('OtrasDeducciones', sql.Decimal(18, 2), otrasDeducciones)
+                    .input('TotalIngresos', sql.Decimal(18, 2), totalIngresos)
+                    .input('TotalDeducciones', sql.Decimal(18, 2), totalDeducciones)
+                    .input('SalarioNeto', sql.Decimal(18, 2), salarioNeto)
+                    .input('INSSPatronal', sql.Decimal(18, 2), inssPatronal)
+                    .input('TotalAPagar', sql.Decimal(18, 2), totalAPagar)
+                    .input('Estado', sql.VarChar(10), estado)
+                    .query(`
+                        UPDATE Planilla SET
+                            FechaPago = @FechaPago,
+                            SalarioBase = @SalarioBase,
+                            DiasTrabajados = @DiasTrabajados,
+                            HorasExtra = @HorasExtra,
+                            Bonificaciones = @Bonificaciones,
+                            Comisiones = @Comisiones,
+                            OtrosIngresos = @OtrosIngresos,
+                            SalarioBruto = @SalarioBruto,
+                            INSS = @INSS,
+                            IR = @IR,
+                            OtrasDeducciones = @OtrasDeducciones,
+                            TotalIngresos = @TotalIngresos,
+                            TotalDeducciones = @TotalDeducciones,
+                            SalarioNeto = @SalarioNeto,
+                            INSSPatronal = @INSSPatronal,
+                            TotalAPagar = @TotalAPagar,
+                            Estado = @Estado
+                        WHERE IdPlanilla = @IdPlanilla
+                    `);
+            } else {
+                // Insertar nueva planilla pagada
+                await pool.request()
+                    .input('IdEmpleado', sql.VarChar(20), String(emp.IdEmpleado))
+                    .input('FechaInicioPeriodo', sql.Date, fechaInicio)
+                    .input('FechaFinPeriodo', sql.Date, fechaFin)
+                    .input('FechaPago', sql.Date, fechaPago)
+                    .input('SalarioBase', sql.Decimal(18, 2), salBasePeriodo)
+                    .input('DiasTrabajados', sql.Int, dias)
+                    .input('HorasExtra', sql.Int, horasExtra)
+                    .input('Bonificaciones', sql.Decimal(18, 2), bonificaciones)
+                    .input('Comisiones', sql.Decimal(18, 2), comisiones)
+                    .input('OtrosIngresos', sql.Decimal(18, 2), otrosIngresos)
+                    .input('SalarioBruto', sql.Decimal(18, 2), salarioBruto)
+                    .input('INSS', sql.Decimal(18, 2), inssLaboral)
+                    .input('IR', sql.Decimal(18, 2), irRedondeado)
+                    .input('OtrasDeducciones', sql.Decimal(18, 2), otrasDeducciones)
+                    .input('TotalIngresos', sql.Decimal(18, 2), totalIngresos)
+                    .input('TotalDeducciones', sql.Decimal(18, 2), totalDeducciones)
+                    .input('SalarioNeto', sql.Decimal(18, 2), salarioNeto)
+                    .input('INSSPatronal', sql.Decimal(18, 2), inssPatronal)
+                    .input('TotalAPagar', sql.Decimal(18, 2), totalAPagar)
+                    .input('Estado', sql.VarChar(10), estado)
+                    .query(`
+                        INSERT INTO Planilla (
+                            IdEmpleado, FechaInicioPeriodo, FechaFinPeriodo, FechaPago,
+                            SalarioBase, DiasTrabajados, HorasExtra, Bonificaciones, Comisiones,
+                            OtrosIngresos, SalarioBruto, INSS, IR, OtrasDeducciones,
+                            TotalIngresos, TotalDeducciones, SalarioNeto, INSSPatronal,
+                            TotalAPagar, Estado
+                        ) VALUES (
+                            @IdEmpleado, @FechaInicioPeriodo, @FechaFinPeriodo, @FechaPago,
+                            @SalarioBase, @DiasTrabajados, @HorasExtra, @Bonificaciones, @Comisiones,
+                            @OtrosIngresos, @SalarioBruto, @INSS, @IR, @OtrasDeducciones,
+                            @TotalIngresos, @TotalDeducciones, @SalarioNeto, @INSSPatronal,
+                            @TotalAPagar, @Estado
+                        )
+                    `);
+            }
+
+            procesados++;
+            totalNetoPagado += salarioNeto;
+            totalInssLaboral += inssLaboral;
+            totalIrRetenido += irRedondeado;
+            totalInssPatronal += inssPatronal;
+        }
+
+        res.json({
+            ok: true,
+            mensaje: `Planilla procesada y PAGADA exitosamente para ${procesados} colaboradores.`,
+            periodo: `${mes} ${anioInt} (${quincena})`,
+            fechaPago: hoyStr,
+            totalEmpleados: procesados,
+            totalNetoPagado: Math.round(totalNetoPagado * 100) / 100,
+            totalInssLaboral: Math.round(totalInssLaboral * 100) / 100,
+            totalIrRetenido: Math.round(totalIrRetenido * 100) / 100,
+            totalInssPatronal: Math.round(totalInssPatronal * 100) / 100
+        });
+
+    } catch (err) {
+        console.error('Error pagando planilla:', err);
+        res.status(500).json({ error: 'Error pagando planilla: ' + err.message });
+    }
+});
+
+// -------------------------------------------------------------
+// 8. PUT /api/recursosHumanos/planilla/marcar-pagada/:idPlanilla
+// -------------------------------------------------------------
+router.put('/planilla/marcar-pagada/:idPlanilla', async (req, res) => {
+    try {
+        const { idPlanilla } = req.params;
+        const pool = await getPool();
+
+        await pool.request()
+            .input('IdPlanilla', sql.Int, idPlanilla)
+            .query(`
+                UPDATE Planilla 
+                SET Estado = 'Pagada', FechaPago = CONVERT(DATE, GETDATE())
+                WHERE IdPlanilla = @IdPlanilla
+            `);
+
+        res.json({ ok: true, mensaje: 'Registro de planilla marcado como PAGADO exitosamente.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;

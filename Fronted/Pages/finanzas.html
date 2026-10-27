@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMI - Finanzas & Ventanilla Fiscal DGI</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- CSS General -->
+    <link rel="stylesheet" href="../CSS/style.css">
+    <style>
+        :root {
+            --bg-main: #07060B;
+            --bg-card: #0F1019;
+            --bg-card-hover: #151724;
+            --bg-sidebar: #0B0C12;
+            --bg-input: #161722;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            
+            --neon-green: #10b981;
+            --neon-green-light: #DBFF99;
+            --neon-pink: #ec4899;
+            --neon-pink-light: #FFD4F8;
+            --neon-blue: #38BDF8;
+            --neon-amber: #FACC15;
+            --neon-purple: #A855F7;
+            
+            --text-main: #EFF0EB;
+            --text-muted-custom: #94A3B8;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+        }
+
+        #wrapper {
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar-wrapper {
+            width: 260px;
+            min-width: 260px;
+            min-height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        #sidebar-wrapper .sidebar-heading img {
+            max-height: 100px;
+            object-fit: contain;
+        }
+
+        #page-content-wrapper {
+            min-width: 0;
+            overflow-y: auto;
+            background: var(--bg-main);
+        }
+
+        .sidebar-link {
+            color: #EFF0EB !important;
+            border: 0 !important;
+            transition: all .2s ease;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.06) !important;
+            color: var(--neon-green-light) !important;
+        }
+
+        .sidebar-active {
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+            color: #07060B !important;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Glassmorphism & Cards */
+        .card-custom {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-custom:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-metric {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-metric::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .card-metric.green::before { background: linear-gradient(90deg, #10b981, #DBFF99); }
+        .card-metric.pink::before { background: linear-gradient(90deg, #ec4899, #FFD4F8); }
+        .card-metric.blue::before { background: linear-gradient(90deg, #38BDF8, #60A5FA); }
+        .card-metric.amber::before { background: linear-gradient(90deg, #F59E0B, #FACC15); }
+        .card-metric.purple::before { background: linear-gradient(90deg, #8B5CF6, #C084FC); }
+
+        /* Pills Navigation */
+        .nav-pills-custom .nav-link {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted-custom);
+            border-radius: 12px;
+            padding: 10px 22px;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-pills-custom .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-pills-custom .nav-link.active {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            color: #07060B !important;
+            border-color: #10b981;
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
+            font-weight: 700;
+        }
+
+        /* Banner DGI Oficial */
+        .dgi-official-banner {
+            background: linear-gradient(135deg, #0c1815 0%, #0d1e2b 50%, #0b101d 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dgi-official-banner::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Cuadre Contable Banner */
+        .cuadre-banner {
+            background: linear-gradient(135deg, #0b1912 0%, #0f241a 100%);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 14px;
+        }
+
+        /* Tables */
+        .table-custom {
+            --bs-table-bg: transparent;
+            --bs-table-color: #EFF0EB;
+            --bs-table-border-color: var(--border-subtle);
+        }
+
+        .table-custom th {
+            color: #94A3B8;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 14px;
+        }
+
+        .table-custom td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Form Controls */
+        .form-control-dark, .form-select-dark {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: #EFF0EB;
+            border-radius: 10px;
+            padding: 9px 14px;
+        }
+
+        .form-control-dark:focus, .form-select-dark:focus {
+            background-color: #191b28;
+            color: #fff;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+        }
+
+        /* Badges */
+        .badge-solvente {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-retencion {
+            background: rgba(236, 72, 153, 0.15);
+            color: #F472B6;
+            border: 1px solid rgba(236, 72, 153, 0.35);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+
+        .badge-juridica {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38BDF8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+
+        .badge-natural {
+            background: rgba(245, 158, 11, 0.15);
+            color: #FBBF24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+
+        /* Stat Icon Bubbles */
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+        }
+
+        .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .stat-icon.pink { background: rgba(236, 72, 153, 0.15); color: #F472B6; }
+        .stat-icon.blue { background: rgba(56, 189, 248, 0.15); color: #38BDF8; }
+        .stat-icon.amber { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.15); color: #C084FC; }
+
+        /* P&L Waterfall Line */
+        .pl-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 8px;
+            transition: background 0.15s ease;
+        }
+
+        .pl-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .pl-row.header {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 700;
+            border-left: 4px solid var(--neon-green);
+        }
+
+        .pl-row.subtotal {
+            background: rgba(16, 185, 129, 0.08);
+            font-weight: 700;
+            color: #34D399;
+            border-left: 4px solid #34D399;
+        }
+
+        .pl-row.final {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #A7F3D0;
+        }
+
+        /* Retención Voucher Print Styling */
+        #constanciaPrintArea {
+            background: #ffffff;
+            color: #111827;
+            padding: 2.5rem;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+        }
+
+        #constanciaPrintArea th, #constanciaPrintArea td {
+            color: #111827;
+            border-color: #cbd5e1;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #constanciaPrintArea, #constanciaPrintArea * { visibility: visible; }
+            #constanciaPrintArea { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        
+        <!-- Sidebar Menú Lateral -->
+        <div class="sidebar" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4">
+                <img src="../Assets/Logo_Ami.png" alt="AMI Logo" class="img-fluid w-75">
+            </div>
+            <div class="list-group list-group-flush px-3 sidebar-menu">
+                <a href="../index.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-house-door me-2"></i> Inicio
+                </a>
+                <a href="inventario.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-car-front me-2"></i> Inventario
+                </a>
+                <a href="ventas.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-display me-2"></i> Ventas
+                </a>
+                <a href="compras.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-cart3 me-2"></i> Compras
+                </a>
+                <a href="clientes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-people me-2"></i> Clientes
+                </a>
+                <a href="marketing.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-megaphone me-2"></i> Marketing
+                </a>
+                <a href="Costos.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-calculator me-2"></i> Costos
+                </a>
+                <a href="finanzas.html" class="list-group-item list-group-item-action sidebar-active rounded-3 mb-2 border-0">
+                    <i class="bi bi-bank me-2"></i> Finanzas & DGI
+                </a>
+                <a href="reportes.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-bar-chart me-2"></i> Análisis
+                </a>
+                <a href="usuarios.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-person-gear me-2"></i> Usuarios
+                </a>
+                <a href="recursosHumanos.html" class="list-group-item list-group-item-action sidebar-link rounded-3 mb-2 text-white bg-transparent border-0">
+                    <i class="bi bi-person-vcard me-2"></i> Personal
+                </a>
+                
+                <div class="mt-4 mb-3">
+                    <a href="Salir.html" class="list-group-item list-group-item-action sidebar-link rounded-3 text-white bg-transparent border-0">
+                        <i class="bi bi-box-arrow-right me-2"></i> Salir
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor Principal -->
+        <div id="page-content-wrapper" class="w-100">
+            <!-- Navbar Superior -->
+            <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-3 px-4 border-bottom border-secondary border-opacity-25">
+                <div class="container-fluid p-0 d-flex justify-content-between align-items-center">
+                    <!-- Ticker Fiscal BCN -->
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-dark border border-secondary px-3 py-2 text-light rounded-pill d-flex align-items-center gap-2">
+                            <i class="bi bi-currency-exchange text-warning"></i>
+                            <span class="text-secondary">Tasa Oficial BCN:</span>
+                            <strong class="text-white">C$ <span id="navTipoCambio">36.6243</span></strong>
+                        </span>
+                        <span class="badge bg-dark border border-secondary px-3 py-2 text-light rounded-pill d-none d-md-flex align-items-center gap-2">
+                            <i class="bi bi-shield-check text-success"></i>
+                            <span class="text-secondary">DGI:</span>
+                            <span class="text-success fw-bold">SOLVENTE</span>
+                        </span>
+                    </div>
+
+                    <!-- Usuario & Acciones Rápidas -->
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportarPaqueteCompletoExcel()" title="Descargar paquete financiero completo en Excel">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel Completo
+                        </button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="recargarDatosFinancieros()" title="Actualizar datos">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                        </button>
+                        <div class="dropdown ms-2">
+                            <div class="d-flex align-items-center cursor-pointer text-white" data-bs-toggle="dropdown">
+                                <img src="../Assets/User.jpg" alt="Usuario" class="rounded-circle me-2" style="width: 35px; height: 35px; object-fit: cover;">
+                                <span class="fw-bold small" id="nombre-usuario">Administrador <i class="bi bi-chevron-down ms-1 text-muted"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido Dinámico de Finanzas -->
+            <div class="container-fluid px-4 py-4">
+
+                <!-- Header de la Pantalla -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                            <span>Finanzas & Ventanilla Fiscal DGI</span>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 fs-6 fw-normal rounded-pill">
+                                Ley 822 de Concertación Tributaria
+                            </span>
+                        </h2>
+                        <p class="text-secondary mb-0">
+                            Balances Generales Clasificados, Estado de Resultados Auditado y Declaración Electrónica Tributaria de Nicaragua.
+                        </p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-success rounded-pill px-3 fw-bold" onclick="exportarPaqueteCompletoExcel()">
+                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Descargar Todo en Excel (.xlsx)
+                        </button>
+                        <button class="btn btn-outline-success rounded-pill px-3" onclick="imprimirReporteActual()">
+                            <i class="bi bi-printer me-1"></i> Imprimir Reporte
+                        </button>
+                        <button class="btn btn-warning rounded-pill px-3 fw-bold text-dark" onclick="abrirModalCalculadora()">
+                            <i class="bi bi-calculator-fill me-1"></i> Calculadora Fiscal DGI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs de Navegación Principal -->
+                <ul class="nav nav-pills nav-pills-custom mb-4" id="finanzasTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-dgi-btn" data-bs-toggle="pill" data-bs-target="#tab-dgi" type="button" role="tab">
+                            <i class="bi bi-building-check"></i> Ventanilla Oficial DGI (Nicaragua)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-balance-btn" data-bs-toggle="pill" data-bs-target="#tab-balance" type="button" role="tab">
+                            <i class="bi bi-balance"></i> Balance General Clasificado
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-resultados-btn" data-bs-toggle="pill" data-bs-target="#tab-resultados" type="button" role="tab">
+                            <i class="bi bi-graph-up-arrow"></i> Estado de Resultados (P&L)
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Contenido de las Pestañas -->
+                <div class="tab-content" id="finanzasTabsContent">
+
+                    <!-- ============================================================== -->
+                    <!-- PESTAÑA 1: VENTANILLA OFICIAL DGI (NICARAGUA - LEY 822)         -->
+                    <!-- ============================================================== -->
+                    <div class="tab-pane fade show active" id="tab-dgi" role="tabpanel">
+
+                        <!-- Membrete Oficial Estilo Ventanilla Electrónica Tributaria (VET) -->
+                        <div class="dgi-official-banner p-4 mb-4">
+                            <div class="row align-items-center">
+                                <div class="col-lg-8 mb-3 mb-lg-0">
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <div class="bg-success bg-opacity-25 p-3 rounded-circle border border-success border-opacity-50 text-success fs-3">
+                                            <i class="bi bi-file-earmark-text-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-uppercase text-success fw-bold small tracking-wider">
+                                                República de Nicaragua • Dirección General de Ingresos (DGI)
+                                            </div>
+                                            <h4 class="fw-bold text-white mb-0">Ventanilla Electrónica Tributaria (VET)</h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary small mb-3">
+                                        Sistema Automatizado de Cumplimiento Tributario para el Impuesto al Valor Agregado (IVA 15%), Retenciones en la Fuente del Impuesto sobre la Renta (IR 2%) y Tasas Municipales (IMI 1%).
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="badge bg-dark border border-secondary px-3 py-2 text-white rounded-pill">
+                                            <strong class="text-secondary">Contribuyente:</strong> AUTOS AMI S.A.
+                                        </span>
+                                        <span class="badge bg-dark border border-secondary px-3 py-2 text-white rounded-pill">
+                                            <strong class="text-secondary">RUC:</strong> J0310000123456
+                                        </span>
+                                        <span class="badge bg-dark border border-secondary px-3 py-2 text-white rounded-pill">
+                                            <strong class="text-secondary">Serie Fiscal:</strong> AMI-A
+                                        </span>
+                                        <span class="badge bg-dark border border-secondary px-3 py-2 text-white rounded-pill">
+                                            <strong class="text-secondary">Resolución:</strong> DGI-RES-2026-98432
+                                        </span>
+                                        <span class="badge-solvente">
+                                            <i class="bi bi-check-circle-fill"></i> ESTADO: SOLVENTE
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 text-lg-end">
+                                    <div class="p-3 bg-dark bg-opacity-75 rounded-4 border border-secondary border-opacity-50 text-start">
+                                        <div class="text-secondary small mb-1">Régimen Tributario:</div>
+                                        <div class="fw-bold text-white mb-2">Régimen General con Retención en la Fuente</div>
+                                        <div class="text-secondary small mb-1">Administración de Rentas:</div>
+                                        <div class="text-success fw-semibold">Grandes Contribuyentes / Managua Centro</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4 Cards de Métricas Fiscales DGI -->
+                        <div class="row g-3 mb-4">
+                            <!-- Card 1: Débito Fiscal IVA (15% Ventas) -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric green p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase fw-semibold">Débito Fiscal IVA (15%)</div>
+                                            <div class="fs-4 fw-bold text-white mt-1" id="kpiDebitoIVA">$ 19,575.00</div>
+                                            <div class="small text-success mt-1">C$ <span id="kpiDebitoIVANIO">716,920.67</span></div>
+                                        </div>
+                                        <div class="stat-icon green">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary small">Generado sobre facturas emitidas a clientes</div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Crédito Fiscal IVA (15% Compras) -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric blue p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase fw-semibold">Crédito Fiscal IVA (15%)</div>
+                                            <div class="fs-4 fw-bold text-white mt-1" id="kpiCreditoIVA">$ 60,375.00</div>
+                                            <div class="small text-info mt-1">C$ <span id="kpiCreditoIVANIO">2,211,192.11</span></div>
+                                        </div>
+                                        <div class="stat-icon blue">
+                                            <i class="bi bi-box-arrow-in-down-left"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary small">Deducible por compras de inventario vehicular</div>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Saldo IVA Período -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric amber p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase fw-semibold" id="lblSaldoIVATitulo">Saldo IVA Período</div>
+                                            <div class="fs-4 fw-bold text-warning mt-1" id="kpiSaldoIVA">$ -40,800.00</div>
+                                            <div class="small text-warning mt-1">C$ <span id="kpiSaldoIVANIO">-1,494,271.44</span></div>
+                                        </div>
+                                        <div class="stat-icon amber">
+                                            <i class="bi bi-cash-stack"></i>
+                                        </div>
+                                    </div>
+                                    <div class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-50 small" id="badgeCondicionIVA">
+                                        Crédito a Favor del Contribuyente
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Retenciones Fuente -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric pink p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase fw-semibold">Retenciones Fiscales</div>
+                                            <div class="fs-4 fw-bold text-white mt-1" id="kpiTotalRetenciones">$ 3,915.00</div>
+                                            <div class="small text-danger mt-1">C$ <span id="kpiTotalRetencionesNIO">143,384.13</span></div>
+                                        </div>
+                                        <div class="stat-icon pink">
+                                            <i class="bi bi-receipt-cutoff"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary small">IR 2% Ventas ($2,610) + IMI 1% ($1,305)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario Oficial DGI-101 (Declaración Mensual Electrónica) -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-lg-7">
+                                <div class="card-custom p-4 h-100">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+                                            <i class="bi bi-file-earmark-ruled text-success"></i>
+                                            Formulario Oficial DGI-101 (Declaración Mensual IVA e IR)
+                                        </h5>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportarDeclaracionDGIExcel()">
+                                                <i class="bi bi-file-earmark-excel me-1"></i> Excel DGI-101
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary small mb-4">
+                                        Liquidación oficial según Ley de Concertación Tributaria (Ley 822) y disposiciones de la DGI para empresas comercializadoras de automotores.
+                                    </p>
+
+                                    <!-- Tabla de Renglones Fiscales DGI -->
+                                    <div class="table-responsive">
+                                        <table class="table table-custom align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 80px;">Renglón</th>
+                                                    <th>Concepto Tributario Oficial</th>
+                                                    <th class="text-end">Monto USD</th>
+                                                    <th class="text-end">Monto C$ (NIO)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaRenglonesDGI">
+                                                <tr>
+                                                    <td><span class="badge bg-secondary">[10]</span></td>
+                                                    <td>Ventas Totales Gravadas con Tasa General IVA (15%)</td>
+                                                    <td class="text-end fw-semibold text-white" id="r10_usd">$ 130,500.00</td>
+                                                    <td class="text-end text-secondary" id="r10_nio">C$ 4,779,471.15</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-success bg-opacity-25 text-success">[20]</span></td>
+                                                    <td><strong>Débito Fiscal IVA Causado (15%)</strong></td>
+                                                    <td class="text-end fw-bold text-success" id="r20_usd">$ 19,575.00</td>
+                                                    <td class="text-end text-success" id="r20_nio">C$ 716,920.67</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-secondary">[30]</span></td>
+                                                    <td>Compras de Inventario y Bienes Gravadas con IVA (15%)</td>
+                                                    <td class="text-end fw-semibold text-white" id="r30_usd">$ 402,500.00</td>
+                                                    <td class="text-end text-secondary" id="r30_nio">C$ 14,741,280.75</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-info bg-opacity-25 text-info">[40]</span></td>
+                                                    <td><strong>Crédito Fiscal IVA Deducible (15%)</strong></td>
+                                                    <td class="text-end fw-bold text-info" id="r40_usd">$ 60,375.00</td>
+                                                    <td class="text-end text-info" id="r40_nio">C$ 2,211,192.11</td>
+                                                </tr>
+                                                <tr class="table-dark" style="background: rgba(245, 158, 11, 0.08);">
+                                                    <td><span class="badge bg-warning bg-opacity-25 text-warning">[50]</span></td>
+                                                    <td><strong>Saldo Neto IVA del Período (Débito - Crédito)</strong></td>
+                                                    <td class="text-end fw-bold text-warning" id="r50_usd">$ -40,800.00</td>
+                                                    <td class="text-end text-warning" id="r50_nio">C$ -1,494,271.44</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-secondary">[60]</span></td>
+                                                    <td>Anticipo / Retención IR a Cuenta (2% Persona Jurídica Art. 58)</td>
+                                                    <td class="text-end fw-semibold text-white" id="r60_usd">$ 2,610.00</td>
+                                                    <td class="text-end text-secondary" id="r60_nio">C$ 95,589.42</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-secondary">[70]</span></td>
+                                                    <td>Impuesto Municipal sobre Ingresos (IMI 1% Alcaldía Managua)</td>
+                                                    <td class="text-end fw-semibold text-white" id="r70_usd">$ 1,305.00</td>
+                                                    <td class="text-end text-secondary" id="r70_nio">C$ 47,794.71</td>
+                                                </tr>
+                                                <tr style="border-top: 2px solid rgba(16, 185, 129, 0.4);">
+                                                    <td><span class="badge bg-success">[90]</span></td>
+                                                    <td><strong class="text-white fs-6">TOTAL IMPUESTOS A PAGAR DGI</strong></td>
+                                                    <td class="text-end fw-bold text-success fs-6" id="r90_usd">$ 0.00</td>
+                                                    <td class="text-end fw-bold text-success fs-6" id="r90_nio">C$ 0.00</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mt-3 p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 small text-secondary">
+                                        <i class="bi bi-info-circle text-info me-1"></i>
+                                        <strong>Nota Legal (Ley 822 Art. 112):</strong> Al existir mayor Crédito Fiscal que Débito Fiscal por compras iniciales de flota automotriz, el saldo resultante queda como Crédito Tributario a Favor a compensar en períodos subsiguientes.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Simulador Tributario Interactivo DGI -->
+                            <div class="col-lg-5">
+                                <div class="card-custom p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+                                            <i class="bi bi-calculator text-warning"></i>
+                                            Simulador Fiscal en Tiempo Real
+                                        </h5>
+                                        <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-50">Tasa BCN</span>
+                                    </div>
+                                    <p class="text-secondary small mb-3">
+                                        Calcula retenciones e IVA según el tipo de contribuyente (Persona Natural vs Jurídica).
+                                    </p>
+
+                                    <!-- Formulario de Simulación -->
+                                    <div class="mb-3">
+                                        <label class="form-label small text-secondary">Monto Base de Venta del Auto (USD):</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-dark border-secondary text-secondary">$</span>
+                                            <input type="number" id="simMontoUSD" class="form-control form-control-dark" value="25000" min="100" step="500" oninput="calcularSimulacionFiscal()">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small text-secondary">Tipo de Cliente / Contribuyente:</label>
+                                        <select id="simTipoCliente" class="form-select form-select-dark" onchange="calcularSimulacionFiscal()">
+                                            <option value="JURIDICA" selected>Persona Jurídica (Empresa con RUC - Agente Retenedor)</option>
+                                            <option value="NATURAL">Persona Natural (Consumidor Final - Sin Retención)</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Desglose de Cálculo Fiscal -->
+                                    <div class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-50 mb-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-secondary small">Subtotal Base:</span>
+                                            <strong class="text-white" id="simSubtotal">$ 25,000.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-secondary small">IVA (15% Ley 822):</span>
+                                            <strong class="text-info" id="simIVA">+ $ 3,750.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2" id="simRowRetIR">
+                                            <span class="text-secondary small">Retención IR (2% DGI Art. 58):</span>
+                                            <strong class="text-danger" id="simRetIR">- $ 500.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2" id="simRowRetIMI">
+                                            <span class="text-secondary small">Retención Alcaldía (IMI 1%):</span>
+                                            <strong class="text-danger" id="simRetIMI">- $ 250.00</strong>
+                                        </div>
+                                        <hr class="border-secondary my-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-white">Neto a Recibir por Autos AMI:</span>
+                                            <h4 class="fw-bold text-success mb-0" id="simNetoUSD">$ 28,000.00</h4>
+                                        </div>
+                                        <div class="text-end small text-secondary">
+                                            Equivalente en Córdobas: <strong class="text-light" id="simNetoNIO">C$ 1,025,480.40</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-warning rounded-pill py-2" onclick="generarConstanciaDesdeSimulador()">
+                                            <i class="bi bi-file-earmark-check me-1"></i> Generar Constancia Oficial de Retención DGI
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Libros Fiscales Oficiales (Ventas y Compras) -->
+                        <div class="card-custom p-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                <div>
+                                    <h5 class="fw-bold text-white mb-1">Libros Contables Fiscales de la DGI</h5>
+                                    <p class="text-secondary small mb-0">Registro cronológico de operaciones gravadas para auditoría de la Dirección General de Ingresos.</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-success active" id="btnVerLibroVentas" onclick="cambiarLibroFiscal('ventas')">
+                                            Libro de Ventas Fiscales
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnVerLibroCompras" onclick="cambiarLibroFiscal('compras')">
+                                            Libro de Compras Fiscales
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-sm btn-success rounded-pill px-3" onclick="exportarLibroFiscalExcel()">
+                                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Descargar en Excel (.xlsx)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabla Dinámica de Libros Fiscales -->
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle" id="tablaLibrosFiscales">
+                                    <thead id="headerLibroFiscal">
+                                        <!-- Se llena dinámicamente -->
+                                    </thead>
+                                    <tbody id="bodyLibroFiscal">
+                                        <!-- Se llena dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ============================================================== -->
+                    <!-- PESTAÑA 2: BALANCE GENERAL CLASIFICADO (ESTADO DE SITUACIÓN)    -->
+                    <!-- ============================================================== -->
+                    <div class="tab-pane fade" id="tab-balance" role="tabpanel">
+
+                        <!-- Banner de Cuadre Contable Estricto -->
+                        <div class="cuadre-banner p-3 px-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-25 p-2 rounded-circle text-success fs-4">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold text-white mb-0">Ecuación Fundamental Cuadrada: Activo = Pasivo + Patrimonio Neto</h6>
+                                    <span class="text-secondary small">Cumplimiento estricto de Normas Internacionales de Información Financiera (NIIF / NIC 1).</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportarBalanceGeneralExcel()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Descargar Balance en Excel
+                                </button>
+                                <div class="text-end">
+                                    <div class="text-secondary small">Diferencia de Cuadre:</div>
+                                    <div class="fw-bold text-success fs-5" id="lblDiferenciaCuadre">$ 0.00</div>
+                                </div>
+                                <span class="badge bg-success px-3 py-2 text-dark fw-bold rounded-pill" id="badgeCuadreEstado">
+                                    <i class="bi bi-check-lg me-1"></i> CUADRE PERFECTO
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 4 Tarjetas de Métricas de Balance -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric green p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Total Activos</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiTotalActivos">$ 1,292,875.00</div>
+                                    <div class="small text-success mt-1">C$ <span id="kpiTotalActivosNIO">47,350,698.81</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric pink p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Total Pasivos</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiTotalPasivos">$ 427,000.00</div>
+                                    <div class="small text-danger mt-1">C$ <span id="kpiTotalPasivosNIO">15,638,576.10</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric blue p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Patrimonio Neto</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiTotalPatrimonio">$ 865,875.00</div>
+                                    <div class="small text-info mt-1">C$ <span id="kpiTotalPatrimonioNIO">31,712,122.71</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric purple p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Razón Corriente (Liquidez)</div>
+                                    <div class="fs-4 fw-bold text-purple mt-1" id="kpiRazonCorriente">5.23x</div>
+                                    <div class="small text-success mt-1"><i class="bi bi-arrow-up-right"></i> Solvencia Alta</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estructura Clasificada en 2 Columnas -->
+                        <div class="row g-4 mb-4">
+                            <!-- Columna 1: ACTIVOS -->
+                            <div class="col-lg-6">
+                                <div class="card-custom p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                                        <h5 class="fw-bold text-success mb-0 d-flex align-items-center gap-2">
+                                            <i class="bi bi-wallet2"></i> ACTIVOS
+                                        </h5>
+                                        <span class="badge bg-success bg-opacity-25 text-success">Estructura de Bienes y Derechos</span>
+                                    </div>
+
+                                    <!-- Activo Corriente -->
+                                    <div class="mb-4">
+                                        <h6 class="text-white fw-bold d-flex justify-content-between align-items-center mb-3">
+                                            <span>1.1 Activo Corriente (Circulante)</span>
+                                            <span class="text-success fw-bold" id="bgTotalActivoCorriente">$ 1,187,375.00</span>
+                                        </h6>
+                                        <div class="list-group list-group-flush bg-transparent" id="listaActivoCorriente">
+                                            <!-- Inyectado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Activo No Corriente -->
+                                    <div class="mb-4">
+                                        <h6 class="text-white fw-bold d-flex justify-content-between align-items-center mb-3">
+                                            <span>1.2 Activo No Corriente (Fijo & Operación)</span>
+                                            <span class="text-success fw-bold" id="bgTotalActivoNoCorriente">$ 105,500.00</span>
+                                        </h6>
+                                        <div class="list-group list-group-flush bg-transparent" id="listaActivoNoCorriente">
+                                            <!-- Inyectado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <hr class="border-secondary my-3">
+                                    <div class="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border border-success border-opacity-25">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase">TOTAL GENERAL ACTIVOS:</div>
+                                            <div class="small text-success">Equivalente BCN: <span id="bgTotalActivosNIO">C$ 47,350,698.81</span></div>
+                                        </div>
+                                        <h4 class="fw-bold text-success mb-0" id="bgTotalActivosGeneral">$ 1,292,875.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna 2: PASIVOS Y PATRIMONIO -->
+                            <div class="col-lg-6">
+                                <div class="card-custom p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                                        <h5 class="fw-bold text-danger mb-0 d-flex align-items-center gap-2">
+                                            <i class="bi bi-bank"></i> PASIVOS & PATRIMONIO
+                                        </h5>
+                                        <span class="badge bg-danger bg-opacity-25 text-danger">Obligaciones & Capital Neto</span>
+                                    </div>
+
+                                    <!-- Pasivo Corriente -->
+                                    <div class="mb-4">
+                                        <h6 class="text-white fw-bold d-flex justify-content-between align-items-center mb-3">
+                                            <span>2.1 Pasivo Corriente (Corto Plazo)</span>
+                                            <span class="text-danger fw-bold" id="bgTotalPasivoCorriente">$ 227,000.00</span>
+                                        </h6>
+                                        <div class="list-group list-group-flush bg-transparent" id="listaPasivoCorriente">
+                                            <!-- Inyectado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Pasivo No Corriente -->
+                                    <div class="mb-4">
+                                        <h6 class="text-white fw-bold d-flex justify-content-between align-items-center mb-3">
+                                            <span>2.2 Pasivo No Corriente (Largo Plazo)</span>
+                                            <span class="text-danger fw-bold" id="bgTotalPasivoNoCorriente">$ 200,000.00</span>
+                                        </h6>
+                                        <div class="list-group list-group-flush bg-transparent" id="listaPasivoNoCorriente">
+                                            <!-- Inyectado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Patrimonio Neto -->
+                                    <div class="mb-4">
+                                        <h6 class="text-white fw-bold d-flex justify-content-between align-items-center mb-3">
+                                            <span>3.0 Patrimonio Neto de Accionistas</span>
+                                            <span class="text-info fw-bold" id="bgTotalPatrimonio">$ 865,875.00</span>
+                                        </h6>
+                                        <div class="list-group list-group-flush bg-transparent" id="listaPatrimonio">
+                                            <!-- Inyectado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <hr class="border-secondary my-3">
+                                    <div class="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-50">
+                                        <div>
+                                            <div class="text-secondary small text-uppercase">TOTAL PASIVO + PATRIMONIO:</div>
+                                            <div class="small text-info">Equivalente BCN: <span id="bgTotalPasivoPatrimonioNIO">C$ 47,350,698.81</span></div>
+                                        </div>
+                                        <h4 class="fw-bold text-white mb-0" id="bgTotalPasivoPatrimonioGeneral">$ 1,292,875.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Indicadores y Ratios Financieros -->
+                        <div class="card-custom p-4">
+                            <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-speedometer2 text-info"></i>
+                                Indicadores de Liquidez, Solvencia y Apalancamiento Financiero
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-3">
+                                    <div class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+                                        <div class="text-secondary small">Capital de Trabajo Neto:</div>
+                                        <div class="fs-5 fw-bold text-success mt-1" id="ratioCapitalTrabajo">$ 960,375.00</div>
+                                        <div class="small text-secondary mt-1">Activo Corriente - Pasivo Corriente</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+                                        <div class="text-secondary small">Razón de Liquidez Corriente:</div>
+                                        <div class="fs-5 fw-bold text-info mt-1" id="ratioLiquidez">5.23 veces</div>
+                                        <div class="small text-secondary mt-1">Capacidad de pago inmediata</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+                                        <div class="text-secondary small">Nivel de Endeudamiento:</div>
+                                        <div class="fs-5 fw-bold text-warning mt-1" id="ratioEndeudamiento">33.0%</div>
+                                        <div class="small text-secondary mt-1">Pasivo Total / Activo Total</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+                                        <div class="text-secondary small">Apalancamiento Financiero:</div>
+                                        <div class="fs-5 fw-bold text-purple mt-1" id="ratioApalancamiento">0.49x</div>
+                                        <div class="small text-secondary mt-1">Deuda vs Fondos Propios</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ============================================================== -->
+                    <!-- PESTAÑA 3: ESTADO DE RESULTADOS INTEGRAL (P&L)                   -->
+                    <!-- ============================================================== -->
+                    <div class="tab-pane fade" id="tab-resultados" role="tabpanel">
+
+                        <!-- 4 Cards de Resumen P&L -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric green p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Ingresos por Ventas</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiErVentas">$ 510,300.00</div>
+                                    <div class="small text-success mt-1">C$ <span id="kpiErVentasNIO">18,689,380.29</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric blue p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Utilidad Bruta</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiErBruta">$ 85,800.00</div>
+                                    <div class="small text-info mt-1">Margen Bruto: <strong id="kpiErMargenBruto">16.8%</strong></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric amber p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Utilidad Operativa (EBIT)</div>
+                                    <div class="fs-4 fw-bold text-white mt-1" id="kpiErEbit">$ 35,200.00</div>
+                                    <div class="small text-warning mt-1">Margen Operativo: <strong id="kpiErMargenEbit">6.9%</strong></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="card-custom card-metric purple p-3 h-100">
+                                    <div class="text-secondary small text-uppercase fw-semibold">Utilidad Neta Final</div>
+                                    <div class="fs-4 fw-bold text-success mt-1" id="kpiErNeta">$ 22,750.00</div>
+                                    <div class="small text-purple mt-1">C$ <span id="kpiErNetaNIO">833,202.83</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <!-- Cascada P&L Detallada -->
+                            <div class="col-lg-7">
+                                <div class="card-custom p-4 h-100">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                        <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                                            <i class="bi bi-journal-text text-success"></i>
+                                            Cascada de Ingresos, Costos y Gastos (P&L Auditado)
+                                        </h5>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportarEstadoResultadosExcel()">
+                                                <i class="bi bi-file-earmark-excel me-1"></i> Excel P&L
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary small mb-3">
+                                        Estructura financiera integral con deducción de provisiones fiscales del IR 30% según Ley 822 de la República de Nicaragua.
+                                    </p>
+
+                                    <!-- Filas de la Cascada P&L -->
+                                    <div class="d-flex flex-column gap-2" id="contenedorCascadaPL">
+                                        <!-- Inyectado dinámicamente por JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico de Distribución P&L -->
+                            <div class="col-lg-5">
+                                <div class="card-custom p-4 h-100 d-flex flex-column">
+                                    <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                                        <i class="bi bi-pie-chart text-info"></i>
+                                        Estructura Porcentual de Ingresos y Egresos
+                                    </h5>
+                                    <div class="flex-grow-1 position-relative" style="min-height: 280px;">
+                                        <canvas id="chartFinanzasPL"></canvas>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 small text-secondary">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Margen Bruto sobre Ventas:</span>
+                                            <strong class="text-info" id="chartTxtMargenBruto">16.8%</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Provisión Impuesto sobre la Renta (IR 30%):</span>
+                                            <strong class="text-danger" id="chartTxtIR30">$ 9,750.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Margen Neto Final del Ejercicio:</span>
+                                            <strong class="text-success" id="chartTxtMargenNeto">4.5%</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: CONSTANCIA OFICIAL DE RETENCIÓN EN LA FUENTE DGI         -->
+    <!-- ============================================================== -->
+    <div class="modal fade" id="modalConstanciaDGI" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark border border-secondary text-white rounded-4">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success"></i>
+                        Constancia Oficial de Retención en la Fuente DGI (Ley 822)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Área Imprimible con estilo oficial de la DGI -->
+                    <div id="constanciaPrintArea" class="shadow-sm">
+                        <div class="text-center border-bottom pb-3 mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">REPÚBLICA DE NICARAGUA</h5>
+                            <h6 class="fw-bold mb-1 text-dark">DIRECCIÓN GENERAL DE INGRESOS (DGI)</h6>
+                            <div class="badge bg-light text-dark border border-secondary px-3 py-1 fw-bold">
+                                CONSTANCIA DE RETENCIÓN EN LA FUENTE
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 small">
+                            <div class="col-6">
+                                <div><strong>AGENTE RETENEDOR:</strong> AUTOS AMI S.A.</div>
+                                <div><strong>RUC:</strong> J0310000123456</div>
+                                <div><strong>SERIE FISCAL:</strong> AMI-A</div>
+                                <div><strong>RESOLUCIÓN:</strong> DGI-RES-2026-98432</div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div><strong>No. DE CONSTANCIA:</strong> <span id="mConstanciaNo" class="text-danger fw-bold">RET-2026-0042</span></div>
+                                <div><strong>FECHA DE EMISIÓN:</strong> <span id="mConstanciaFecha">2026-10-26</span></div>
+                                <div><strong>TIPO DE CAMBIO BCN:</strong> C$ 36.6243</div>
+                            </div>
+                        </div>
+
+                        <div class="p-2 bg-light border rounded mb-3 small">
+                            <div><strong>SUJETO RETENIDO / CLIENTE:</strong> <span id="mConstanciaCliente" class="fw-bold">Corporación de Transportes S.A.</span></div>
+                            <div><strong>RUC / CÉDULA:</strong> <span id="mConstanciaRUC">J0310000998877</span></div>
+                            <div><strong>CONCEPTO LEGAL:</strong> Retención Definitiva y a Cuenta según Ley de Concertación Tributaria (Ley 822, Art. 58 y Art. 112) por Venta de Bien Automotor.</div>
+                        </div>
+
+                        <table class="table table-bordered table-sm mb-3 text-center small">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Concepto de Retención</th>
+                                    <th>Alícuota Legal</th>
+                                    <th>Monto Base (USD)</th>
+                                    <th>Retención (USD)</th>
+                                    <th>Retención en C$ (BCN)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-start">Retención del Impuesto sobre la Renta (IR a Cuenta)</td>
+                                    <td><strong>2.00%</strong></td>
+                                    <td id="mConstanciaBaseIR">$ 25,000.00</td>
+                                    <td id="mConstanciaMontoIR" class="fw-bold text-danger">$ 500.00</td>
+                                    <td id="mConstanciaMontoIR_NIO">C$ 18,312.15</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start">Impuesto Municipal sobre Ingresos (IMI Alcaldía)</td>
+                                    <td><strong>1.00%</strong></td>
+                                    <td id="mConstanciaBaseIMI">$ 25,000.00</td>
+                                    <td id="mConstanciaMontoIMI" class="fw-bold text-danger">$ 250.00</td>
+                                    <td id="mConstanciaMontoIMI_NIO">C$ 9,156.08</td>
+                                </tr>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="3" class="text-end">TOTAL RETENIDO:</td>
+                                    <td id="mConstanciaTotalUSD" class="text-danger fs-6">$ 750.00</td>
+                                    <td id="mConstanciaTotalNIO" class="fs-6">C$ 27,468.23</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="row align-items-center mt-4">
+                            <div class="col-8 small">
+                                <div class="text-muted fst-italic">
+                                    "Esta constancia es emitida de conformidad con la Ley 822 y acredita la deducción del pago a cuenta de los tributos de la República de Nicaragua."
+                                </div>
+                                <div class="mt-4 pt-4 border-top border-dark d-inline-block" style="width: 220px;">
+                                    <div class="fw-bold text-dark text-center">Firma y Sello Autorizado</div>
+                                    <div class="text-muted text-center" style="font-size: 0.75rem;">Gerencia Financiera Autos AMI</div>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div id="constanciaQRCode" class="d-flex justify-content-center"></div>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">Código de Verificación Fiscal DGI</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold" onclick="imprimirConstanciaDGI()">
+                        <i class="bi bi-printer-fill me-1"></i> Imprimir Constancia Fiscal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Esenciales -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="../JS/auth.js"></script>
+    <script src="../JS/finanzas.js?v=2"></script>
+</body>
+</html>

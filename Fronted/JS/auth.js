@@ -28,6 +28,7 @@
         'clientes.html': 'Clientes',
         'marketing.html': 'Marketing',
         'costos.html': 'Costos',
+        'finanzas.html': 'Costos',
         'reportes.html': 'Analisis',
         'usuarios.html': 'Usuarios',
         'recursoshumanos.html': 'Personal',

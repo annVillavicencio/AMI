@@ -84,6 +84,7 @@ app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/recursosHumanos', require('./routes/recursosHumanos'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/reportes', require('./routes/reportes'));
+app.use('/api/finanzas', require('./routes/finanzas'));
 
 // Servir frontend estático para Docker o ejecución directa
 app.use(express.static(path.join(__dirname, '../Fronted')));
