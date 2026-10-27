@@ -1,7 +1,7 @@
 ================================================================================
        HISTORIAL COMPLETO DE CONVERSACIÓN Y DESARROLLO - PROYECTO AUTOS AMI      
 ================================================================================
-Fecha de generación: 27/10/2026, 12:48:07 p. m.
+Fecha de generación: 27/10/2026, 12:59:37 p. m.
 Sistema: AUTOS AMI S.A. - Sistema Integral de Gestión Automotriz
 Base de Datos: SQL Server (Autos_AMI) - localhost:1433
 Backend: Node.js / Express (puerto 3000) / mssql
@@ -13207,6 +13207,57 @@ Todos los cambios fueron probados contra el servidor local activo en [http://loc
 USUARIO:
 ahh y creo que hay un error con el archivo de doockers ya que es diferente al del env oriiginal
 
+ANTIGRAVITY (ASISTENTE):
+Es una excelente observación. La diferencia entre el [.env](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/Backend/.env) original y [docker-compose.yml](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/docker-compose.yml) no es una equivocación accidental, sino una **exigencia técnica de Docker y Microsoft SQL Server**:
+
+---
+
+### ¿Por qué son diferentes?
+
+| Variable | [Backend/.env](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/Backend/.env) (Local Windows) | [docker-compose.yml](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/docker-compose.yml) (Docker) | Motivo técnico |
+| :--- | :---: | :---: | :--- |
+| **`DB_SERVER`** | `localhost` | `sqlserver` | En Windows tu BD corre en tu misma máquina (`localhost`). Pero **dentro de un contenedor Docker, `localhost` apunta a sí mismo** (al Node.js). Para comunicarse con la base de datos dentro de Docker, debe usar el nombre del servicio en la red interna: `sqlserver`. |
+| **`DB_PASSWORD`** | `123` | `Password123!` | La imagen oficial de Microsoft SQL Server en Linux/Docker (`mcr.microsoft.com/mssql/server`) **exige obligatoriamente una contraseña compleja** (mínimo 8 caracteres, con mayúsculas, minúsculas, números y símbolos). Si se le pone `123`, el contenedor de SQL Server **falla al instante y se apaga por directiva de seguridad de Microsoft**. |
+
+---
+
+### Mejoras y Correcciones Aplicadas en Docker
+
+1. **Variables Dinámicas con Valores por Defecto**:
+   En [docker-compose.yml](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/docker-compose.yml) se parametrizó la configuración para admitir ambos escenarios sin romper el despliegue:
+   * **Escenario A (Todo en Docker)**: Si ejecutas `docker compose up`, levanta automáticamente el contenedor de SQL Server y el backend conectados entre sí con `Password123!`.
+   * **Escenario B (Backend en Docker conectado a tu SQL Server local de Windows)**:
+     Si deseas que el contenedor de Docker use tu SQL Server de Windows (con clave `123`), ahora puedes configurar:
+     ```env
+     DOCKER_DB_SERVER=host.docker.internal
+     DOCKER_DB_PASSWORD=123
+     ```
+     Ya que dejamos configurado `extra_hosts: ["host.docker.internal:host-gateway"]`.
+
+2. **Dependencia Restaurada**:
+   Se añadió `depends_on: - sqlserver` en [docker-compose.yml](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/docker-compose.yml) para garantizar que el contenedor de base de datos inicie antes que el backend de Node.
+
+3. **Corrección de [.dockerignore](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/.dockerignore)**:
+   Se eliminó un carácter invisible UTF-8 BOM (`\uFEFF`) al inicio del archivo que impedía que Docker ignorara correctamente la carpeta `Backend/node_modules` de Windows.
+
+4. **Nueva Guía [.env.example](file:///C:/Nueva_Version_plus_sexo_AMI/AMI/.env.example) en la Raíz**:
+   Se creó un archivo explicativo en la raíz del repositorio detallando los dos modos de conexión (Node directo en Windows vs Docker Compose).
+
+---
+
+### Cambios Subidos a GitHub
+
+* [`9e43128`](https://github.com/annVillavicencio/AMI/commit/9e43128) - *`fix(docker): configurar variables dinámicas, dependencias y documentar diferencia de contraseñas entre Docker y .env local`*
+* [`f155f63`](https://github.com/annVillavicencio/AMI/commit/f155f63) - *`docs(history): actualizar historial de conversacion`*
+
+
+--------------------------------------------------------------------------------
+[TURNO #267] - Fecha: 2026-10-27T18:57:23Z (Paso 8618)
+--------------------------------------------------------------------------------
+
+USUARIO:
+tmb configura el archivo de la conversacion ahorita de todo lo que  se ha hecho
+
 
 ================================================================================
               APÉNDICE TÉCNICO: RESUMEN DE LA ARQUITECTURA Y ESTADO ACTUAL       
@@ -13214,40 +13265,53 @@ ahh y creo que hay un error con el archivo de doockers ya que es diferente al de
 
 1. CÓMO INICIAR EL PROYECTO EN LA NUEVA COMPUTADORA:
    a) Base de Datos: Restaurar el archivo Autos_AMI.bak en SQL Server (LocalDB o localhost).
-      El archivo .bak contiene todas las tablas: Facturas, DetalleFactura, Planilla, Empleados, Autos, etc.
+      El archivo .bak contiene las 21 tablas del sistema completas y actualizadas.
    b) Variables de Entorno: Crear el archivo Backend/.env con:
+      PORT=3000
       DB_USER=sa
-      DB_PASSWORD=tu_contraseña
+      DB_PASSWORD=tu_contraseña (ej. 123)
       DB_SERVER=localhost
       DB_DATABASE=Autos_AMI
-      PORT=3000
+      DB_PORT=1433
    c) Iniciar Servidor Backend:
       cd Backend
       npm install (si no están instalados los módulos)
       node server.js
    d) Acceder al Frontend:
-      Abrir en el navegador: http://localhost:3000/Pages/login.html
-      o abrir directamente Fronted/Pages/login.html.
+      Abrir en el navegador: http://localhost:3000/Login.html o http://localhost:3000/index.html
 
-2. CREDENCIALES DE ACCESO POR ROL:
-   - Super Administrador: superadmin@ami.com | Admin123! (acceso total a todos los módulos)
-   - Administrador: admin@ami.com | Admin123!
-   - Vendedor: vendedor@ami.com | Venta123!
-   - Contador: contador@ami.com | Conta123!
-   - RRHH: rrhh@ami.com | Rrhh123!
+2. DESPLIEGUE EN DOCKER (docker compose up):
+   - Servicio sqlserver: Usa imagen mcr.microsoft.com/mssql/server:2022-latest.
+   - Contraseña de Docker: Password123! (obligatoria por políticas de complejidad de Microsoft en Linux).
+   - Red interna Docker: El backend conecta a DB_SERVER=sqlserver.
+   - Conexión a SQL Server de Windows desde Docker: Configurar DOCKER_DB_SERVER=host.docker.internal y DOCKER_DB_PASSWORD=123.
 
-3. REGLAS FISCALES DGI (NICARAGUA - LEY 822):
-   - Personas Naturales (Consumidores Finales): Cédula nacional. No son agentes retenedores.
-     Pagan 100% con IVA (15%). Retención DGI = $ 0.00, Retención Alcaldía = $ 0.00.
-   - Personas Jurídicas (Agentes Retenedores): RUC con serie J. Retienen 2% DGI (Art. 59 Ley 822)
-     y 1% Alcaldía (Plan de Arbitrios) previa entrega de Constancia de Retención.
+3. MÓDULO DE INICIO (DASHBOARD) Y ALERTAS DINÁMICAS:
+   - Tarjeta de Inventario:
+     * Crítico: <= 10 vehículos disponibles (Rojo #EF4444).
+     * Alerta Preventiva: <= 15 vehículos disponibles (Ámbar #F59E0B).
+     * Óptimo / Saludable: > 15 vehículos disponibles (Verde #10B981).
+     * Modal interactivo #modalDetallesInventario con filtros: Disponibles, Vendidos, Todos.
+   - Tarjeta de Órdenes Pendientes:
+     * Monitorea compras pendientes de aprobación con proveedores.
+     * Ambas tarjetas se mantienen siempre visibles simultáneamente lado a lado (col-md-6).
+     * Modal interactivo #modalDetallesOrdenes con filtros: Pendientes, Completadas, Todas.
 
-4. REGLAS LABORALES DE PLANILLA (NICARAGUA):
-   - INSS Laboral: 7.00% sobre el salario total devengado.
-   - IR Laboral: Tarifa progresiva mensual Art. 23 Ley 822 (Renta anual proyectada).
-   - INSS Patronal: 21.5% (empresas de menos de 50 trabajadores) o 22.5% (más de 50).
-   - INATEC: 2.0% patronal.
-   - Horas Extras: Código del Trabajo (Valor hora ordinaria x 2).
+4. PERFIL DE USUARIO (Fronted/Pages/Perfil.html):
+   - Menú desplegable en barra superior con opciones: "Ver perfil" y "Cerrar sesión".
+   - Pantalla completa con banner, datos del empleado, rol institucional y módulos autorizados.
+   - Formulario de edición con validación de contraseña actual y cambio de credenciales.
+   - Botones para mostrar/ocultar contraseñas mediante iconos de ojo interactivos.
+
+5. CREDENCIALES DE ACCESO POR ROL:
+   - Super Administrador: Andrea.villavicencio@ami.com | Ami2026#001 (idUsuario: 6, idRol: 4)
+   - Administrador: Gabriel.quintanilla@ami.com | Ami2026#002 (idUsuario: 7, idRol: 5)
+   - Usuario estándar: jose.perez@ami.com | Ami2026#005 (idUsuario: 10, idRol: 6)
+   - Usuario de revisión: fernando.mendoza@ami.com | Ami2026#011 (idUsuario: 16, idRol: 7)
+
+6. REGLAS FISCALES DGI Y LABORALES:
+   - Ley 822 (DGI Nicaragua): 15% IVA. Retención 2% DGI y 1% Alcaldía solo para personas jurídicas.
+   - Planilla (MITRAB/INSS): 7% INSS Laboral, tarifa progresiva IR (Art. 23 Ley 822), 21.5% INSS Patronal, 2% INATEC.
 
 ================================================================================
                              FIN DEL HISTORIAL COMPLETO                         
