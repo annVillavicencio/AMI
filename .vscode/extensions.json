@@ -1,6 +1,7 @@
-﻿{
-  "recommendations": [
-    "ritwickdey.liveserver",
-    "ms-mssql.mssql"
-  ]
+{
+    "recommendations":  [
+                            "ritwickdey.liveserver",
+                            "ms-mssql.mssql",
+                            "ms-azuretools.vscode-docker"
+                        ]
 }

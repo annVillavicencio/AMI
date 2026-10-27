@@ -13313,6 +13313,57 @@ tmb configura el archivo de la conversacion ahorita de todo lo que  se ha hecho
    - Ley 822 (DGI Nicaragua): 15% IVA. Retención 2% DGI y 1% Alcaldía solo para personas jurídicas.
    - Planilla (MITRAB/INSS): 7% INSS Laboral, tarifa progresiva IR (Art. 23 Ley 822), 21.5% INSS Patronal, 2% INATEC.
 
+
+================================================================================
+SESIÓN DE ACTUALIZACIÓN INTEGRAL - CONFIGURACIÓN RBAC, PURGA DE ROLES Y BLINDAJE
+FECHA: 27 DE OCTUBRE DE 2026
+================================================================================
+
+1. SINCRONIZACIÓN Y RESTAURACIÓN DE LA BASE DE DATOS:
+   - Se restauró la base de datos Autos_AMI en Microsoft SQL Server v17 local usando Autos_AMI.bak.
+   - Se verificaron las 21 tablas del sistema y la coherencia referencial.
+   - Se actualizó el archivo Backend/.env para conectarse de forma nativa a localhost:1433 con autenticación sa.
+   - El servidor Backend se ejecuta nativamente en puerto 3000 con Node.js.
+
+2. PURGA Y REESTRUCTURACIÓN DEFINITIVA DE ROLES EN SQL SERVER:
+   - Siguiendo instrucciones explícitas de negocio, se eliminaron por completo:
+     * idRol 6: "Usuario estándar" (eliminados sus usuarios, permisos y registro en rol).
+     * idRol 7: "Usuario de revisión" (eliminados sus usuarios, permisos y registro en rol).
+   - Se consolidaron los 6 roles oficiales del sistema:
+     1. Superadministrador (idRol: 4): Acceso total a los 10 módulos con CRUD completo.
+     2. Administrador (idRol: 5): Acceso a 9 módulos operativos (todo excepto Usuarios).
+     3. Encargado de inventario (idRol: 9): Restringido exclusivamente al módulo "Inventario".
+     4. Vendedores (idRol: 10): Restringido exclusivamente al módulo "Ventas".
+     5. Encargado de la contabilidad (idRol: 11): Acceso a "Costos", "Analisis", "Compras" y "Ventas".
+     6. Recursos Humanos (idRol: 12): Acceso exclusivo a "Personal".
+
+3. CREDENCIALES DUALES DE ACCESO (DEPARTAMENTAL Y PERSONAL):
+   - Superadministrador: Andrea.villavicencio@ami.com | Ami2026#001
+   - Administrador: Gabriel.quintanilla@ami.com | Ami2026#002
+   - Encargado de inventario:
+     * daniel.ramirez@ami.com / inventario@ami.com | Ami2026#Stock
+   - Vendedores:
+     * fernando.amador@ami.com / ventas@ami.com | Ami2026#Ventas
+     * Amelia@ami.com | Ami2026#Ventas
+   - Encargado de contabilidad:
+     * roberto.romano@ami.com / contabilidad@ami.com | Ami2026#Conta
+   - Recursos Humanos:
+     * laura.morales@ami.com / rrhh@ami.com | Ami2026#RRHH
+     * Juancho@ami.com | Ami2026#RRHH
+
+4. RESOLUCIÓN DE FILTRACIONES VISUALES Y BLINDAJE RBAC (FRONTEND):
+   - Se corrigieron los enlaces con href="#" en Fronted/Pages/ventas.html para Costos y Personal que provocaban que permanecieran visibles para Vendedores.
+   - Fronted/JS/auth.js fue rediseñado con validación doble:
+     * Filtra por coincidencia de archivo URL (.html).
+     * Filtra por coincidencia de texto visible del elemento en el Sidebar (evita filtraciones por enlaces huérfanos).
+   - Se implementó sincronización automática en segundo plano con el nuevo endpoint /api/auth/permisos/:idUsuario, evitando problemas de caché desactualizada en el localStorage del navegador.
+   - En Fronted/index.html y Fronted/JS/script.js:
+     * Se invirtió el orden de carga para garantizar que auth.js aplique permisos antes de la ejecución de script.js.
+     * Se ocultaron automáticamente las tarjetas y la sección de alertas del Dashboard cuando el rol autenticado no posee permisos sobre Compras ni Inventario.
+
+5. RESPALDO FRESCO DE BASE DE DATOS:
+   - Se generó un nuevo backup completo comprimido Autos_AMI.bak (1.12 MB) ubicado en la raíz del repositorio, conteniendo todos los roles, usuarios y permisos definitivos.
+
 ================================================================================
                              FIN DEL HISTORIAL COMPLETO                         
 ================================================================================

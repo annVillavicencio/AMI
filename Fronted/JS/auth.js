@@ -3,11 +3,12 @@
  */
 
 (function () {
-    // 1. Obtener la sesión del usuario guardada
-    const usuarioSesion = localStorage.getItem('usuario_ami');
     const rutaActual = window.location.pathname.toLowerCase();
     const esPaginaLogin = rutaActual.endsWith('login.html');
     const esPaginaSalir = rutaActual.endsWith('salir.html');
+
+    // 1. Obtener la sesión del usuario guardada
+    let usuarioSesion = localStorage.getItem('usuario_ami');
 
     // Si no ha iniciado sesión y no está en el login ni en salir, redirigir al Login
     if (!usuarioSesion) {
@@ -18,9 +19,9 @@
         return;
     }
 
-    const usuario = JSON.parse(usuarioSesion);
+    let usuario = JSON.parse(usuarioSesion);
 
-    // Mapeo entre los enlaces del Sidebar y los nombres de módulos en la BD
+    // Mapeo entre archivos y nombres de módulos en la BD
     const mapaModulos = {
         'inventario.html': 'Inventario',
         'ventas.html': 'Ventas',
@@ -35,10 +36,26 @@
         'index.html': 'Dashboard'
     };
 
+    // Mapeo por texto de etiqueta (garantiza que NINGÚN módulo se filtre aunque href='#')
+    const mapaTexto = {
+        'inventario': 'Inventario',
+        'ventas': 'Ventas',
+        'compras': 'Compras',
+        'clientes': 'Clientes',
+        'marketing': 'Marketing',
+        'costos': 'Costos',
+        'finanzas': 'Costos',
+        'análisis': 'Analisis',
+        'analisis': 'Analisis',
+        'usuarios': 'Usuarios',
+        'personal': 'Personal',
+        'recursos humanos': 'Personal',
+        'inicio': 'Dashboard'
+    };
+
     // Función global para consultar permisos desde cualquier pantalla
     window.tienePermiso = function (modulo, accion = 'puedeVer') {
         if (!usuario || !usuario.permisos) return false;
-        // El Superadministrador siempre tiene permiso total
         if (usuario.rol === 'Superadministrador' || usuario.idRol === 4) return true;
 
         const permisoModulo = usuario.permisos.find(p => p.modulo.toLowerCase() === modulo.toLowerCase());
@@ -67,7 +84,7 @@
             elSaludo.textContent = (usuario.nombre || '').split(' ')[0];
         }
 
-        // C. Configurar menú desplegable del perfil de usuario (Ver perfil / Cerrar sesión)
+        // C. Configurar menú desplegable del perfil de usuario
         const dropdownUsuario = elNombreUsuario ? elNombreUsuario.closest('.dropdown') : document.querySelector('.dropdown');
         if (dropdownUsuario) {
             const menuDropdown = dropdownUsuario.querySelector('.dropdown-menu');
@@ -90,24 +107,45 @@
             }
         }
 
-        // D. Filtrar enlaces del Sidebar según permisos
-        const linksSidebar = document.querySelectorAll('.sidebar-menu a, .sidebar a');
+        // D. Filtrar enlaces del Sidebar (Doble comprobación: por URL y por Texto)
+        const linksSidebar = document.querySelectorAll('.sidebar-menu a, .sidebar a, #sidebar-wrapper a');
         linksSidebar.forEach(link => {
             const href = (link.getAttribute('href') || '').toLowerCase();
-            for (const [archivo, modulo] of Object.entries(mapaModulos)) {
+            const texto = link.textContent.trim().toLowerCase();
+
+            // Salir e Inicio tienen lógica propia
+            if (href.includes('salir') || texto.includes('salir')) return;
+
+            let modulo = null;
+
+            // 1. Comprobar por URL
+            for (const [archivo, mod] of Object.entries(mapaModulos)) {
                 if (href.includes(archivo)) {
-                    if (!window.tienePermiso(modulo, 'puedeVer')) {
-                        link.classList.add('d-none');
-                        link.style.setProperty('display', 'none', 'important');
-                    }
+                    modulo = mod;
                     break;
                 }
+            }
+
+            // 2. Comprobar por texto si no coincidió por archivo
+            if (!modulo) {
+                for (const [palabra, mod] of Object.entries(mapaTexto)) {
+                    if (texto.includes(palabra)) {
+                        modulo = mod;
+                        break;
+                    }
+                }
+            }
+
+            // 3. Aplicar restricción si se detectó módulo
+            if (modulo && !window.tienePermiso(modulo, 'puedeVer')) {
+                link.classList.add('d-none');
+                link.style.setProperty('display', 'none', 'important');
             }
         });
 
         // E. Si la página actual no tiene permiso de ser vista, bloquear el acceso
         const paginaActual = window.location.pathname.split('/').pop().toLowerCase();
-        const moduloActual = mapaModulos[paginaActual];
+        let moduloActual = mapaModulos[paginaActual];
         if (moduloActual && !window.tienePermiso(moduloActual, 'puedeVer')) {
             alert('No tienes permiso para acceder al módulo de ' + moduloActual);
             const rutaInicio = window.location.pathname.includes('/Pages/') ? '../index.html' : 'index.html';
@@ -124,13 +162,33 @@
         });
     }
 
-    // Ejecutar de inmediato o esperar al DOM si aún está cargando
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', aplicarPermisosYPerfil);
-    } else {
-        aplicarPermisosYPerfil();
+    // G. Refrescar permisos en segundo plano directamente de la base de datos
+    async function sincronizarPermisosServidor() {
+        if (!usuario || !usuario.id) return;
+        try {
+            const res = await fetch('/api/auth/permisos/' + usuario.id);
+            if (res.ok) {
+                const usuarioActualizado = await res.json();
+                usuario = usuarioActualizado;
+                localStorage.setItem('usuario_ami', JSON.stringify(usuarioActualizado));
+                window.usuarioAMI = usuarioActualizado;
+                aplicarPermisosYPerfil();
+            }
+        } catch (e) {
+            // Silencioso si falla la red, ya se aplicó localStorage
+        }
     }
 
-    // Guardar usuario en window para acceso global
+    // Ejecutar de inmediato o esperar al DOM si aún está cargando
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            aplicarPermisosYPerfil();
+            sincronizarPermisosServidor();
+        });
+    } else {
+        aplicarPermisosYPerfil();
+        sincronizarPermisosServidor();
+    }
+
     window.usuarioAMI = usuario;
 })();

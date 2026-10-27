@@ -251,6 +251,16 @@ async function cargarAlertasDashboard() {
     }
 
     // =========================================================================
+    // Ocultar sección completa si no tiene alertas aplicables a su rol
+    const contAlertas = document.getElementById('contenedor-alertas-dashboard');
+    if (!tienePermisoInventario && !tienePermisoCompras) {
+        if (contAlertas) contAlertas.style.setProperty('display', 'none', 'important');
+        const seccionHeader = contAlertas ? contAlertas.previousElementSibling : null;
+        if (seccionHeader) seccionHeader.style.setProperty('display', 'none', 'important');
+    } else if (contAlertas) {
+        contAlertas.style.removeProperty('display');
+    }
+
     // C. BADGE GLOBAL DE ESTADO EN EL HEADER
     // =========================================================================
     if (badgeTotalAlertas) {

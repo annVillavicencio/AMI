@@ -89,9 +89,46 @@ app.use('/api/finanzas', require('./routes/finanzas'));
 // Servir frontend estático para Docker o ejecución directa
 app.use(express.static(path.join(__dirname, '../Fronted')));
 
-// Redirigir raíz a inventario
+// Endpoint para refrescar permisos de un usuario
+app.get('/api/auth/permisos/:idUsuario', async (req, res) => {
+    try {
+        const pool = await getPool();
+        const userRes = await pool.request()
+            .input('id', sql.Int, parseInt(req.params.idUsuario, 10))
+            .query(`
+                SELECT u.idUsuario, u.correo, u.EstadoUser, u.CodigoEmpleado, r.idRol, r.NombreRol,
+                       e.NombreEmpleado, e.ApellidoEmpleado
+                FROM Usuarios u
+                INNER JOIN rol r ON u.idRol = r.idRol
+                LEFT JOIN Empleado e ON u.CodigoEmpleado = e.CodigoEmpleado
+                WHERE u.idUsuario = @id
+            `);
+
+        if (userRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const usuario = userRes.recordset[0];
+        const permisosRes = await pool.request()
+            .input('idRol', sql.Int, usuario.idRol)
+            .query('SELECT modulo, puedeVer, puedeAgregar, puedeEditar, puedeEliminar FROM Permisos WHERE idRol = @idRol');
+
+        res.json({
+            id: usuario.idUsuario,
+            correo: usuario.correo,
+            nombre: usuario.NombreEmpleado ? `${usuario.NombreEmpleado} ${usuario.ApellidoEmpleado}` : usuario.correo,
+            rol: usuario.NombreRol,
+            idRol: usuario.idRol,
+            permisos: permisosRes.recordset
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Redirigir raíz a Inicio (Dashboard)
 app.get('/', (req, res) => {
-    res.redirect('/Pages/inventario.html');
+    res.redirect('/index.html');
 });
 
 const PORT = process.env.PORT || 3000;
