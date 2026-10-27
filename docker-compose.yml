@@ -5,10 +5,13 @@ services:
     restart: always
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Password123!
+      # NOTA: Microsoft SQL Server en Docker exige obligatoriamente una contraseña compleja
+      # (mínimo 8 caracteres, mayúsculas, minúsculas y números/símbolos).
+      # Si se configura '123' el contenedor de SQL Server se cerrará por error de política de seguridad de Microsoft.
+      - MSSQL_SA_PASSWORD=${DOCKER_DB_PASSWORD:-Password123!}
       - MSSQL_PID=Developer
     ports:
-      - "1433:1433"
+      - "${DB_PORT:-1433}:1433"
     volumes:
       - mssql_data:/var/opt/mssql
 
@@ -18,18 +21,24 @@ services:
       dockerfile: Dockerfile
     container_name: ami_backend
     restart: always
+    depends_on:
+      - sqlserver
     extra_hosts:
+      # Permite conectar al SQL Server instalado localmente en Windows usando 'host.docker.internal'
       - "host.docker.internal:host-gateway"
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - PORT=3000
-      - DB_SERVER=sqlserver
-      - DB_PORT=1433
-      - DB_DATABASE=Autos_AMI
-      - DB_USER=sa
-      - DB_PASSWORD=Password123!
-      - DB_WINDOWS_AUTH=false
+      - PORT=${PORT:-3000}
+      # OPCIÓN A (Por defecto - Base de datos en contenedor Docker): DB_SERVER=sqlserver y DB_PASSWORD=Password123!
+      # OPCIÓN B (Conectar al SQL Server local de tu Windows): DB_SERVER=host.docker.internal y DB_PASSWORD=123
+      - DB_SERVER=${DOCKER_DB_SERVER:-sqlserver}
+      - DB_PORT=${DB_PORT:-1433}
+      - DB_DATABASE=${DB_DATABASE:-Autos_AMI}
+      - DB_USER=${DB_USER:-sa}
+      - DB_PASSWORD=${DOCKER_DB_PASSWORD:-Password123!}
+      - DB_WINDOWS_AUTH=${DB_WINDOWS_AUTH:-false}
     command: sh -c "node initDb.js && node server.js"
+
 volumes:
   mssql_data:
