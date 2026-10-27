@@ -242,4 +242,142 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+
+// -------------------------------------------------------------
+// GET /api/usuarios/perfil/:id: Obtener información completa del perfil del usuario logueado
+// -------------------------------------------------------------
+router.get('/perfil/:id', async (req, res) => {
+    try {
+        const idUsuario = parseInt(req.params.id, 10);
+        if (isNaN(idUsuario)) {
+            return res.status(400).json({ error: 'ID de usuario inválido' });
+        }
+
+        const pool = await getPool();
+        const result = await pool.request()
+            .input('idUsuario', sql.Int, idUsuario)
+            .query(`
+                SELECT 
+                    u.idUsuario,
+                    u.correo,
+                    u.idRol,
+                    ISNULL(r.NombreRol, 'Sin Rol') AS NombreRol,
+                    ISNULL(u.EstadoUser, 'Activo') AS EstadoUser,
+                    CONVERT(VARCHAR(10), u.fechaCreacion, 120) AS fechaCreacion,
+                    u.CodigoEmpleado,
+                    ISNULL(e.NombreEmpleado, '') AS NombreEmpleado,
+                    ISNULL(e.ApellidoEmpleado, '') AS ApellidoEmpleado,
+                    ISNULL(e.Cedula, 'N/D') AS Cedula,
+                    CONVERT(VARCHAR(10), e.FechaIngreso, 120) AS FechaIngreso,
+                    ISNULL(c.NombreCargo, 'Colaborador') AS NombreCargo,
+                    ISNULL(d.NombreDepartamento, 'General') AS NombreDepartamento
+                FROM Usuarios u
+                LEFT JOIN rol r ON u.idRol = r.idRol
+                LEFT JOIN Empleado e ON u.CodigoEmpleado = e.CodigoEmpleado
+                LEFT JOIN Cargo c ON e.IdCargo = c.IdCargo
+                LEFT JOIN Departamento d ON e.idDepartamento = d.idDepartamento
+                WHERE u.idUsuario = @idUsuario
+            `);
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.recordset[0];
+        
+        // Consultar los permisos del rol
+        const permisosRes = await pool.request()
+            .input('idRol', sql.Int, user.idRol)
+            .query('SELECT modulo, puedeVer, puedeAgregar, puedeEditar, puedeEliminar FROM Permisos WHERE idRol = @idRol');
+        user.permisos = permisosRes.recordset;
+
+        res.json(user);
+    } catch (err) {
+        console.error('Error al obtener perfil:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// -------------------------------------------------------------
+// PUT /api/usuarios/perfil/:id: Actualizar datos personales y/o contraseña del perfil
+// -------------------------------------------------------------
+router.put('/perfil/:id', async (req, res) => {
+    try {
+        const idUsuario = parseInt(req.params.id, 10);
+        if (isNaN(idUsuario)) {
+            return res.status(400).json({ error: 'ID de usuario inválido' });
+        }
+
+        const { nombre, apellido, correo, contrasenaActual, nuevaContrasena } = req.body;
+        const pool = await getPool();
+
+        // 1. Obtener datos actuales del usuario
+        const curUserRes = await pool.request()
+            .input('idUsuario', sql.Int, idUsuario)
+            .query('SELECT idUsuario, contrasena, CodigoEmpleado, correo FROM Usuarios WHERE idUsuario = @idUsuario');
+
+        if (curUserRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const curUser = curUserRes.recordset[0];
+
+        // 2. Si se solicitó cambio de contraseña, validar contraseña actual
+        let passwordToSet = curUser.contrasena;
+        if (nuevaContrasena && nuevaContrasena.trim().length > 0) {
+            if (!contrasenaActual || contrasenaActual.trim() !== curUser.contrasena.trim()) {
+                return res.status(400).json({ error: 'La contraseña actual ingresada es incorrecta.' });
+            }
+            if (nuevaContrasena.trim().length < 4) {
+                return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 4 caracteres.' });
+            }
+            passwordToSet = nuevaContrasena.trim();
+        }
+
+        const correoToSet = (correo && correo.trim()) ? correo.trim() : curUser.correo;
+
+        // 3. Actualizar correo y contraseña en Usuarios
+        await pool.request()
+            .input('idUsuario', sql.Int, idUsuario)
+            .input('correo', sql.VarChar, correoToSet)
+            .input('contrasena', sql.VarChar, passwordToSet)
+            .query(`
+                UPDATE Usuarios 
+                SET correo = @correo, contrasena = @contrasena 
+                WHERE idUsuario = @idUsuario
+            `);
+
+        // 4. Si tiene Empleado vinculado y se enviaron nombres, actualizar Empleado
+        let nombreCompletoFinal = correoToSet;
+        if (curUser.CodigoEmpleado && (nombre || apellido)) {
+            const nomTrim = (nombre || '').trim();
+            const apeTrim = (apellido || '').trim();
+            await pool.request()
+                .input('CodigoEmpleado', sql.VarChar, curUser.CodigoEmpleado)
+                .input('NombreEmpleado', sql.VarChar, nomTrim)
+                .input('ApellidoEmpleado', sql.VarChar, apeTrim)
+                .query(`
+                    UPDATE Empleado SET
+                        NombreEmpleado = CASE WHEN @NombreEmpleado <> '' THEN @NombreEmpleado ELSE NombreEmpleado END,
+                        ApellidoEmpleado = CASE WHEN @ApellidoEmpleado <> '' THEN @ApellidoEmpleado ELSE ApellidoEmpleado END
+                    WHERE CodigoEmpleado = @CodigoEmpleado
+                `);
+            nombreCompletoFinal = `${nomTrim} ${apeTrim}`.trim();
+        }
+
+        res.json({ 
+            mensaje: 'Perfil actualizado con éxito',
+            usuario: {
+                id: idUsuario,
+                correo: correoToSet,
+                nombre: nombreCompletoFinal
+            }
+        });
+    } catch (err) {
+        console.error('Error al actualizar perfil:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
+

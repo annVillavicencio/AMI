@@ -67,7 +67,30 @@
             elSaludo.textContent = (usuario.nombre || '').split(' ')[0];
         }
 
-        // C. Filtrar enlaces del Sidebar según permisos
+        // C. Configurar menú desplegable del perfil de usuario (Ver perfil / Cerrar sesión)
+        const dropdownUsuario = elNombreUsuario ? elNombreUsuario.closest('.dropdown') : document.querySelector('.dropdown');
+        if (dropdownUsuario) {
+            const menuDropdown = dropdownUsuario.querySelector('.dropdown-menu');
+            if (menuDropdown) {
+                const enPaginas = window.location.pathname.includes('/Pages/');
+                const rutaPerfil = enPaginas ? 'Perfil.html' : 'Pages/Perfil.html';
+                menuDropdown.innerHTML = `
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center" href="${rutaPerfil}">
+                            <i class="bi bi-person me-2 text-muted fs-6"></i> Ver perfil
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider border-secondary my-1 opacity-25"></li>
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center text-danger" href="#" onclick="window.cerrarSesion(); return false;">
+                            <i class="bi bi-box-arrow-right me-2 text-danger fs-6"></i> Cerrar sesión
+                        </a>
+                    </li>
+                `;
+            }
+        }
+
+        // D. Filtrar enlaces del Sidebar según permisos
         const linksSidebar = document.querySelectorAll('.sidebar-menu a, .sidebar a');
         linksSidebar.forEach(link => {
             const href = (link.getAttribute('href') || '').toLowerCase();
@@ -82,7 +105,7 @@
             }
         });
 
-        // D. Si la página actual no tiene permiso de ser vista, bloquear el acceso
+        // E. Si la página actual no tiene permiso de ser vista, bloquear el acceso
         const paginaActual = window.location.pathname.split('/').pop().toLowerCase();
         const moduloActual = mapaModulos[paginaActual];
         if (moduloActual && !window.tienePermiso(moduloActual, 'puedeVer')) {
@@ -91,7 +114,7 @@
             window.location.href = rutaInicio;
         }
 
-        // E. Hacer que los botones de "Salir" cierren sesión automáticamente
+        // F. Hacer que los botones de "Salir" cierren sesión automáticamente
         const linksSalir = document.querySelectorAll('a[href*="Salir.html"], a[href*="salir.html"]');
         linksSalir.forEach(btn => {
             btn.addEventListener('click', function (e) {
