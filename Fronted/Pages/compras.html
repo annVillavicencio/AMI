@@ -472,7 +472,7 @@
   </a>
                                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="generarReporte(event); return false;">
       <span><i class="bi bi-file-earmark-text me-3"></i> Generar reporte</span> <i class="bi bi-chevron-right text-secondary small"></i>
-                                    </a>
+  </a>
                                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom-0">
                                         <span><i class="bi bi-gear me-3"></i> Configuración</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
@@ -484,70 +484,94 @@
                 </div>
             </div>
         </div>
-    </div>
 
-     <div class="modal fade" id="modalCompra" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content card-custom text-white">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold" id="modalCompraLabel"><i class="bi bi-cart-check text-neon-green me-2"></i>Registrar Compra</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formCompra">
-                    <input type="hidden" id="compra-id" value="">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label small text-secondary">ID de Compra</label>
-                            <input type="text" id="compra-id-display" class="form-control form-control-dark" placeholder="Autogenerado" readonly>
+    <!-- Modal Registrar/Editar Compra -->
+    <div class="modal fade" id="modalCompra" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-custom text-white">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold" id="modalCompraLabel"><i class="bi bi-cart-check text-neon-green me-2"></i>Registrar Compra</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCompra">
+                        <input type="hidden" id="compra-id" value="">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">ID de Compra</label>
+                                <input type="text" id="compra-id-display" class="form-control form-control-dark" placeholder="Autogenerado" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Proveedor *</label>
+                                <input type="text" id="compra-proveedor" list="lista-proveedores" class="form-control form-control-dark" placeholder="Ej. Auto Importaciones" required>
+                                <datalist id="lista-proveedores"></datalist>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Número de Factura</label>
+                                <input type="text" id="compra-factura" class="form-control form-control-dark" placeholder="Ej. F-1025">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">Descripción</label>
+                                <input type="text" id="compra-descripcion" class="form-control form-control-dark" placeholder="Ej. Lote de camionetas Toyota">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Fecha de compra *</label>
+                                <input type="date" id="compra-fecha" class="form-control form-control-dark" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Total de la compra (C$) *</label>
+                                <input type="number" step="0.01" id="compra-total" class="form-control form-control-dark" placeholder="0.00" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small text-secondary">Estado de la compra</label>
+                                <select id="compra-estado" class="form-select form-control-dark">
+                                    <option value="Completado">Completado</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Proveedor *</label>
-                            <input type="text" id="compra-proveedor" list="lista-proveedores" class="form-control form-control-dark" placeholder="Ej. Auto Importaciones" required>
-                            <datalist id="lista-proveedores"></datalist>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Número de Factura</label>
-                            <input type="text" id="compra-factura" class="form-control form-control-dark" placeholder="Ej. F-1025">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label small text-secondary">Descripción</label>
-                            <input type="text" id="compra-descripcion" class="form-control form-control-dark" placeholder="Ej. Lote de camionetas Toyota">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Fecha de compra *</label>
-                            <input type="date" id="compra-fecha" class="form-control form-control-dark" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Total de la compra (C$) *</label>
-                            <input type="number" step="0.01" id="compra-total" class="form-control form-control-dark" placeholder="0.00" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small text-secondary">Estado de la compra</label>
-                            <select id="compra-estado" class="form-select form-control-dark">
-                                <option value="Completado">Completado</option>
-                                <option value="Pendiente">Pendiente</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top border-secondary border-opacity-25">
-                <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="btn-guardar-compra" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Compra</button>
+                    </form>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25">
+                    <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btn-guardar-compra" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Compra</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal Reporte Compras -->
+    <div class="modal fade" id="modalReporteCompras" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content card-custom text-white">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-bag-check text-warning me-2"></i> Reporte de Compras</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert bg-dark text-white border border-warning mb-3 rounded-3" id="kpi-compras"></div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead><tr><th>ID</th><th>Proveedor</th><th>Factura</th><th>Total (C$)</th><th>Fecha</th><th>Estado</th></tr></thead>
+                            <tbody id="cuerpo-tabla-reporte-compras"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-warning fw-bold rounded-pill px-4 text-dark" onclick="descargarReporteExcel(event)">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Descargar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../JS/script.js?v=3"></script>
-<script src="../JS/auth.js"></script>
-    <script src="../JS/compras.js?v=5"></script>
-
-
-</div>
-
+    <script src="../JS/script.js?v=4"></script>
+    <script src="../JS/auth.js"></script>
+    <script src="../JS/compras.js?v=6"></script>
 </body>
 </html>

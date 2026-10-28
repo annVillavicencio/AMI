@@ -416,7 +416,8 @@ function calcularDatosReporte() {
     kpiTexto = `El proveedor con mayor inversión es <strong>${maxProv}</strong> (C$ ${maxGasto.toLocaleString('en-US', { minimumFractionDigits: 2 })}). Inversión total en compras: <strong class="text-danger">C$ ${totalInvertido.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>.`;
 }
 
-function generarReporte() {
+function generarReporte(e) {
+    if (e && e.preventDefault) e.preventDefault();
     if (comprasData.length === 0) return alert("No hay datos de compras para generar el reporte.");
     calcularDatosReporte();
 
