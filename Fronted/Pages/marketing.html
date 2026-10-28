@@ -187,7 +187,7 @@
                                                 Buscar
                                             </button>
                                         </div>
-                                        <button class="btn btn-outline-green rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalCampana">
+                                        <button class="btn btn-outline-green rounded-pill px-4" onclick="abrirModalCrear()">
                                             <i class="bi bi-plus fs-5 align-middle me-1"></i> Nueva Campaña
                                         </button>
                                     </div>
@@ -306,10 +306,10 @@
                             <div class="card-body">
                                <h6 class="fw-bold text-white mb-4"><i class="bi bi-lightning-charge text-neon-green me-2"></i>Acciones rápidas</h6>
                                 <div class="list-group list-group-flush dark-list bg-transparent">
-                                    <a href="#" class="list-group-item list-group-item-action bg-transparent text-white d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-download me-3"></i> Exportar campaña</span> <i class="bi bi-chevron-right text-secondary small"></i>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action bg-transparent text-white d-flex justify-content-between align-items-center" onclick="generarReporte()">
+                                    <a href="#" class="list-group-item list-group-item-action bg-transparent text-white d-flex justify-content-between align-items-center" onclick="descargarReporteExcel(event); return false;">
+      <span><i class="bi bi-download me-3"></i> Exportar campaña</span> <i class="bi bi-chevron-right text-secondary small"></i>
+  </a>
+                                    <a href="#" class="list-group-item list-group-item-action bg-transparent text-white d-flex justify-content-between align-items-center" onclick="generarReporte(event); return false;">
                                         <span><i class="bi bi-file-earmark-text me-3"></i> Generar reporte</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                     <a href="#" class="list-group-item list-group-item-action bg-transparent text-white d-flex justify-content-between align-items-center border-bottom-0">
@@ -325,50 +325,45 @@
     </div>
 
     <!-- Modal Nueva Campaña -->
+    <!-- Modal Campaña (Nueva / Editar) -->
     <div class="modal fade" id="modalCampana" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content dark-card text-white border-secondary border-opacity-25">
                 <div class="modal-header border-bottom border-secondary border-opacity-25">
-                    <h5 class="modal-title fw-bold">
+                    <h5 class="modal-title fw-bold" id="modalCampanaTitle">
                         <i class="bi bi-megaphone me-2" style="color: var(--pink-soft);"></i> Nueva Campaña
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="formNuevaCampana">
+                    <form id="formNuevaCampana" onsubmit="guardarCampana(event)">
+                        <input type="hidden" id="campana-id">
                         <div class="mb-3">
-                            <label class="form-label small text-subhead">Nombre de la Campaña</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Ej. Lanzamiento SUV X1" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-subhead">Plataforma de lanzamiento</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="Ej. Instagram, facebook.." required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-subhead">Nivel de interacciones</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="%.." required>
+                            <label class="form-label small text-subhead">Nombre de la Campaña *</label>
+                            <input type="text" id="campana-nombre" class="form-control form-control-dark" placeholder="Ej. Lanzamiento SUV X1" required>
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-6">
-                                <label class="form-label small text-subhead">Fecha Inicio</label>
-                                <input type="date" class="form-control form-control-dark" required>
+                                <label class="form-label small text-subhead">Fecha Inicio *</label>
+                                <input type="date" id="campana-inicio" class="form-control form-control-dark" required>
                             </div>
                             <div class="col-6">
-                                <label class="form-label small text-subhead">Fecha Fin</label>
-                                <input type="date" class="form-control form-control-dark" required>
+                                <label class="form-label small text-subhead">Fecha Fin *</label>
+                                <input type="date" id="campana-fin" class="form-control form-control-dark" required>
                             </div>
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-6">
-                                <label class="form-label small text-subhead">Presupuesto ($)</label>
-                                <input type="number" class="form-control form-control-dark" placeholder="0.00" step="0.01" required>
+                                <label class="form-label small text-subhead">Presupuesto Invertido ($) *</label>
+                                <input type="number" id="campana-presupuesto" class="form-control form-control-dark" placeholder="0.00" step="0.01" required>
                             </div>
                             <div class="col-6">
-                                <label class="form-label small text-subhead">Estado</label>
-                                <select class="form-select form-control-dark text-white">
+                                <label class="form-label small text-subhead">Estado *</label>
+                                <select id="campana-estado" class="form-select form-control-dark text-white">
                                     <option value="Programada">Programada</option>
                                     <option value="Activa">Activa</option>
                                     <option value="Finalizada">Finalizada</option>
+                                    <option value="Pausada">Pausada</option>
                                 </select>
                             </div>
                         </div>
@@ -376,39 +371,44 @@
                 </div>
                 <div class="modal-footer border-top border-secondary border-opacity-25">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4 small" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" form="formNuevaCampana" class="btn btn-purple rounded-pill px-4 small fw-semibold">Guardar Campaña</button>
+                    <button type="submit" form="formNuevaCampana" id="btnGuardarCampana" class="btn btn-purple rounded-pill px-4 small fw-semibold">Guardar Campaña</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Reporte Marketing -->
+    <div class="modal fade" id="modalReporteMarketing" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content card-custom text-white">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-megaphone text-info me-2"></i> Reporte Marketing</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert bg-dark text-white border border-info mb-3 rounded-3" id="kpi-marketing"></div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead><tr><th>ID</th><th>Campaña</th><th>Fechas</th><th>Presupuesto</th><th>Estado</th></tr></thead>
+                            <tbody id="cuerpo-tabla-reporte-marketing"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-info fw-bold rounded-pill text-dark" onclick="descargarReporteExcel(event)">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Descargar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts al final del documento -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../JS/script.js?v=3"></script>
-<script src="../JS/auth.js"></script>
-    <script src="../JS/marketing.js?v=3"></script>
-
-<div class="modal fade" id="modalReporteMarketing" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content card-custom text-white">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold"><i class="bi bi-megaphone text-info me-2"></i> Reporte Marketing</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert bg-dark text-white border border-info mb-3 rounded-3" id="kpi-marketing"></div>
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle">
-                        <thead><tr><th>ID</th><th>Campaña</th><th>Fechas</th><th>Presupuesto</th><th>Estado</th></tr></thead>
-                        <tbody id="cuerpo-tabla-reporte-marketing"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button><button type="button" class="btn btn-info fw-bold rounded-pill text-dark" onclick="descargarReporteExcel()">Descargar Excel</button></div>
-        </div>
-    </div>
-</div>
-
+    <script src="../JS/script.js?v=4"></script>
+    <script src="../JS/auth.js"></script>
+    <script src="../JS/marketing.js?v=4"></script>
 </body>
 </html>
-
-

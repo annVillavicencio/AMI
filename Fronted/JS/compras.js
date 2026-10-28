@@ -442,21 +442,48 @@ function generarReporte() {
     if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
-function descargarReporteExcel() {
-    if (comprasData.length === 0) return alert("No hay compras para exportar.");
+function descargarReporteExcel(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!comprasData || comprasData.length === 0) return alert("No hay compras para exportar.");
     calcularDatosReporte();
-    let csvContent = "\uFEFFID,Proveedor,Factura,Total (C$),Fecha,Estado\n";
-    datosReporte.forEach(item => {
-        let prov = (item.proveedor || '').replace(/"/g, '""');
-        csvContent += `"${item.id}","${prov}","${item.factura}","${item.total}","${item.fecha}","${item.estado}"\n`;
-    });
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_compras_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    if (typeof XLSX !== 'undefined') {
+        const wsData = [
+            ["REPORTE GENERAL DE COMPRAS - AMI"],
+            [`Fecha de Generación: ${new Date().toLocaleString()}`],
+            [],
+            ["ID Compra", "Proveedor", "N° Factura", "Total (C$)", "Fecha", "Estado"]
+        ];
+
+        datosReporte.forEach(item => {
+            wsData.push([
+                item.id,
+                item.proveedor,
+                item.factura,
+                item.total,
+                item.fecha,
+                item.estado
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Compras");
+        XLSX.writeFile(wb, `reporte_compras_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+        let csvContent = "\uFEFFID,Proveedor,Factura,Total (C$),Fecha,Estado\n";
+        datosReporte.forEach(item => {
+            let prov = (item.proveedor || '').replace(/"/g, '""');
+            csvContent += `"${item.id}","${prov}","${item.factura}","${item.total}","${item.fecha}","${item.estado}"\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `reporte_compras_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 window.generarReporte = generarReporte;

@@ -390,20 +390,47 @@ function generarReporte() {
     if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
-function descargarReporteExcel() {
-    if (costosData.length === 0) return;
+function descargarReporteExcel(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!costosData || costosData.length === 0) return alert("No hay datos de costos para exportar.");
     calcularRC();
-    let csv = "\uFEFFID,Auto,Categoría,Descripción,Monto (C$),Fecha\n";
-    datosRC.forEach(i => {
-        csv += `"${i.id}","${i.auto}","${i.cat}","${i.desc.replace(/"/g, '""')}","${i.m}","${i.f}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_costos_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    if (typeof XLSX !== 'undefined') {
+        const wsData = [
+            ["REPORTE GENERAL DE COSTOS DE ESTANCAMIENTO - AMI"],
+            [`Fecha de Generación: ${new Date().toLocaleString()}`],
+            [],
+            ["ID Costo", "Vehículo (Auto)", "Categoría de Costo", "Descripción", "Monto (C$)", "Fecha de Registro"]
+        ];
+
+        datosRC.forEach(i => {
+            wsData.push([
+                i.id,
+                i.auto,
+                i.cat,
+                i.desc,
+                i.m,
+                i.f
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Costos");
+        XLSX.writeFile(wb, `reporte_costos_AMI_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+        let csv = "\uFEFFID,Auto,Categoría,Descripción,Monto (C$),Fecha\n";
+        datosRC.forEach(i => {
+            csv += `"${i.id}","${i.auto}","${i.cat}","${i.desc.replace(/"/g, '""')}","${i.m}","${i.f}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `reporte_costos_AMI_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 window.generarReporte = generarReporte;

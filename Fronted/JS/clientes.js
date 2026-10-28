@@ -200,28 +200,31 @@ function abrirModalEditar(id) {
 window.eliminarCliente = eliminarCliente;
 window.abrirModalEditar = abrirModalEditar;
 
-// --- REPORTE DE CLIENTES ---
+
+// --- REPORTE DE CLIENTES Y EXPORTACIÓN EXCEL ---
 let datosReporteClientes = [];
 let kpiOrigenTexto = "";
 
 function calcularDatosReporte() {
     datosReporteClientes = [];
     const origenesCount = {};
-    let totalClientes = clientesData.length;
+    let totalClientes = (clientesData || []).length;
 
-    clientesData.forEach(c => {
+    (clientesData || []).forEach(c => {
+        const origen = c.Origen || 'Mostrador / Directo';
         datosReporteClientes.push({
-            nombre: c.Nombre + ' ' + c.Apellido,
+            id: c.IdClientes,
+            nombre: (c.Nombre || '') + ' ' + (c.Apellido || ''),
+            cedula: c.Cedula || 'N/A',
+            telefono: c.Telefono || 'N/A',
             correo: c.Correo || 'N/A',
-            origen: c.Origen || 'Desconocido'
+            origen: origen
         });
 
-        const o = c.Origen || 'Desconocido';
-        origenesCount[o] = (origenesCount[o] || 0) + 1;
+        origenesCount[origen] = (origenesCount[origen] || 0) + 1;
     });
 
-    // KPI: Origen mas repetido
-    let maxOrigen = '';
+    let maxOrigen = 'Mostrador / Directo';
     let maxCount = 0;
     for (const [ori, count] of Object.entries(origenesCount)) {
         if (count > maxCount) {
@@ -231,17 +234,18 @@ function calcularDatosReporte() {
     }
     
     let porcentaje = totalClientes > 0 ? ((maxCount / totalClientes) * 100).toFixed(1) : 0;
-    kpiOrigenTexto = `El origen más frecuente es <strong>${maxOrigen}</strong> con un ${porcentaje}% del total (${maxCount} clientes).`;
+    kpiOrigenTexto = `Total de clientes en cartera: <strong class="text-info">${totalClientes}</strong>. El origen más frecuente es <strong class="text-neon-green">${maxOrigen}</strong> con un ${porcentaje}% del total (${maxCount} clientes).`;
 }
 
-function generarReporte() {
-    if (clientesData.length === 0) {
-        alert("Cargando datos, intente de nuevo en un segundo.");
-        return;
+function generarReporte(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!clientesData || clientesData.length === 0) {
+        return alert("Cargando datos de clientes, por favor espere un momento.");
     }
     calcularDatosReporte();
 
-    document.getElementById('kpi-origen').innerHTML = kpiOrigenTexto;
+    const kpiEl = document.getElementById('kpi-origen');
+    if (kpiEl) kpiEl.innerHTML = kpiOrigenTexto;
 
     const tbody = document.getElementById('cuerpo-tabla-reporte-clientes');
     if (tbody) {
@@ -249,39 +253,73 @@ function generarReporte() {
         datosReporteClientes.forEach(item => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${item.nombre}</td>
+                    <td class="text-secondary fw-bold">#${item.id}</td>
+                    <td class="text-white fw-bold">${item.nombre}</td>
+                    <td class="text-secondary">${item.cedula}</td>
+                    <td class="text-white">${item.telefono}</td>
                     <td class="text-secondary">${item.correo}</td>
-                    <td class="text-info fw-bold">${item.origen}</td>
+                    <td><span class="badge bg-dark border border-info text-info">${item.origen}</span></td>
                 </tr>
             `;
         });
     }
 
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalReporteClientes'));
-    modal.show();
+    const modalEl = document.getElementById('modalReporteClientes');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 }
 
-function descargarReporteExcel() {
-    if (datosReporteClientes.length === 0) calcularDatosReporte();
-    if (datosReporteClientes.length === 0) return alert("No hay datos para exportar.");
+function descargarReporteExcel(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!clientesData || clientesData.length === 0) return alert("No hay datos de clientes para exportar.");
+    calcularDatosReporte();
 
-    let csvContent = "ï»¿Nombre,Correo,Origen\n";
-    datosReporteClientes.forEach(item => {
-        csvContent += `"${item.nombre}","${item.correo}","${item.origen}"\n`;
-    });
+    if (typeof XLSX !== 'undefined') {
+        const wsData = [
+            ["REPORTE GENERAL DE CLIENTES - AMI"],
+            [`Fecha de Emisión: ${new Date().toLocaleString()}`],
+            [],
+            ["ID Cliente", "Nombre Completo", "Cédula", "Teléfono", "Correo Electrónico", "Canal de Origen"]
+        ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "reporte_clientes.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        datosReporteClientes.forEach(item => {
+            wsData.push([
+                item.id,
+                item.nombre,
+                item.cedula,
+                item.telefono,
+                item.correo,
+                item.origen
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+        XLSX.writeFile(wb, `reporte_clientes_AMI_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+        let csvContent = "\uFEFFID,Nombre Completo,Cedula,Telefono,Correo,Origen\n";
+        datosReporteClientes.forEach(item => {
+            csvContent += `"${item.id}","${item.nombre.replace(/"/g, '""')}","${item.cedula}","${item.telefono}","${item.correo}","${item.origen}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_clientes_AMI_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 window.generarReporte = generarReporte;
 window.descargarReporteExcel = descargarReporteExcel;
+window.guardarCliente = guardarCliente;
+
 
 
 function actualizarKPIsPrincipales(data) {

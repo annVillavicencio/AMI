@@ -1178,3 +1178,118 @@ window.abrirModalVerFactura = abrirModalVerFactura;
 window.anularFactura = anularFactura;
 window.cargarApartadoDGI = cargarApartadoDGI;
 window.exportarLibroVentasDGIExcel = exportarLibroVentasDGIExcel;
+
+
+// ==========================================================================
+// REPORTE GENERAL DE VENTAS Y EXPORTACIÓN EXCEL
+// ==========================================================================
+let datosReporteVentas = [];
+
+function calcularDatosReporteVentas() {
+    datosReporteVentas = [];
+    let totalGeneral = 0;
+    ventasData.forEach(v => {
+        const monto = parseFloat(v.Monto || 0);
+        totalGeneral += monto;
+        const fecha = v.FechaVenta ? new Date(v.FechaVenta).toLocaleDateString() : 'N/A';
+        datosReporteVentas.push({
+            id: v.idVenta,
+            cliente: v.Cliente || 'N/A',
+            vehiculo: v.Vehiculo || 'N/A',
+            monto: '$ ' + monto.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+            montoNum: monto,
+            fecha: fecha,
+            formaPago: v.FormaPago || 'N/A',
+            factura: v.NumeroFactura || 'Sin Factura'
+        });
+    });
+
+    const kpiEl = document.getElementById('kpi-ventas');
+    if (kpiEl) {
+        kpiEl.innerHTML = `Total de ventas registradas: <strong class="text-success">${ventasData.length}</strong> | Facturación global acumulada: <strong class="text-success">$ ${totalGeneral.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>`;
+    }
+}
+
+function generarReporte(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!ventasData || ventasData.length === 0) {
+        return alert("No hay datos de ventas disponibles para generar el reporte.");
+    }
+    calcularDatosReporteVentas();
+
+    const tbody = document.getElementById('cuerpo-tabla-reporte-ventas');
+    if (tbody) {
+        tbody.innerHTML = '';
+        datosReporteVentas.forEach(i => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-neon-green fw-bold">#${i.id}</td>
+                    <td class="text-white">${i.cliente}</td>
+                    <td class="text-info">${i.vehiculo}</td>
+                    <td class="text-success fw-bold">${i.monto}</td>
+                    <td class="text-secondary">${i.fecha}</td>
+                    <td><span class="badge bg-dark border border-secondary text-light">${i.formaPago}</span></td>
+                </tr>
+            `;
+        });
+    }
+
+    const modalEl = document.getElementById('modalReporteVentas');
+    if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+}
+
+function descargarReporteExcel(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!ventasData || ventasData.length === 0) {
+        return alert("No hay ventas para exportar.");
+    }
+    calcularDatosReporteVentas();
+
+    if (typeof XLSX !== 'undefined') {
+        const wsData = [
+            ["REPORTE GENERAL DE VENTAS - AUTOS MODERNOS E IMPORTACIONES (AMI)"],
+            [`Fecha y hora de generación: ${new Date().toLocaleString()}`],
+            [],
+            ["ID Venta", "Cliente", "Vehículo", "Monto ($)", "Fecha", "Forma de Pago", "Factura Fiscal"]
+        ];
+
+        datosReporteVentas.forEach(i => {
+            wsData.push([
+                i.id,
+                i.cliente,
+                i.vehiculo,
+                i.montoNum,
+                i.fecha,
+                i.formaPago,
+                i.factura
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+        XLSX.writeFile(wb, `Reporte_Ventas_AMI_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+        let csvContent = "\uFEFFID Venta,Cliente,Vehiculo,Monto,Fecha,Forma Pago,Factura\n";
+        datosReporteVentas.forEach(i => {
+            csvContent += `"${i.id}","${(i.cliente||'').replace(/"/g, '""')}","${(i.vehiculo||'').replace(/"/g, '""')}","${i.montoNum}","${i.fecha}","${i.formaPago}","${i.factura}"\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Reporte_Ventas_AMI_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+function exportarVentasExcel(e) {
+    descargarReporteExcel(e);
+}
+
+window.generarReporte = generarReporte;
+window.descargarReporteExcel = descargarReporteExcel;
+window.exportarVentasExcel = exportarVentasExcel;

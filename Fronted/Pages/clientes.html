@@ -446,10 +446,10 @@
                             <div class="card-body">
                                 <h6 class="text-white fw-bold mb-4"><i class="bi bi-lightning-charge-fill text-neon me-2"></i>Acciones rápidas</h6>
                                 <div class="list-group list-group-flush dark-list">
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-download me-3"></i> Exportar clientes</span> <i class="bi bi-chevron-right text-secondary small"></i>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="generarReporte()">
+                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="descargarReporteExcel(event); return false;">
+      <span><i class="bi bi-download me-3"></i> Exportar clientes</span> <i class="bi bi-chevron-right text-secondary small"></i>
+  </a>
+                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="generarReporte(event); return false;">
                                         <span><i class="bi bi-file-earmark-text me-3"></i> Generar reporte</span> <i class="bi bi-chevron-right text-secondary small"></i>
                                     </a>
                                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom-0">
@@ -464,96 +464,99 @@
             </div>
         </div>
     </div>
-     <div class="modal fade" id="modalCliente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content card-custom text-white">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold"><i class="bi bi-display text-neon-green me-2"></i>Gestión de compras</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label small text-secondary">ID del cliente (Autogenerado)</label>
-                            <input type="text" class="form-control form-control-dark" placeholder="XXXX" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Nombre</label>
-                            <input type="text" id="input-nombre" class="form-control form-control-dark" placeholder="Nombre del cliente">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Apellido</label>
-                            <input type="text" id="input-apellido" class="form-control form-control-dark" placeholder="Apellido del cliente">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">Telefono</label>
-                            <input type="text" id="input-telefono" class="form-control form-control-dark" placeholder="Telefono del cliente">
-                        </div>
-                       <div class="col-md-6">
-                            <label class="form-label small text-secondary">Correo Electronico</label>
-                            <input type="text" id="input-correo" class="form-control form-control-dark" placeholder="Correo del cliente">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-secondary">cedula</label>
-                            <input type="text" id="input-cedula" class="form-control form-control-dark" placeholder="cedula del cliente">
-                        </div><div class="col-6">
-                                <label class="form-label small text-subhead">Fecha de registro</label>
-                                <input type="date" class="form-control form-control-dark" required>
+     
+    <!-- Modal Cliente (Nuevo / Editar) -->
+    <div class="modal fade" id="modalCliente" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-custom text-white">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold" id="modalClienteTitle"><i class="bi bi-person-plus text-neon-green me-2"></i>Gestión de Clientes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCliente">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">ID del cliente (Autogenerado)</label>
+                                <input type="text" id="input-id-cliente" class="form-control form-control-dark" placeholder="Automático" readonly>
                             </div>
-                        <div class="modal-footer border-top border-secondary border-opacity-25">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Nombre *</label>
+                                <input type="text" id="input-nombre" class="form-control form-control-dark" placeholder="Nombre" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Apellido *</label>
+                                <input type="text" id="input-apellido" class="form-control form-control-dark" placeholder="Apellido" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Teléfono *</label>
+                                <input type="text" id="input-telefono" class="form-control form-control-dark" placeholder="Teléfono" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary">Cédula *</label>
+                                <input type="text" id="input-cedula" class="form-control form-control-dark" placeholder="Cédula" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small text-secondary">Correo Electrónico</label>
+                                <input type="email" id="input-correo" class="form-control form-control-dark" placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25">
                     <button type="button" class="btn border-secondary text-white rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" id="btn-guardar-cliente" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark">Guardar Cliente</button>
+                    <button type="button" id="btn-guardar-cliente" class="btn bg-neon-green fw-bold rounded-pill px-4 text-dark" onclick="guardarCliente()">Guardar Cliente</button>
                 </div>
-                    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../JS/script.js?v=3"></script>
-    <script src="../JS/auth.js"></script>
-    <script src="../JS/clientes.js?v=3"></script>
-
-<!-- Modal Reporte Clientes -->
-<div class="modal fade" id="modalReporteClientes" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content card-custom text-white">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
-                <h5 class="modal-title fw-bold">
-                    <i class="bi bi-file-earmark-person text-info me-2"></i> Reporte de Clientes
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="alert bg-dark text-white border border-info mb-3 rounded-3" id="kpi-origen">
-                    <!-- KPI JS -->
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Nombre Completo</th>
-                                <th>Correo</th>
-                                <th>Origen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpo-tabla-reporte-clientes">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="modal-footer border-top border-secondary border-opacity-25">
-                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-info fw-bold rounded-pill px-4 text-dark" onclick="descargarReporteExcel()">
-                    <i class="bi bi-file-earmark-excel me-1"></i> Descargar Excel
-                </button>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Modal Reporte Clientes -->
+    <div class="modal fade" id="modalReporteClientes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content card-custom text-white">
+                <div class="modal-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-file-earmark-person text-info me-2"></i> Reporte de Clientes
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert bg-dark text-white border border-info mb-3 rounded-3" id="kpi-origen">
+                        <!-- KPI JS -->
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Cédula</th>
+                                    <th>Teléfono</th>
+                                    <th>Correo</th>
+                                    <th>Origen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpo-tabla-reporte-clientes">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-info fw-bold rounded-pill px-4 text-dark" onclick="descargarReporteExcel(event)">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Descargar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../JS/script.js?v=4"></script>
+    <script src="../JS/auth.js"></script>
+    <script src="../JS/clientes.js?v=4"></script>
 </body>
 </html>
-
-
-
