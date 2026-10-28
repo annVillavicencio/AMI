@@ -13364,6 +13364,58 @@ FECHA: 27 DE OCTUBRE DE 2026
 5. RESPALDO FRESCO DE BASE DE DATOS:
    - Se generó un nuevo backup completo comprimido Autos_AMI.bak (1.12 MB) ubicado en la raíz del repositorio, conteniendo todos los roles, usuarios y permisos definitivos.
 
+
+================================================================================
+SESIÓN 17 - RESTAURACIÓN TOTAL DE BD, REPORTES, EXPORTACIÓN Y CRUD EN MÓDULOS
+Fecha: 27 de Octubre de 2026
+Objetivo: Restaurar BD actualizada (Autos_AMI.bak), recuperar usuarios y auto LOTSO-3421,
+          solucionar exportación y generación de reportes en Ventas, Compras, Clientes,
+          Marketing y Costos, corregir congelamiento de Clientes y habilitar CRUD en Marketing.
+================================================================================
+
+1. RESTAURACIÓN Y SINCRONIZACIÓN DE BASE DE DATOS (Autos_AMI.bak):
+   - El backup Autos_AMI.bak provino de una versión de motor SQL Server 2025 (v17.0.1145.4, BD versión 998).
+   - Se restauró en la instancia local MSSQLSERVER2025 y se transfirieron las 27 tablas a la base de datos de producción local (localhost:1433/Autos_AMI) mediante SqlBulkCopy con mapeo de columnas no computadas y preservación de llaves primarias/identidades:
+     * Auto: 46 vehículos (incluyendo el vehículo recién ingresado Placa: LOTSO-3421, ID: 48, DOG Challenger SRT 2022, $135,000, Vendido).
+     * Usuarios: 14 usuarios oficiales restaurados y vinculados a sus roles y empleados.
+     * Ventas: 17 ventas registradas (incluyendo la venta del vehículo LOTSO-3421 a Elena Castro con factura fiscal AMI-FAC-0004).
+     * Compras: 7 compras registradas (C$ 537,500.00 en total).
+     * Clientes: 22 clientes activos con sus canales de origen.
+     * Empleados: 23 empleados con sus departamentos y cargos.
+     * Campañas de Marketing: 5 campañas registradas con 15 interacciones vinculadas.
+     * Nómina / Planilla: 77 registros de planilla sincronizados.
+
+2. MÓDULO DE VENTAS (Fronted/Pages/ventas.html, Fronted/JS/ventas.js):
+   - Se vinculó el botón "Exportar ventas" a exportarVentasExcel(event).
+   - Se implementó la función generarReporte(event) que calcula el acumulado total de ventas ($), cantidad de operaciones y renderiza el modal #modalReporteVentas.
+   - Se habilitó la descarga en formato Excel nativo (.xlsx) mediante SheetJS con fallback automático a CSV UTF-8.
+
+3. MÓDULO DE COMPRAS (Fronted/Pages/compras.html, Fronted/JS/compras.js):
+   - Se restauró el modal #modalReporteCompras en el DOM como hermano directo de <body>, eliminando tags huérfanos.
+   - Se conectó el botón "Exportar compras" a descargarReporteExcel(event) con generación de archivo Excel (.xlsx) vía SheetJS.
+   - Se conectó el botón "Generar reporte" a generarReporte(event), calculando automáticamente el proveedor con mayor inversión (Auto Nica: C$ 235,000.00) y listando las compras con sus montos y estados.
+
+4. MÓDULO DE CLIENTES (Fronted/Pages/clientes.html, Fronted/JS/clientes.js):
+   - Causa del Congelamiento: El modal #modalReporteClientes estaba anidado dentro de 4 divs no cerrados pertenecientes a #modalCliente. Al abrirse, el backdrop de Bootstrap (.modal-backdrop) cubría toda la pantalla por encima del modal, dejando la interfaz totalmente bloqueada y congelada.
+   - Solución: Se cerraron y equilibraron todos los contenedores HTML (openDivs = 0), posicionando ambos modales de forma independiente.
+   - Se implementó la descarga de clientes a Excel (.xlsx) y CSV con BOM UTF-8 y se vinculó la acción rápida de exportar.
+
+5. MÓDULO DE MARKETING (Backend/routes/marketing.js, Fronted/Pages/marketing.html, Fronted/JS/marketing.js):
+   - Backend: Se implementaron las rutas completas REST:
+     * GET /api/marketing/: Obtener campañas ordenadas descendentemente.
+     * POST /api/marketing: Crear campaña con validación de fechas y presupuesto.
+     * PUT /api/marketing/:id: Actualizar campaña existente.
+     * DELETE /api/marketing/:id: Eliminar campaña eliminando previamente sus interacciones asociadas para evitar conflictos de llave foránea.
+   - Frontend:
+     * Se asignaron IDs semánticos a los campos del formulario #modalCampana (campana-nombre, campana-inicio, campana-fin, campana-presupuesto, campana-estado).
+     * Se agregaron botones de acción "Editar" y "Eliminar" en cada fila de la tabla de campañas.
+     * Se implementó abrirModalCrear(), abrirModalEditar(id), guardarCampana(event) y eliminarCampana(id).
+     * Se vinculó el botón "Exportar campaña" para descarga directa en formato Excel (.xlsx).
+
+6. MÓDULO DE COSTOS (Fronted/Pages/costos.html, Fronted/JS/costos.js):
+   - Se vinculó la acción rápida "Exportar Información" a descargarReporteExcel(event).
+   - Se integró la librería SheetJS (xlsx.full.min.js) para permitir la descarga directa en Excel (.xlsx) y CSV.
+
 ================================================================================
                              FIN DEL HISTORIAL COMPLETO                         
 ================================================================================
